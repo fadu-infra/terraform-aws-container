@@ -1,0 +1,30 @@
+{
+  "build": {
+    "args": {
+      "VARIANT": "ubuntu-22.04"
+    },
+    "dockerfile": "Dockerfile"
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "mads-hartmann.bash-ide-vscode",
+        "foxundermoon.shell-format",
+        "hashicorp.hcl"
+      ]
+    }
+  },
+  "features": {
+    "ghcr.io/devcontainers-contrib/features/zsh-plugins:0": {
+      "omzPlugins": "https://github.com/zsh-users/zsh-autosuggestions https://github.com/zsh-users/zsh-syntax-highlighting",
+      "plugins": "zsh-autosuggestions zsh-syntax-highlighting",
+      "username": "vscode"
+    },
+    "ghcr.io/devcontainers/features/terraform:1": {
+      "installSentinel": true,
+      "installTFSec": true,
+      "installTerraformDocs": true
+    }
+  },
+  "postCreateCommand": "pip3 install pre-commit"
+}
