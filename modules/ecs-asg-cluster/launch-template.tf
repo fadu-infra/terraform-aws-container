@@ -54,6 +54,7 @@ resource "aws_launch_template" "node" {
         delete_on_termination = block_device_mappings.value.delete_on_termination
         volume_size           = block_device_mappings.value.volume_size
         volume_type           = "gp3"
+        snapshot_id           = var.use_snapshot ? var.snapshot_id : null
       }
     }
   }
