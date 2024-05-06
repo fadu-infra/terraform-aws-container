@@ -40,6 +40,18 @@ variable "ebs_disks" {
   default = {}
 }
 
+variable "use_snapshot" {
+  description = "Use snapshot to create ECS nodes."
+  type        = bool
+  default     = false
+}
+
+variable "snapshot_id" {
+  description = "The snapshot ID to use to create ECS nodes."
+  type        = string
+  default     = ""
+}
+
 variable "enabled_default_capacity_provider" {
   description = "Enable default capacity provider strategy."
   type        = bool
