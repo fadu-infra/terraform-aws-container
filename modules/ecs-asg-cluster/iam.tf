@@ -55,9 +55,9 @@ data "aws_iam_policy_document" "assume_role_policies" {
 resource "aws_iam_role" "service_roles" {
   for_each = { for svc in local.services : svc.role_name => svc }
 
-  name                = each.value.role_name
-  assume_role_policy  = data.aws_iam_policy_document.assume_role_policies[each.key].json
-  tags                = local.tags
+  name               = each.value.role_name
+  assume_role_policy = data.aws_iam_policy_document.assume_role_policies[each.key].json
+  tags               = local.tags
 }
 
 resource "aws_iam_role_policy_attachment" "service_role_policies" {
@@ -65,8 +65,8 @@ resource "aws_iam_role_policy_attachment" "service_role_policies" {
     for policy in flatten([
       for svc in local.services : [
         for policy_arn in svc.policies : {
-          role_name   = svc.role_name
-          policy_arn  = policy_arn
+          role_name  = svc.role_name
+          policy_arn = policy_arn
         }
       ]
     ]) : "${policy.role_name}-${policy.policy_arn}" => policy
