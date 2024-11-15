@@ -53,3 +53,11 @@ output "security_group" {
   }
   description = "The ID and name of the ECS nodes security group."
 }
+
+output "dlm_service_role" {
+  description = "The name and ARN of the DLM service role."
+  value = {
+    name = module.ecs_cluster.dlm_service_role_name
+    arn  = module.ecs_cluster.dlm_service_role_arn
+  }
+}
