@@ -27,6 +27,14 @@ locals {
         "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy",
         "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
       ]
+    },
+    {
+      # Allow DLM to manage EBS snapshots
+      role_name  = "${local.common_name_prefix}-DlmServiceRole",
+      identifier = "dlm.amazonaws.com",
+      policies = [
+        "arn:aws:iam::aws:policy/service-role/AWSDataLifecycleManagerServiceRole"
+      ]
     }
   ]
 }
