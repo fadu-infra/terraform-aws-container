@@ -55,9 +55,9 @@ output "security_group" {
 }
 
 output "dlm_service_role" {
-  description = "The name and ARN of the DLM service role."
   value = {
-    name = module.ecs_cluster.dlm_service_role_name
-    arn  = module.ecs_cluster.dlm_service_role_arn
+    name = aws_iam_role.service_roles["${local.common_name_prefix}-DlmServiceRole"].name
+    arn  = aws_iam_role.service_roles["${local.common_name_prefix}-DlmServiceRole"].arn
   }
+  description = "The name and ARN of the DLM service role"
 }
