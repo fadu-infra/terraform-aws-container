@@ -1,82 +1,110 @@
 locals {
-  services = [
-    {
-      # Allow EC2 instance to register as ECS cluster member, fetch ECR images, write logs to CloudWatch
-      role_name  = "${local.common_name_prefix}-Ec2InstanceRole",
-      identifier = "ec2.amazonaws.com",
+  iam_roles = {
+    ec2_instance = {
+      name        = format("%s-Ec2InstanceRole", local.common_name_prefix)
+      identifier  = "ec2.amazonaws.com"
+      description = "Allows EC2 instances to call AWS services on your behalf"
       policies = [
         "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role",
         "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore",
         "arn:aws:iam::aws:policy/CloudWatchLogsFullAccess"
       ]
-    },
-    {
-      # Allow ECS service to interact with LoadBalancers
-      role_name  = "${local.common_name_prefix}-EcsServiceRole",
-      identifier = "ecs.amazonaws.com",
+      create_instance_profile = true
+    }
+
+    ecs_service = {
+      name        = format("%s-EcsServiceRole", local.common_name_prefix)
+      identifier  = "ecs.amazonaws.com"
+      description = "Allows ECS services to call AWS services on your behalf"
       policies = [
         "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceRole",
         "arn:aws:iam::aws:policy/service-role/AmazonECSInfrastructureRolePolicyForVolumes"
       ]
-    },
-    {
-      # Allow ECS tasks to write logs to CloudWatch
-      role_name  = "${local.common_name_prefix}-EcsTaskExecutionRole",
-      identifier = "ecs-tasks.amazonaws.com",
+    }
+
+    ecs_task = {
+      name        = format("%s-EcsTaskExecutionRole", local.common_name_prefix)
+      identifier  = "ecs-tasks.amazonaws.com"
+      description = "Allows ECS tasks to call AWS services on your behalf"
       policies = [
         "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy",
         "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
       ]
-    },
-    {
-      # Allow DLM to manage EBS snapshots
-      role_name  = "${local.common_name_prefix}-DlmServiceRole",
-      identifier = "dlm.amazonaws.com",
+    }
+
+    dlm_service = {
+      name        = format("%s-DlmServiceRole", local.common_name_prefix)
+      identifier  = "dlm.amazonaws.com"
+      description = "Allows DLM to manage EBS snapshots"
       policies = [
         "arn:aws:iam::aws:policy/service-role/AWSDataLifecycleManagerServiceRole"
       ]
     }
-  ]
+  }
+
+  role_policy_attachments = merge([
+    for role_key, role in local.iam_roles : {
+      for policy_arn in role.policies :
+      "${role.name}:${policy_arn}" => {
+        role_name  = role.name
+        policy_arn = policy_arn
+      }
+    }
+  ])
 }
 
-data "aws_iam_policy_document" "assume_role_policies" {
-  for_each = { for svc in local.services : svc.role_name => svc }
+resource "aws_iam_role" "roles" {
+  for_each = local.iam_roles
 
-  statement {
-    actions = ["sts:AssumeRole"]
+  name        = each.value.name
+  description = each.value.description
+  tags        = local.tags
 
-    principals {
-      type        = "Service"
-      identifiers = [each.value.identifier]
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = each.value.identifier
+        }
+      }
+    ]
+  })
+
+  dynamic "inline_policy" {
+    for_each = try(each.value.inline_policies, {})
+    content {
+      name   = inline_policy.key
+      policy = inline_policy.value
     }
   }
+
+  lifecycle {
+    create_before_destroy = true
+  }
 }
 
-resource "aws_iam_role" "service_roles" {
-  for_each = { for svc in local.services : svc.role_name => svc }
+resource "aws_iam_role_policy_attachment" "role_policies" {
+  for_each = local.role_policy_attachments
 
-  name               = each.value.role_name
-  assume_role_policy = data.aws_iam_policy_document.assume_role_policies[each.key].json
-  tags               = local.tags
+  role       = each.value.role_name
+  policy_arn = each.value.policy_arn
+
+  depends_on = [aws_iam_role.roles]
 }
 
-resource "aws_iam_role_policy_attachment" "service_role_policies" {
+resource "aws_iam_instance_profile" "profile" {
   for_each = {
-    for policy in flatten([
-      for svc in local.services : [
-        for policy_arn in svc.policies : {
-          role_name  = svc.role_name
-          policy_arn = policy_arn
-        }
-      ]
-    ]) : "${policy.role_name}-${policy.policy_arn}" => policy
+    for k, v in local.iam_roles : k => v
+    if try(v.create_instance_profile, false)
   }
 
-  role       = aws_iam_role.service_roles[each.value.role_name].name
-  policy_arn = each.value.policy_arn
-}
+  name = "${each.value.name}-profile"
+  role = aws_iam_role.roles[each.key].name
 
-resource "aws_iam_instance_profile" "ecs_node" {
-  name = "${local.common_name_prefix}-Ec2InstanceProfile"
-  role = aws_iam_role.service_roles["${local.common_name_prefix}-Ec2InstanceRole"].name
+  lifecycle {
+    create_before_destroy = true
+  }
 }
