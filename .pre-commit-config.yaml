@@ -1,6 +1,6 @@
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.5.0
+    rev: v5.0.0
     hooks:
       - id: check-yaml
       - id: check-json
@@ -8,16 +8,31 @@ repos:
         args:
           - "--markdown-linebreak-ext=md"
       - id: check-added-large-files
+      - id: check-shebang-scripts-are-executable
+      - id: check-merge-conflict
+      - id: check-vcs-permalinks
       - id: detect-private-key
       - id: detect-aws-credentials
         args:
           - "--allow-missing-credentials"
       - id: end-of-file-fixer
+      - id: no-commit-to-branch
+      - id: pretty-format-json
+        args:
+          - "--autofix"
+
+  - repo: https://github.com/zricethezav/gitleaks
+    rev: v8.21.2
+    hooks:
+      - id: gitleaks
 
   - repo: https://github.com/antonbabenko/pre-commit-terraform
-    rev: v1.88.4
+    rev: v1.96.2
     hooks:
       - id: terraform_fmt
+        args:
+          - "--args=-diff"
+      - id: terragrunt_fmt
       - id: terraform_tflint
         args:
           - "--args=--config=__GIT_WORKING_DIR__/.tflint.hcl"
@@ -25,10 +40,3 @@ repos:
         args:
           - "--tf-init-args=-upgrade"
           - "--hook-config=--retry-once-with-cleanup=true"
-      - id: terraform_docs
-        args:
-          - "--hook-config=--path-to-file=README.md"
-          - "--hook-config=--add-to-existing-file=true"
-          - "--hook-config=--create-file-if-not-exist=true"
-          - "--hook-config=--use-standard-markers=true"
-          - "--args=--sort-by=required"
