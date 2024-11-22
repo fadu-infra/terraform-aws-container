@@ -32,6 +32,13 @@ resource "aws_launch_template" "node" {
   tags                   = local.tags
   update_default_version = true
 
+  metadata_options {
+    http_endpoint               = "enabled"
+    http_tokens                 = "required"  # IMDSv2를 필수로 설정
+    http_put_response_hop_limit = 1
+    instance_metadata_tags      = "enabled"
+  }
+
   network_interfaces {
     associate_public_ip_address = local.public
     security_groups             = local.sg_ids
