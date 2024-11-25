@@ -2,7 +2,7 @@ locals {
   iam_roles = {
     ec2_instance = {
       name        = format("%s-Ec2InstanceRole", local.common_name_prefix)
-      identifier  = "ec2.amazonaws.com"
+      principal  = "ec2.amazonaws.com"
       description = "Allows EC2 instances to call AWS services on your behalf"
       policies = [
         "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role",
@@ -14,7 +14,7 @@ locals {
 
     ecs_service = {
       name        = format("%s-EcsServiceRole", local.common_name_prefix)
-      identifier  = "ecs.amazonaws.com"
+      principal  = "ecs.amazonaws.com"
       description = "Allows ECS services to call AWS services on your behalf"
       policies = [
         "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceRole",
@@ -24,7 +24,7 @@ locals {
 
     ecs_task = {
       name        = format("%s-EcsTaskExecutionRole", local.common_name_prefix)
-      identifier  = "ecs-tasks.amazonaws.com"
+      principal  = "ecs-tasks.amazonaws.com"
       description = "Allows ECS tasks to call AWS services on your behalf"
       policies = [
         "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy",
@@ -34,7 +34,7 @@ locals {
 
     dlm_service = {
       name        = format("%s-DlmServiceRole", local.common_name_prefix)
-      identifier  = "dlm.amazonaws.com"
+      principal  = "dlm.amazonaws.com"
       description = "Allows DLM to manage EBS snapshots"
       policies = [
         "arn:aws:iam::aws:policy/service-role/AWSDataLifecycleManagerServiceRole"
@@ -67,7 +67,7 @@ resource "aws_iam_role" "roles" {
         Action = "sts:AssumeRole"
         Effect = "Allow"
         Principal = {
-          Service = each.value.identifier
+          Service = each.value.principal
         }
       }
     ]
