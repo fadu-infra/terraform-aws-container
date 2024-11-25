@@ -5,14 +5,13 @@ data "cloudinit_config" "config" {
   part {
     content_type = "text/x-shellscript"
     content      = <<EOT
-#!/bin/bash
-echo ECS_CLUSTER="${local.name}" >> /etc/ecs/ecs.config
-echo ECS_LOGLEVEL="debug" >> /etc/ecs/ecs.config
-echo ECS_ENABLE_CONTAINER_METADATA=true >> /etc/ecs/ecs.config
-echo ECS_ENABLE_SPOT_INSTANCE_DRAINING=${tostring(var.spot)} >> /etc/ecs/ecs.config
-echo ECS_AVAILABLE_LOGGING_DRIVERS=["json-file","awslogs"]
-
-EOT
+                    #!/bin/bash
+                    echo ECS_CLUSTER="${local.name}" >> /etc/ecs/ecs.config
+                    echo ECS_LOGLEVEL="debug" >> /etc/ecs/ecs.config
+                    echo ECS_ENABLE_CONTAINER_METADATA=true >> /etc/ecs/ecs.config
+                    echo ECS_ENABLE_SPOT_INSTANCE_DRAINING=${tostring(var.spot)} >> /etc/ecs/ecs.config
+                    echo ECS_AVAILABLE_LOGGING_DRIVERS=["json-file","awslogs"]
+                  EOT
   }
 
   dynamic "part" {
