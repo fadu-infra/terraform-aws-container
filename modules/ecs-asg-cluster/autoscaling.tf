@@ -9,7 +9,7 @@ resource "aws_autoscaling_group" "ecs_nodes" {
   instance_refresh {
     strategy = "Rolling"
     preferences {
-      min_healthy_percentage = 75
+      min_healthy_percentage = 100
       instance_warmup        = 300
       checkpoint_delay       = 300
       checkpoint_percentages = [50, 100]
