@@ -14,7 +14,6 @@ resource "aws_autoscaling_group" "ecs_nodes" {
       checkpoint_delay       = 300
       checkpoint_percentages = [50, 100]
     }
-    triggers = ["launch_template"]
   }
 
   mixed_instances_policy {
