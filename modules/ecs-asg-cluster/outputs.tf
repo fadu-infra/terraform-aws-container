@@ -16,34 +16,42 @@ output "ecs_cluster_details" {
 
 output "ecs_service_role" {
   value = {
-    name = aws_iam_role.service_roles["ecs_service"].name
-    arn  = aws_iam_role.service_roles["ecs_service"].arn
+    name = aws_iam_role.ecs_service.name
+    arn  = aws_iam_role.ecs_service.arn
   }
   description = "The name and ARN of the ECS service role."
 }
 
 output "ecs_task_execution_role" {
   value = {
-    name = aws_iam_role.service_roles["ecs_task"].name
-    arn  = aws_iam_role.service_roles["ecs_task"].arn
+    name = aws_iam_role.ecs_task.name
+    arn  = aws_iam_role.ecs_task.arn
   }
   description = "The name and ARN of the ECS default task execution role."
 }
 
 output "iam_instance_profile" {
   value = {
-    arn  = aws_iam_instance_profile.service_profiles["ec2_instance"].arn
-    name = aws_iam_instance_profile.service_profiles["ec2_instance"].name
+    arn  = aws_iam_instance_profile.ecs_instance.arn
+    name = aws_iam_instance_profile.ecs_instance.name
   }
   description = "The ARN and name of the IAM instance profile."
 }
 
 output "iam_instance_role" {
   value = {
-    arn  = aws_iam_role.service_roles["ec2_instance"].arn
-    name = aws_iam_role.service_roles["ec2_instance"].name
+    arn  = aws_iam_role.ecs_instance.arn
+    name = aws_iam_role.ecs_instance.name
   }
   description = "The ARN and name of the IAM instance role."
+}
+
+output "dlm_service_role" {
+  value = {
+    name = aws_iam_role.dlm_service.name
+    arn  = aws_iam_role.dlm_service.arn
+  }
+  description = "The name and ARN of the DLM service role"
 }
 
 output "security_group" {
@@ -52,12 +60,4 @@ output "security_group" {
     name = aws_security_group.ecs_nodes.name
   }
   description = "The ID and name of the ECS nodes security group."
-}
-
-output "dlm_service_role" {
-  value = {
-    name = aws_iam_role.service_roles["dlm_service"].name
-    arn  = aws_iam_role.service_roles["dlm_service"].arn
-  }
-  description = "The name and ARN of the DLM service role"
 }

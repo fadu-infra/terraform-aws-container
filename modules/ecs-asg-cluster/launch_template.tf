@@ -44,7 +44,7 @@ resource "aws_launch_template" "node" {
   }
 
   iam_instance_profile {
-    name = aws_iam_instance_profile.service_profiles["ec2_instance"].name
+    name = aws_iam_instance_profile.ecs_instance.name
   }
 
   monitoring {
