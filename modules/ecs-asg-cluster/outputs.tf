@@ -16,32 +16,32 @@ output "ecs_cluster_details" {
 
 output "ecs_service_role" {
   value = {
-    name = aws_iam_role.service_roles["${local.common_name_prefix}-EcsServiceRole"].name
-    arn  = aws_iam_role.service_roles["${local.common_name_prefix}-EcsServiceRole"].arn
+    name = aws_iam_role.roles["ecs_service"].name
+    arn  = aws_iam_role.roles["ecs_service"].arn
   }
   description = "The name and ARN of the ECS service role."
 }
 
 output "ecs_task_execution_role" {
   value = {
-    name = aws_iam_role.service_roles["${local.common_name_prefix}-EcsTaskExecutionRole"].name
-    arn  = aws_iam_role.service_roles["${local.common_name_prefix}-EcsTaskExecutionRole"].arn
+    name = aws_iam_role.roles["ecs_task"].name
+    arn  = aws_iam_role.roles["ecs_task"].arn
   }
   description = "The name and ARN of the ECS default task execution role."
 }
 
 output "iam_instance_profile" {
   value = {
-    arn  = aws_iam_instance_profile.ecs_node.arn
-    name = aws_iam_instance_profile.ecs_node.name
+    arn  = aws_iam_instance_profile.profile["ec2_instance"].arn
+    name = aws_iam_instance_profile.profile["ec2_instance"].name
   }
   description = "The ARN and name of the IAM instance profile."
 }
 
 output "iam_instance_role" {
   value = {
-    arn  = aws_iam_role.service_roles["${local.common_name_prefix}-Ec2InstanceRole"].arn
-    name = aws_iam_role.service_roles["${local.common_name_prefix}-Ec2InstanceRole"].name
+    arn  = aws_iam_role.roles["ec2_instance"].arn
+    name = aws_iam_role.roles["ec2_instance"].name
   }
   description = "The ARN and name of the IAM instance role."
 }
@@ -56,8 +56,8 @@ output "security_group" {
 
 output "dlm_service_role" {
   value = {
-    name = aws_iam_role.service_roles["${local.common_name_prefix}-DlmServiceRole"].name
-    arn  = aws_iam_role.service_roles["${local.common_name_prefix}-DlmServiceRole"].arn
+    name = aws_iam_role.roles["dlm_service"].name
+    arn  = aws_iam_role.roles["dlm_service"].arn
   }
   description = "The name and ARN of the DLM service role"
 }
