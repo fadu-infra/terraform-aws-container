@@ -4,14 +4,14 @@ data "cloudinit_config" "config" {
 
   part {
     content_type = "text/x-shellscript"
-    content      = <<EOT
-                    #!/bin/bash
-                    echo ECS_CLUSTER="${local.name}" >> /etc/ecs/ecs.config
-                    echo ECS_LOGLEVEL="debug" >> /etc/ecs/ecs.config
-                    echo ECS_ENABLE_CONTAINER_METADATA=true >> /etc/ecs/ecs.config
-                    echo ECS_ENABLE_SPOT_INSTANCE_DRAINING=${tostring(var.spot)} >> /etc/ecs/ecs.config
-                    echo ECS_AVAILABLE_LOGGING_DRIVERS=["json-file","awslogs"]
-                  EOT
+    content      = <<-EOT
+      #!/bin/bash
+      echo ECS_CLUSTER="${local.name}" >> /etc/ecs/ecs.config
+      echo ECS_LOGLEVEL="debug" >> /etc/ecs/ecs.config
+      echo ECS_ENABLE_CONTAINER_METADATA=true >> /etc/ecs/ecs.config
+      echo ECS_ENABLE_SPOT_INSTANCE_DRAINING=${tostring(var.spot)} >> /etc/ecs/ecs.config
+      echo ECS_AVAILABLE_LOGGING_DRIVERS=["json-file","awslogs"]
+    EOT
   }
 
   dynamic "part" {
@@ -33,7 +33,7 @@ resource "aws_launch_template" "node" {
 
   metadata_options {
     http_endpoint               = "enabled"
-    http_tokens                 = "required"  # IMDSv2를 필수로 설정
+    http_tokens                 = "required"
     http_put_response_hop_limit = 1
     instance_metadata_tags      = "enabled"
   }
@@ -44,7 +44,7 @@ resource "aws_launch_template" "node" {
   }
 
   iam_instance_profile {
-    name = aws_iam_instance_profile.profile["ec2_instance"].name 
+    name = aws_iam_instance_profile.service_profiles["ec2_instance"].name
   }
 
   monitoring {

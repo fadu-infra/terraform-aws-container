@@ -8,13 +8,13 @@ resource "aws_autoscaling_group" "ecs_nodes" {
 
   instance_refresh {
     strategy = "Rolling"
-    preferences  {
+    preferences {
       min_healthy_percentage = 75
-      instance_warmup = 300
-      checkpoint_delay = 300
+      instance_warmup        = 300
+      checkpoint_delay       = 300
       checkpoint_percentages = [50, 100]
     }
-    triggers = ["tag", "launch_template", "user_data"]
+    triggers = ["launch_template"]
   }
 
   mixed_instances_policy {
