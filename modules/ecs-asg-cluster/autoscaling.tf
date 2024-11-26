@@ -25,7 +25,7 @@ resource "aws_autoscaling_group" "ecs_nodes" {
     launch_template {
       launch_template_specification {
         launch_template_id = aws_launch_template.node.id
-        version            = "$Latest"
+        version            = aws_launch_template.node.latest_version
       }
 
       dynamic "override" {
