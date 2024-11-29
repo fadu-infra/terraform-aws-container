@@ -1,59 +1,151 @@
+# Common IAM policy definitions
 locals {
-  services = [
-    {
-      # Allow EC2 instance to register as ECS cluster member, fetch ECR images, write logs to CloudWatch
-      role_name  = "${local.common_name_prefix}-Ec2InstanceRole",
-      identifier = "ec2.amazonaws.com",
-      managed_policy_arns = [
-        "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role",
-        "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore",
-        "arn:aws:iam::aws:policy/CloudWatchLogsFullAccess"
-      ]
-    },
-    {
-      # Allow ECS service to interact with LoadBalancers
-      role_name  = "${local.common_name_prefix}-EcsServiceRole",
-      identifier = "ecs.amazonaws.com",
-      managed_policy_arns = [
-        "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceRole",
-        "arn:aws:iam::aws:policy/service-role/AmazonECSInfrastructureRolePolicyForVolumes"
-      ]
-    },
-    {
-      # Allow ECS tasks to write logs to CloudWatch
-      role_name  = "${local.common_name_prefix}-EcsTaskExecutionRole",
-      identifier = "ecs-tasks.amazonaws.com",
-      managed_policy_arns = [
-        "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy",
-        "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
-      ]
-    }
+  # ECS Instance Role & Policies
+  ecs_instance_role_name = "${local.common_name_prefix}-Ec2InstanceRole"
+  ecs_instance_policies = [
+    "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role",
+    "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore",
+    "arn:aws:iam::aws:policy/CloudWatchLogsFullAccess"
+  ]
+
+  # ECS Service Role & Policies
+  ecs_service_role_name = "${local.common_name_prefix}-EcsServiceRole"
+  ecs_service_policies = [
+    "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceRole",
+    "arn:aws:iam::aws:policy/service-role/AmazonECSInfrastructureRolePolicyForVolumes"
+  ]
+
+  # ECS Task Role & Policies
+  ecs_task_role_name = "${local.common_name_prefix}-EcsTaskExecutionRole"
+  ecs_task_policies = [
+    "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy",
+    "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+  ]
+
+  # DLM Service Role & Policies
+  dlm_service_role_name = "${local.common_name_prefix}-DlmServiceRole"
+  dlm_service_policies = [
+    "arn:aws:iam::aws:policy/service-role/AWSDataLifecycleManagerServiceRole"
   ]
 }
 
-data "aws_iam_policy_document" "assume_role_policies" {
-  for_each = { for svc in local.services : svc.role_name => svc }
+# ECS Instance Role
+resource "aws_iam_role" "ecs_instance" {
+  name        = local.ecs_instance_role_name
+  description = "Allows EC2 instances to call AWS services on your behalf"
 
-  statement {
-    actions = ["sts:AssumeRole"]
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Action = "sts:AssumeRole"
+      Effect = "Allow"
+      Principal = {
+        Service = "ec2.amazonaws.com"
+      }
+    }]
+  })
 
-    principals {
-      type        = "Service"
-      identifiers = [each.value.identifier]
-    }
+  lifecycle {
+    create_before_destroy = true
   }
 }
 
-resource "aws_iam_role" "service_roles" {
-  for_each = { for svc in local.services : svc.role_name => svc }
+resource "aws_iam_role_policy_attachment" "ecs_instance" {
+  count = length(local.ecs_instance_policies)
 
-  name                = each.value.role_name
-  assume_role_policy  = data.aws_iam_policy_document.assume_role_policies[each.key].json
-  managed_policy_arns = each.value.managed_policy_arns
-  tags                = local.tags
+  role       = aws_iam_role.ecs_instance.name
+  policy_arn = local.ecs_instance_policies[count.index]
 }
 
-resource "aws_iam_instance_profile" "ecs_node" {
-  name = "${local.common_name_prefix}-Ec2InstanceProfile"
-  role = aws_iam_role.service_roles["${local.common_name_prefix}-Ec2InstanceRole"].name
+resource "aws_iam_instance_profile" "ecs_instance" {
+  name = "${local.ecs_instance_role_name}-profile"
+  role = aws_iam_role.ecs_instance.name
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+# ECS Service Role
+resource "aws_iam_role" "ecs_service" {
+  name        = local.ecs_service_role_name
+  description = "Allows ECS services to call AWS services on your behalf"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Action = "sts:AssumeRole"
+      Effect = "Allow"
+      Principal = {
+        Service = "ecs.amazonaws.com"
+      }
+    }]
+  })
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+resource "aws_iam_role_policy_attachment" "ecs_service" {
+  count = length(local.ecs_service_policies)
+
+  role       = aws_iam_role.ecs_service.name
+  policy_arn = local.ecs_service_policies[count.index]
+}
+
+# ECS Task Role
+resource "aws_iam_role" "ecs_task" {
+  name        = local.ecs_task_role_name
+  description = "Allows ECS tasks to call AWS services on your behalf"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Action = "sts:AssumeRole"
+      Effect = "Allow"
+      Principal = {
+        Service = "ecs-tasks.amazonaws.com"
+      }
+    }]
+  })
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+resource "aws_iam_role_policy_attachment" "ecs_task" {
+  count = length(local.ecs_task_policies)
+
+  role       = aws_iam_role.ecs_task.name
+  policy_arn = local.ecs_task_policies[count.index]
+}
+
+# DLM Service Role
+resource "aws_iam_role" "dlm_service" {
+  name        = local.dlm_service_role_name
+  description = "Allows DLM to manage EBS snapshots"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Action = "sts:AssumeRole"
+      Effect = "Allow"
+      Principal = {
+        Service = "dlm.amazonaws.com"
+      }
+    }]
+  })
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+resource "aws_iam_role_policy_attachment" "dlm_service" {
+  count = length(local.dlm_service_policies)
+
+  role       = aws_iam_role.dlm_service.name
+  policy_arn = local.dlm_service_policies[count.index]
 }

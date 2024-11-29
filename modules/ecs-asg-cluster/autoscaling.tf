@@ -6,6 +6,16 @@ resource "aws_autoscaling_group" "ecs_nodes" {
   protect_from_scale_in = local.protect_from_scale_in
   desired_capacity_type = "units"
 
+  instance_refresh {
+    strategy = "Rolling"
+    preferences {
+      min_healthy_percentage = 100
+      instance_warmup        = 300
+      checkpoint_delay       = 300
+      checkpoint_percentages = [50, 100]
+    }
+  }
+
   mixed_instances_policy {
     instances_distribution {
       on_demand_base_capacity                  = local.on_demand_base_capacity
@@ -15,7 +25,7 @@ resource "aws_autoscaling_group" "ecs_nodes" {
     launch_template {
       launch_template_specification {
         launch_template_id = aws_launch_template.node.id
-        version            = "$Latest"
+        version            = aws_launch_template.node.latest_version
       }
 
       dynamic "override" {
