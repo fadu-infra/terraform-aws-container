@@ -2,7 +2,7 @@ config {
   plugin_dir = "~/.tflint.d/plugins"
 
   format              = "compact"
-  module              = true
+  call_module_type    = "local"
   force               = false
   disabled_by_default = false
 
@@ -15,10 +15,10 @@ plugin "terraform" {
 }
 
 plugin "aws" {
-  enabled = true
+  enabled    = true
   deep_check = false
-  version = "0.29.0"
-  source  = "github.com/terraform-linters/tflint-ruleset-aws"
+  version    = "0.29.0"
+  source     = "github.com/terraform-linters/tflint-ruleset-aws"
 }
 
 rule "terraform_comment_syntax" {
