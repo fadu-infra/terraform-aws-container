@@ -46,14 +46,6 @@ output "iam_instance_role" {
   description = "The ARN and name of the IAM instance role."
 }
 
-output "dlm_service_role" {
-  value = {
-    name = aws_iam_role.dlm_service.name
-    arn  = aws_iam_role.dlm_service.arn
-  }
-  description = "The name and ARN of the DLM service role"
-}
-
 output "security_group" {
   value = {
     id   = aws_security_group.ecs_nodes.id

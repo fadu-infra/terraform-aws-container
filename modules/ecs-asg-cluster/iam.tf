@@ -21,12 +21,6 @@ locals {
     "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy",
     "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
   ]
-
-  # DLM Service Role & Policies
-  dlm_service_role_name = "${local.common_name_prefix}-DlmServiceRole"
-  dlm_service_policies = [
-    "arn:aws:iam::aws:policy/service-role/AWSDataLifecycleManagerServiceRole"
-  ]
 }
 
 # ECS Instance Role
@@ -120,32 +114,4 @@ resource "aws_iam_role_policy_attachment" "ecs_task" {
 
   role       = aws_iam_role.ecs_task.name
   policy_arn = local.ecs_task_policies[count.index]
-}
-
-# DLM Service Role
-resource "aws_iam_role" "dlm_service" {
-  name        = local.dlm_service_role_name
-  description = "Allows DLM to manage EBS snapshots"
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [{
-      Action = "sts:AssumeRole"
-      Effect = "Allow"
-      Principal = {
-        Service = "dlm.amazonaws.com"
-      }
-    }]
-  })
-
-  lifecycle {
-    create_before_destroy = true
-  }
-}
-
-resource "aws_iam_role_policy_attachment" "dlm_service" {
-  count = length(local.dlm_service_policies)
-
-  role       = aws_iam_role.dlm_service.name
-  policy_arn = local.dlm_service_policies[count.index]
 }
