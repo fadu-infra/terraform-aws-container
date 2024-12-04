@@ -1,4 +1,4 @@
-# ecs-asg-cluster
+# ecs-cluster
 
 <!-- BEGIN_TF_DOCS -->
 ## Requirements

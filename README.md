@@ -8,7 +8,7 @@
 
 Terraform module which creates resources for container services on AWS.
 
-- [ecs-asg-cluster](./modules/ecs-asg-cluster): Terraform module to run ECS cluster, with ASG + Launch Template + Scaling policies via capacity provider.
+- [ecs-cluster](./modules/ecs-cluster): Terraform module to run ECS cluster, with ASG + Launch Template + Scaling policies via capacity provider.
 
 ## License
 
