@@ -59,7 +59,9 @@ resource "aws_autoscaling_group" "ecs_nodes" {
   }
 
   dynamic "tag" {
-    for_each = local.tags
+    for_each = merge(local.tags, {
+      AmazonECSManaged = "true"
+    })
     content {
       key                 = tag.key
       value               = tag.value
