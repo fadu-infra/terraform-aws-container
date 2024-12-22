@@ -6,11 +6,19 @@
     "dockerfile": "Dockerfile"
   },
   "customizations": {
+    "settings": {
+      "editor.codeActionsOnSave": {
+        "source.fixAll": "true"
+      },
+      "editor.formatOnSave": true
+    },
     "vscode": {
       "extensions": [
-        "mads-hartmann.bash-ide-vscode",
-        "foxundermoon.shell-format",
-        "hashicorp.hcl"
+        "hashicorp.hcl",
+        "hashicorp.terraform",
+        "redhat.vscode-yaml",
+        "tamasfe.even-better-toml",
+        "editorconfig.editorconfig"
       ]
     }
   },
@@ -26,5 +34,5 @@
       "installTerraformDocs": true
     }
   },
-  "postCreateCommand": "pip3 install pre-commit && pre-commit install"
+  "postCreateCommand": "pip3 install pre-commit git-cliff && pre-commit install"
 }
