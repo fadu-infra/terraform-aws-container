@@ -48,6 +48,7 @@ This project uses a devcontainer environment, which provides a consistent, pre-c
 We maintain this project in our Self-managed GitLab instance, but we welcome all contributions through GitHub:
 
 1. For bug reports and feature requests:
+
    - Open an issue on GitHub
    - Use the provided issue templates
    - Be as detailed as possible in your description
