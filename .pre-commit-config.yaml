@@ -22,7 +22,7 @@ repos:
           - "--autofix"
 
   - repo: https://github.com/zricethezav/gitleaks
-    rev: v8.21.2
+    rev: v8.22.0
     hooks:
       - id: gitleaks
 
@@ -32,7 +32,6 @@ repos:
       - id: terraform_fmt
         args:
           - "--args=-diff"
-      - id: terragrunt_fmt
       - id: terraform_tflint
         args:
           - "--args=--config=__GIT_WORKING_DIR__/.tflint.hcl"
