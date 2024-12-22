@@ -6,7 +6,7 @@ repos:
       - id: check-json
       - id: trailing-whitespace
         args:
-          - "--markdown-linebreak-ext=md"
+          - '--markdown-linebreak-ext=md'
       - id: check-added-large-files
       - id: check-shebang-scripts-are-executable
       - id: check-merge-conflict
@@ -14,12 +14,12 @@ repos:
       - id: detect-private-key
       - id: detect-aws-credentials
         args:
-          - "--allow-missing-credentials"
+          - '--allow-missing-credentials'
       - id: end-of-file-fixer
       - id: no-commit-to-branch
       - id: pretty-format-json
         args:
-          - "--autofix"
+          - '--autofix'
 
   - repo: https://github.com/zricethezav/gitleaks
     rev: v8.22.0
@@ -31,11 +31,11 @@ repos:
     hooks:
       - id: terraform_fmt
         args:
-          - "--args=-diff"
+          - '--args=-diff'
       - id: terraform_tflint
         args:
-          - "--args=--config=__GIT_WORKING_DIR__/.tflint.hcl"
+          - '--args=--config=__GIT_WORKING_DIR__/.tflint.hcl'
       - id: terraform_validate
         args:
-          - "--tf-init-args=-upgrade"
-          - "--hook-config=--retry-once-with-cleanup=true"
+          - '--tf-init-args=-upgrade'
+          - '--hook-config=--retry-once-with-cleanup=true'
