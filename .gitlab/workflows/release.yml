@@ -25,9 +25,7 @@ prepare_job:
       artifacts: true
   script:
     - apk add curl jq
-    - echo "## Full Changelog" > RELEASE.md
     - cat CHANGELOG.md >> RELEASE.md
-    - echo -e "\n## Release Notes" >> RELEASE.md
     - 'curl -H "PRIVATE-TOKEN: $GITLAB_API_TOKEN" "$CI_API_V4_URL/projects/$CI_PROJECT_ID/repository/changelog?version=$CI_COMMIT_TAG" | jq -r .notes > release_notes.md'
   artifacts:
     paths:
