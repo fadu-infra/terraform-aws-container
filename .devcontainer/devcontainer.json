@@ -36,5 +36,5 @@
       "installTerraformDocs": true
     }
   },
-  "postCreateCommand": "pip3 install pre-commit git-cliff && pre-commit install"
+  "postAttachCommand": "pip3 install pre-commit git-cliff && pre-commit install"
 }
