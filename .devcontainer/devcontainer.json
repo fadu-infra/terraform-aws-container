@@ -8,10 +8,20 @@
   "customizations": {
     "vscode": {
       "extensions": [
-        "mads-hartmann.bash-ide-vscode",
-        "foxundermoon.shell-format",
-        "hashicorp.hcl"
-      ]
+        "hashicorp.hcl",
+        "hashicorp.terraform",
+        "redhat.vscode-yaml",
+        "tamasfe.even-better-toml",
+        "editorconfig.editorconfig",
+        "esbenp.prettier-vscode"
+      ],
+      "settings": {
+        "editor.codeActionsOnSave": {
+          "source.fixAll": true
+        },
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "editor.formatOnSave": true
+      }
     }
   },
   "features": {
@@ -26,5 +36,5 @@
       "installTerraformDocs": true
     }
   },
-  "postCreateCommand": "pip3 install pre-commit && pre-commit install"
+  "postAttachCommand": "pip3 install pre-commit git-cliff && pre-commit install"
 }
