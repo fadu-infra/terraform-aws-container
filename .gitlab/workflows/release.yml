@@ -7,9 +7,9 @@ changelog:
   image:
     name: orhunp/git-cliff:latest
     entrypoint: ['']
-    variables:
-      GIT_STRATEGY: clone # clone entire repo instead of reusing workspace
-      GIT_DEPTH: 0 # avoid shallow clone to give cliff all the info it needs
+  variables:
+    GIT_STRATEGY: clone # clone entire repo instead of reusing workspace
+    GIT_DEPTH: 0 # avoid shallow clone to give cliff all the info it needs
   stage: doc
   script:
     - git-cliff -r . > CHANGELOG.md
