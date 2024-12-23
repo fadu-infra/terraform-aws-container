@@ -1,6 +1,5 @@
 stages:
   - doc
-  - prepare
   - release
 
 changelog:
@@ -19,15 +18,18 @@ changelog:
       - CHANGELOG.md
       - release_notes.md
 
-prepare_job:
-  stage: prepare
+upload_changelog:
+  stage: release
   image: alpine:latest
   needs:
     - job: changelog
       artifacts: true
   script:
     - apk add curl jq
-    - 'curl -H "PRIVATE-TOKEN: $GITLAB_API_TOKEN" -X POST "$CI_API_V4_URL/projects/$CI_PROJECT_ID/repository/changelog?version=$CI_COMMIT_TAG"  --data-binary @CHANGELOG.md'
+    - >
+      curl --request PUT --header "PRIVATE-TOKEN: $GITLAB_API_TOKEN"
+      --header "Content-Type: application/json" "$CI_API_V4_URL/projects/$CI_PROJECT_ID/repository/files/CHANGELOG.md"
+      --data "{\"branch\":\"$CI_DEFAULT_BRANCH\",\"content\":\"$(cat CHANGELOG.md | base64)\",\"commit_message\":\"Update CHANGELOG.md for version $CI_COMMIT_TAG\"}"
 
 release_job:
   stage: release
