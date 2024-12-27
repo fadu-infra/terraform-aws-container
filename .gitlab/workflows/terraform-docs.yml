@@ -16,6 +16,11 @@ terraform-docs:
       --output-mode=replace \
       --sort=true \
       --sort-by=required \
+      --hide-empty=true \
+      --show-sensitive=true \
+      --read-comments=true \
+      --escape=false \
+      --indent=2 \
       ${TERRAFORM_PATH}
 
   rules:
