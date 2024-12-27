@@ -21,5 +21,5 @@ terraform-docs:
   rules:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
       changes:
-        - '${TERRAFORM_PATH}/**/*.tf'
-        - '${WORKFLOW_PATH}/.terraform-docs.yml'
+        - 'modules/ecs-asg-cluster/**/*.tf'
+        - '.gitlab/workflows/.terraform-docs.yml'
