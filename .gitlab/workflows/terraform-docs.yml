@@ -1,0 +1,21 @@
+stages:
+  - docs
+
+terraform-docs:
+  stage: docs
+  image:
+    name: quay.io/terraform-docs/terraform-docs:latest
+    entrypoint: ['']
+  script:
+    - terraform-docs markdown table \
+      --output-file=Terraform.md \
+      --output-mode=replace \
+      --sort=true \
+      --sort-by=required \
+      modules/ecs-asg-cluster
+
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+      changes:
+        - 'modules/ecs-asg-cluster/**/*.tf'
+        - 'modules/ecs-asg-cluster/.terraform-docs.yml'
