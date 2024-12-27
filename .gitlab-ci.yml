@@ -1,3 +1,8 @@
+stages:
+  - docs
+  - doc
+  - release
+
 default:
   tags:
     - infra-core-docker
