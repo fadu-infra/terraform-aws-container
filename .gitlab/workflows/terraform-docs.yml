@@ -6,16 +6,20 @@ terraform-docs:
   image:
     name: quay.io/terraform-docs/terraform-docs:latest
     entrypoint: ['']
+  variables:
+    TERRAFORM_PATH: modules/ecs-asg-cluster
+    WORKFLOW_PATH: .gitlab/workflows
+    DOCS_FILENAME: TERRAFORM.md
   script:
     - terraform-docs markdown table \
-      --output-file=Terraform.md \
+      --output-file=${DOCS_FILENAME} \
       --output-mode=replace \
       --sort=true \
       --sort-by=required \
-      modules/ecs-asg-cluster
+      ${TERRAFORM_PATH}
 
   rules:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
       changes:
-        - 'modules/ecs-asg-cluster/**/*.tf'
-        - 'modules/ecs-asg-cluster/.terraform-docs.yml'
+        - '${TERRAFORM_PATH}/**/*.tf'
+        - '${WORKFLOW_PATH}/.terraform-docs.yml'
