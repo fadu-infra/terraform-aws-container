@@ -51,6 +51,8 @@ github_release:
   stage: sync
   image: alpine:latest
   needs:
+    - job: changelog
+      artifacts: true
     - job: release_job
   variables:
     GITHUB_REPO: 'fadu-infra/terraform-aws-container'
