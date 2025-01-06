@@ -11,12 +11,11 @@ include:
   - local: '.gitlab/workflows/release.yml'
   - local: '.gitlab/workflows/terraform-doc.yml'
 
-terraform-docs-custom:
+generate-terraform-doc:
   extends:
     - .create-terraform-doc
     - .upload-terraform-doc
   rules:
     - changes:
         - 'modules/ecs-asg-cluster/**/*.tf'
-        - '.gitlab/workflows/terraform-doc.yml'
       when: always

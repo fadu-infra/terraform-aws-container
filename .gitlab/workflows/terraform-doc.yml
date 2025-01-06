@@ -5,11 +5,10 @@
     entrypoint: ['']
   variables:
     MODULE_PATH: modules/ecs-asg-cluster
-    WORKFLOW_PATH: .gitlab/workflows
-    DOCS_FILENAME: README.md
+    DOC_FILENAME: README.md
   script:
     - terraform-docs markdown table \
-      --output-file=${DOCS_FILENAME} \
+      --output-file=${DOC_FILENAME} \
       --output-mode=replace \
       --sort=true \
       --sort-by=required \
@@ -27,15 +26,15 @@
   stage: doc
   image: alpine:latest
   variables:
-    DOCS_FILENAME: README.md
+    DOC_FILENAME: README.md
     MODULE_PATH: modules/ecs-asg-cluster
   needs:
-    - job: create-terraform-doc
+    - job: generate-terraform-doc
       artifacts: true
   script:
     - apk add curl jq
     - >
-      CONTENT=$(cat ${DOCS_FILENAME} | base64 -w 0) &&
+      CONTENT=$(cat ${DOC_FILENAME} | base64 -w 0) &&
       curl --request PUT --header "PRIVATE-TOKEN: $GITLAB_API_TOKEN"
-      --header "Content-Type: application/json" "$CI_API_V4_URL/projects/$CI_PROJECT_ID/repository/files/${MODULE_PATH}/${DOCS_FILENAME}"
-      --data "{\"branch\":\"$CI_DEFAULT_BRANCH\",\"encoding\":\"base64\",\"content\":\"$CONTENT\",\"commit_message\":\"Update ${DOCS_FILENAME} for version $CI_COMMIT_TAG\"}"
+      --header "Content-Type: application/json" "$CI_API_V4_URL/projects/$CI_PROJECT_ID/repository/files/${MODULE_PATH}/${DOC_FILENAME}"
+      --data "{\"branch\":\"$CI_DEFAULT_BRANCH\",\"encoding\":\"base64\",\"content\":\"$CONTENT\",\"commit_message\":\"Update ${DOC_FILENAME} for version $CI_COMMIT_TAG\"}"
