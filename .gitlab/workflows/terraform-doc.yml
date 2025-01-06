@@ -34,11 +34,25 @@ upload-terraform-doc:
     MODULE_PATH: modules/ecs-asg-cluster
   script:
     - apk add curl jq
-    - >
-      CONTENT=$(cat ${MODULE_PATH}/${DOC_FILENAME} | base64 -w 0) &&
-      curl --request PUT --header "PRIVATE-TOKEN: $GITLAB_API_TOKEN"
-      --header "Content-Type: application/json" "$CI_API_V4_URL/projects/$CI_PROJECT_ID/repository/files/${MODULE_PATH}/${DOC_FILENAME}"
-      --data "{\"branch\":\"$CI_DEFAULT_BRANCH\",\"encoding\":\"base64\",\"content\":\"$CONTENT\",\"commit_message\":\"Update ${DOC_FILENAME} [skip ci]\"}"
+    - |
+      if [ ! -f "${MODULE_PATH}/${DOC_FILENAME}" ]; then
+        echo "Error: File ${MODULE_PATH}/${DOC_FILENAME} not found"
+        exit 1
+      fi
+    - |
+      FILE_PATH="${MODULE_PATH}%2F${DOC_FILENAME}"
+      echo "Uploading to path: ${FILE_PATH}"
+      CONTENT=$(cat ${MODULE_PATH}/${DOC_FILENAME} | base64 -w 0)
+      curl --fail --silent --show-error --request PUT \
+        --header "PRIVATE-TOKEN: $GITLAB_API_TOKEN" \
+        --header "Content-Type: application/json" \
+        "$CI_API_V4_URL/projects/$CI_PROJECT_ID/repository/files/${FILE_PATH}" \
+        --data "{\"branch\":\"$CI_DEFAULT_BRANCH\",\"encoding\":\"base64\",\"content\":\"$CONTENT\",\"commit_message\":\"Update ${DOC_FILENAME} [skip ci]\"}" || \
+      {
+        echo "Error uploading file"
+        exit 1
+      }
+      echo "File uploaded successfully"
   needs:
     - job: create-terraform-doc
       artifacts: true
