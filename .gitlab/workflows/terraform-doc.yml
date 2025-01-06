@@ -28,9 +28,6 @@
   variables:
     DOC_FILENAME: README.md
     MODULE_PATH: modules/ecs-asg-cluster
-  needs:
-    - job: generate-terraform-doc
-      artifacts: true
   script:
     - apk add curl jq
     - >
