@@ -2,14 +2,16 @@ stages:
   - doc
   - release
 
-workflow:
-  rules:
-    - if: '$CI_COMMIT_TAG =~ /^v?\d+\.\d+\.\d+$/ && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == $CI_DEFAULT_BRANCH'
-      when: always
-
 include:
   - local: '.gitlab/workflows/release.yml'
+    rules:
+      - if: '$CI_COMMIT_TAG =~ /^v?\d+\.\d+\.\d+$/'
+        when: always
+
   - local: '.gitlab/workflows/terraform-doc.yml'
+    rules:
+      - if: '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME == $CI_DEFAULT_BRANCH'
+        when: always
 
 generate-terraform-doc:
   extends:
@@ -19,3 +21,9 @@ generate-terraform-doc:
     - changes:
         - 'modules/ecs-asg-cluster/**/*.tf'
       when: always
+
+generate-terraform-doc-manual:
+  extends:
+    - .create-terraform-doc
+  rules:
+    - when: manual
