@@ -9,7 +9,7 @@ workflow:
 
 include:
   - local: '.gitlab/workflows/release.yml'
-  - local: '.gitlab/workflows/terraform-docs.yml'
+  - local: '.gitlab/workflows/terraform-doc.yml'
 
 terraform-docs-custom:
   extends:
@@ -18,5 +18,5 @@ terraform-docs-custom:
   rules:
     - changes:
         - 'modules/ecs-asg-cluster/**/*.tf'
-        - '.gitlab/workflows/terraform-docs.yml'
+        - '.gitlab/workflows/terraform-doc.yml'
       when: always
