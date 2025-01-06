@@ -1,0 +1,35 @@
+.create-terraform-doc:
+  stage: doc
+  image:
+    name: quay.io/terraform-docs/terraform-docs:latest
+    entrypoint: ['']
+  variables:
+    TERRAFORM_PATH: modules/ecs-asg-cluster
+    WORKFLOW_PATH: .gitlab/workflows
+    DOCS_FILENAME: TERRAFORM.md
+  script: # TODO: add artifacts
+    - terraform-docs markdown table \
+      --output-file=${DOCS_FILENAME} \
+      --output-mode=replace \
+      --sort=true \
+      --sort-by=required \
+      --hide-empty=true \
+      --sensitive=true \
+      --read-comments=true \
+      --escape=false \
+      --indent=2 \
+      ${TERRAFORM_PATH}
+
+.upload-terraform-doc:
+  stage: doc
+  image: alpine:latest
+  needs:
+    - job: changelog # FIXME: change to create-terraform-doc
+      artifacts: true
+  script: # FIXME: change to file name
+    - apk add curl jq
+    - >
+      CONTENT=$(cat CHANGELOG.md | base64 -w 0) &&
+      curl --request PUT --header "PRIVATE-TOKEN: $GITLAB_API_TOKEN"
+      --header "Content-Type: application/json" "$CI_API_V4_URL/projects/$CI_PROJECT_ID/repository/files/CHANGELOG.md"
+      --data "{\"branch\":\"$CI_DEFAULT_BRANCH\",\"encoding\":\"base64\",\"content\":\"$CONTENT\",\"commit_message\":\"Update CHANGELOG.md for version $CI_COMMIT_TAG\"}"
