@@ -7,16 +7,16 @@ create-terraform-doc:
     MODULE_PATH: modules/ecs-asg-cluster
     DOC_FILENAME: README.md
   script:
-    - terraform-docs markdown table \
-      --output-file=${DOC_FILENAME} \
-      --output-mode=replace \
-      --sort=true \
-      --sort-by=required \
-      --hide-empty=true \
-      --sensitive=true \
-      --read-comments=true \
-      --escape=false \
-      --indent=2 \
+    - terraform-docs markdown table
+      --output-file=${DOC_FILENAME}
+      --output-mode=replace
+      --sort=true
+      --sort-by=required
+      --hide-empty=true
+      --sensitive=true
+      --read-comments=true
+      --escape=false
+      --indent=2
       ${MODULE_PATH}
   artifacts:
     paths:
