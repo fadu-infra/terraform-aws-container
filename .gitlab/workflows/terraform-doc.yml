@@ -40,18 +40,26 @@ upload-terraform-doc:
         exit 1
       fi
     - |
-      FILE_PATH="${MODULE_PATH}%2F${DOC_FILENAME}"
-      echo "Uploading to path: ${FILE_PATH}"
+      # URL encode the entire path
+      FILE_PATH=$(echo "${MODULE_PATH}/${DOC_FILENAME}" | sed 's/\//%2F/g')
+      echo "Original path: ${MODULE_PATH}/${DOC_FILENAME}"
+      echo "Encoded path: ${FILE_PATH}"
+
+      # Debug information
+      echo "API URL: $CI_API_V4_URL/projects/$CI_PROJECT_ID/repository/files/${FILE_PATH}"
+      echo "Target branch: $CI_DEFAULT_BRANCH"
+
       CONTENT=$(cat ${MODULE_PATH}/${DOC_FILENAME} | base64 -w 0)
-      curl --fail --silent --show-error --request PUT \
+      RESPONSE=$(curl --fail --silent --show-error --request PUT \
         --header "PRIVATE-TOKEN: $GITLAB_API_TOKEN" \
         --header "Content-Type: application/json" \
         "$CI_API_V4_URL/projects/$CI_PROJECT_ID/repository/files/${FILE_PATH}" \
-        --data "{\"branch\":\"$CI_DEFAULT_BRANCH\",\"encoding\":\"base64\",\"content\":\"$CONTENT\",\"commit_message\":\"Update ${DOC_FILENAME} [skip ci]\"}" || \
-      {
-        echo "Error uploading file"
+        --data "{\"branch\":\"$CI_DEFAULT_BRANCH\",\"encoding\":\"base64\",\"content\":\"$CONTENT\",\"commit_message\":\"Update ${DOC_FILENAME} [skip ci]\"}" 2>&1)
+
+      if [ $? -ne 0 ]; then
+        echo "Error response: $RESPONSE"
         exit 1
-      }
+      fi
       echo "File uploaded successfully"
   needs:
     - job: create-terraform-doc
