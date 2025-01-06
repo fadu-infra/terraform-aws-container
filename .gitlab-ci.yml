@@ -1,6 +1,7 @@
-default:
-  tags:
-    - infra-core-docker
+stages:
+  - doc
+  - release
+  - docs
 
 workflow:
   rules:

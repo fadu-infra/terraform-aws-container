@@ -1,7 +1,3 @@
-stages:
-  - doc
-  - release
-
 changelog:
   image:
     name: orhunp/git-cliff:latest

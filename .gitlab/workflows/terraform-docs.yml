@@ -1,6 +1,3 @@
-stages:
-  - docs
-
 terraform-docs:
   stage: docs
   image:
