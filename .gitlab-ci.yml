@@ -21,9 +21,3 @@ generate-terraform-doc:
     - changes:
         - 'modules/ecs-asg-cluster/**/*.tf'
       when: always
-
-generate-terraform-doc-manual:
-  extends:
-    - .create-terraform-doc
-  rules:
-    - when: manual
