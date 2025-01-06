@@ -17,7 +17,7 @@ terraform-docs:
       --sort=true \
       --sort-by=required \
       --hide-empty=true \
-      --show-sensitive=true \
+      --sensitive=true \
       --read-comments=true \
       --escape=false \
       --indent=2 \
