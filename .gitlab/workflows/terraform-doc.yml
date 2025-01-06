@@ -1,4 +1,4 @@
-.create-terraform-doc:
+create-terraform-doc:
   stage: doc
   image:
     name: quay.io/terraform-docs/terraform-docs:latest
@@ -22,7 +22,7 @@
     paths:
       - README.md
 
-.upload-terraform-doc:
+upload-terraform-doc:
   stage: doc
   image: alpine:latest
   variables:
