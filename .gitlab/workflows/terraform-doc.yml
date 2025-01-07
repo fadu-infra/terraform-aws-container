@@ -1,8 +1,7 @@
-default:
+.doc-rules:
   rules:
     - if: '$CI_COMMIT_REF_NAME == "$CI_DEFAULT_BRANCH"'
       when: always
-    - when: never
 
 # Global variables used across jobs
 variables:
@@ -11,6 +10,8 @@ variables:
 
 # Generate Terraform documentation
 create-terraform-doc:
+  extends:
+    - .doc-rules
   stage: doc
   image:
     name: quay.io/terraform-docs/terraform-docs:latest
@@ -35,6 +36,8 @@ create-terraform-doc:
 
 # Upload generated documentation to GitLab repository
 upload-terraform-doc:
+  extends:
+    - .doc-rules
   stage: doc
   image: alpine:latest
   before_script:
