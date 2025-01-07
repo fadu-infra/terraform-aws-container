@@ -13,7 +13,7 @@ changelog:
   variables:
     GIT_STRATEGY: clone # clone entire repo instead of reusing workspace
     GIT_DEPTH: 0 # avoid shallow clone to give cliff all the info it needs
-  stage: doc
+  stage: pre
   script:
     - git-cliff --latest -r . > release_notes.md
     - git-cliff -r . > CHANGELOG.md
@@ -22,23 +22,9 @@ changelog:
       - CHANGELOG.md
       - release_notes.md
 
-upload_changelog:
+release:
   extends:
     - .release-rules
-  stage: release
-  image: alpine:latest
-  needs:
-    - job: changelog
-      artifacts: true
-  script:
-    - apk add curl jq
-    - >
-      CONTENT=$(cat CHANGELOG.md | base64 -w 0) &&
-      curl --request PUT --header "PRIVATE-TOKEN: $GITLAB_API_TOKEN"
-      --header "Content-Type: application/json" "$CI_API_V4_URL/projects/$CI_PROJECT_ID/repository/files/CHANGELOG.md"
-      --data "{\"branch\":\"$CI_DEFAULT_BRANCH\",\"encoding\":\"base64\",\"content\":\"$CONTENT\",\"commit_message\":\"Update CHANGELOG.md for version $CI_COMMIT_TAG\"}"
-
-release_job:
   stage: release
   image: registry.gitlab.com/gitlab-org/release-cli:latest
   needs:
@@ -51,3 +37,19 @@ release_job:
     description: release_notes.md
     tag_name: '$CI_COMMIT_TAG'
     ref: '$CI_COMMIT_SHA'
+
+upload_changelog:
+  extends:
+    - .release-rules
+  stage: post
+  image: alpine:latest
+  needs:
+    - job: changelog
+      artifacts: true
+  script:
+    - apk add curl jq
+    - >
+      CONTENT=$(cat CHANGELOG.md | base64 -w 0) &&
+      curl --request PUT --header "PRIVATE-TOKEN: $GITLAB_API_TOKEN"
+      --header "Content-Type: application/json" "$CI_API_V4_URL/projects/$CI_PROJECT_ID/repository/files/CHANGELOG.md"
+      --data "{\"branch\":\"$CI_DEFAULT_BRANCH\",\"encoding\":\"base64\",\"content\":\"$CONTENT\",\"commit_message\":\"Update CHANGELOG.md for version $CI_COMMIT_TAG\"}"

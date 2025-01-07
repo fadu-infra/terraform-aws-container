@@ -7,8 +7,9 @@ workflow:
     - when: never
 
 stages:
-  - doc
+  - pre
   - release
+  - post
 
 include:
   - local: '.gitlab/workflows/release.yml'
