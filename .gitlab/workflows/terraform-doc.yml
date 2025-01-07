@@ -26,7 +26,7 @@ create-terraform-doc:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
       when: always
     - if: '$CI_PIPELINE_SOURCE == "web"'
-      when: always
+      when: manual
 
 upload-terraform-doc:
   stage: doc
