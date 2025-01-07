@@ -19,5 +19,5 @@ manual-doc:
     include: '.gitlab/workflows/terraform-doc.yml'
     strategy: depend
   rules:
-    - if: '$CI_PIPELINE_SOURCE == "web"'
-      when: manual
+    - when: manual
+      allow_failure: true
