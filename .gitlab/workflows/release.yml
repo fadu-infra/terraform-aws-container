@@ -1,19 +1,19 @@
 .release-rules:
   rules:
-    - if: '$CI_COMMIT_TAG =~ /^v?\d+\.\d+\.\d+$/ && $CI_COMMIT_REF_NAME == "$CI_DEFAULT_BRANCH"'
+    - if: '$CI_COMMIT_TAG =~ /^v?\d+\.\d+\.\d+$/'
       when: always
     - when: never
 
 changelog:
   extends:
     - .release-rules
+  stage: pre
   image:
     name: orhunp/git-cliff:latest
     entrypoint: ['']
   variables:
     GIT_STRATEGY: clone # clone entire repo instead of reusing workspace
     GIT_DEPTH: 0 # avoid shallow clone to give cliff all the info it needs
-  stage: pre
   script:
     - git-cliff --latest -r . > release_notes.md
     - git-cliff -r . > CHANGELOG.md
@@ -53,3 +53,53 @@ upload_changelog:
       curl --request PUT --header "PRIVATE-TOKEN: $GITLAB_API_TOKEN"
       --header "Content-Type: application/json" "$CI_API_V4_URL/projects/$CI_PROJECT_ID/repository/files/CHANGELOG.md"
       --data "{\"branch\":\"$CI_DEFAULT_BRANCH\",\"encoding\":\"base64\",\"content\":\"$CONTENT\",\"commit_message\":\"Update CHANGELOG.md for version $CI_COMMIT_TAG\"}"
+
+github_release:
+  extends:
+    - .release-rules
+  stage: post
+  image: alpine:latest
+  needs:
+    - job: changelog
+      artifacts: true
+  variables:
+    GITHUB_REPO: 'fadu-infra/terraform-aws-container'
+    GITHUB_API_URL: 'https://api.github.com'
+  script:
+    - apk add --no-cache curl jq
+    - |
+      RELEASE_NOTES=$(cat release_notes.md | jq -R -s '.')
+      RELEASE_INFO=$(curl -s \
+        -H "Accept: application/vnd.github+json" \
+        -H "Authorization: Bearer ${GITHUB_API_TOKEN}" \
+        -H "X-GitHub-Api-Version: 2022-11-28" \
+        "${GITHUB_API_URL}/repos/${GITHUB_REPO}/releases/tags/${CI_COMMIT_TAG}")
+
+      RELEASE_ID=$(echo "$RELEASE_INFO" | jq -r '.id // empty')
+
+      if [ -z "$RELEASE_ID" ]; then
+        curl -L \
+          -X POST \
+          -H "Accept: application/vnd.github+json" \
+          -H "Authorization: Bearer ${GITHUB_API_TOKEN}" \
+          -H "X-GitHub-Api-Version: 2022-11-28" \
+          "${GITHUB_API_URL}/repos/${GITHUB_REPO}/releases" \
+          -d "{
+            \"tag_name\":\"${CI_COMMIT_TAG}\",
+            \"name\":\"Release ${CI_COMMIT_TAG}\",
+            \"body\":${RELEASE_NOTES},
+            \"draft\":false,
+            \"prerelease\":false
+          }"
+      else
+        curl -L \
+          -X PATCH \
+          -H "Accept: application/vnd.github+json" \
+          -H "Authorization: Bearer ${GITHUB_API_TOKEN}" \
+          -H "X-GitHub-Api-Version: 2022-11-28" \
+          "${GITHUB_API_URL}/repos/${GITHUB_REPO}/releases/${RELEASE_ID}" \
+          -d "{
+            \"name\":\"Release ${CI_COMMIT_TAG}\",
+            \"body\":${RELEASE_NOTES}
+          }"
+      fi
