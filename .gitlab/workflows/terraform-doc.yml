@@ -54,5 +54,5 @@ upload-terraform-doc:
     - job: create-terraform-doc
       artifacts: true
   rules:
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_EVENT_TYPE == "detached"'
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
       when: always
