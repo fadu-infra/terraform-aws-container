@@ -1,0 +1,61 @@
+.terraform-doc-rules:
+  rules:
+    - if: '$CI_COMMIT_REF_NAME == "$CI_DEFAULT_BRANCH"'
+      when: always
+
+# Global variables used across jobs
+variables:
+  MODULE_PATH: modules/ecs-asg-cluster
+  DOC_FILENAME: README.md
+
+# Generate Terraform documentation
+create-terraform-doc:
+  extends:
+    - .terraform-doc-rules
+  stage: pre
+  image:
+    name: quay.io/terraform-docs/terraform-docs:latest
+    entrypoint: ['']
+  script:
+    - |
+      terraform-docs markdown table \
+        --output-file=${DOC_FILENAME} \
+        --output-mode=replace \
+        --sort=true \
+        --sort-by=required \
+        --hide-empty=true \
+        --sensitive=true \
+        --read-comments=true \
+        --escape=false \
+        --indent=2 \
+        ${MODULE_PATH}
+  artifacts:
+    paths:
+      - ${MODULE_PATH}/${DOC_FILENAME}
+    expire_in: 1 week
+
+# Upload generated documentation to GitLab repository
+upload-terraform-doc:
+  extends:
+    - .terraform-doc-rules
+  stage: post
+  image: alpine:latest
+  before_script:
+    - apk add --no-cache curl jq
+  script:
+    - |
+      FILE_PATH=$(echo "${MODULE_PATH}/${DOC_FILENAME}" | sed 's/\//%2F/g')
+      CONTENT=$(cat ${MODULE_PATH}/${DOC_FILENAME} | base64 -w 0)
+      RESPONSE=$(curl --fail --silent --show-error --request PUT \
+        --header "PRIVATE-TOKEN: $GITLAB_API_TOKEN" \
+        --header "Content-Type: application/json" \
+        "$CI_API_V4_URL/projects/$CI_PROJECT_ID/repository/files/${FILE_PATH}" \
+        --data "{\"branch\":\"$CI_DEFAULT_BRANCH\",\"encoding\":\"base64\",\"content\":\"$CONTENT\",\"commit_message\":\"Update ${DOC_FILENAME} [skip ci]\"}" 2>&1)
+
+      if [ $? -ne 0 ]; then
+        echo "Error uploading file: $RESPONSE"
+        exit 1
+      fi
+  needs:
+    - job: create-terraform-doc
+      artifacts: true
