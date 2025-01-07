@@ -1,3 +1,9 @@
+default:
+  rules:
+    - if: '$CI_COMMIT_REF_NAME == "$CI_DEFAULT_BRANCH"'
+      when: always
+    - when: never
+
 # Global variables used across jobs
 variables:
   MODULE_PATH: modules/ecs-asg-cluster
@@ -41,7 +47,7 @@ upload-terraform-doc:
         --header "PRIVATE-TOKEN: $GITLAB_API_TOKEN" \
         --header "Content-Type: application/json" \
         "$CI_API_V4_URL/projects/$CI_PROJECT_ID/repository/files/${FILE_PATH}" \
-        --data "{\"branch\":\"$CI_MERGE_REQUEST_SOURCE_BRANCH_NAME\",\"encoding\":\"base64\",\"content\":\"$CONTENT\",\"commit_message\":\"Update ${DOC_FILENAME} [skip ci]\"}" 2>&1)
+        --data "{\"branch\":\"$CI_DEFAULT_BRANCH\",\"encoding\":\"base64\",\"content\":\"$CONTENT\",\"commit_message\":\"Update ${DOC_FILENAME} [skip ci]\"}" 2>&1)
 
       if [ $? -ne 0 ]; then
         echo "Error uploading file: $RESPONSE"

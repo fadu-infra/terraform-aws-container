@@ -1,3 +1,9 @@
+default:
+  rules:
+    - if: '$CI_COMMIT_TAG =~ /^v?\d+\.\d+\.\d+$/ || $CI_COMMIT_REF_NAME == "$CI_DEFAULT_BRANCH"'
+      when: always
+    - when: never
+
 changelog:
   image:
     name: orhunp/git-cliff:latest
