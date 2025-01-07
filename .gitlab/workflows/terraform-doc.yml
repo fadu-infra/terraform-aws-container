@@ -1,3 +1,6 @@
+stages:
+  - doc
+
 create-terraform-doc:
   stage: doc
   image:
