@@ -11,6 +11,4 @@ include:
   - local: '.gitlab/workflows/terraform-doc.yml'
     rules:
       - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main"'
-        # changes:
-        #   - 'modules/**/*.tf'
         when: always

@@ -25,6 +25,8 @@ create-terraform-doc:
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
       when: always
+    - if: '$CI_PIPELINE_SOURCE == "web"'
+      when: always
 
 upload-terraform-doc:
   stage: doc
@@ -35,20 +37,7 @@ upload-terraform-doc:
   script:
     - apk add curl jq
     - |
-      if [ ! -f "${MODULE_PATH}/${DOC_FILENAME}" ]; then
-        echo "Error: File ${MODULE_PATH}/${DOC_FILENAME} not found"
-        exit 1
-      fi
-    - |
-      # URL encode the entire path
       FILE_PATH=$(echo "${MODULE_PATH}/${DOC_FILENAME}" | sed 's/\//%2F/g')
-      echo "Original path: ${MODULE_PATH}/${DOC_FILENAME}"
-      echo "Encoded path: ${FILE_PATH}"
-
-      # Debug information
-      echo "API URL: $CI_API_V4_URL/projects/$CI_PROJECT_ID/repository/files/${FILE_PATH}"
-      echo "Target branch: $CI_DEFAULT_BRANCH"
-
       CONTENT=$(cat ${MODULE_PATH}/${DOC_FILENAME} | base64 -w 0)
       RESPONSE=$(curl --fail --silent --show-error --request PUT \
         --header "PRIVATE-TOKEN: $GITLAB_API_TOKEN" \
@@ -57,10 +46,9 @@ upload-terraform-doc:
         --data "{\"branch\":\"$CI_DEFAULT_BRANCH\",\"encoding\":\"base64\",\"content\":\"$CONTENT\",\"commit_message\":\"Update ${DOC_FILENAME} [skip ci]\"}" 2>&1)
 
       if [ $? -ne 0 ]; then
-        echo "Error response: $RESPONSE"
+        echo "Error uploading file: $RESPONSE"
         exit 1
       fi
-      echo "File uploaded successfully"
   needs:
     - job: create-terraform-doc
       artifacts: true
