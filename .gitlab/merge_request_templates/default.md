@@ -1,13 +1,15 @@
 # Merge Request
 
-## What does this MR do?
+## Type of Change
 
 <!--
-이 MR의 주요 변경사항을 간단히 설명해주세요.
-예시:
-- 사용자 인증 기능 추가
-- 성능 최적화: 데이터베이스 쿼리 개선
-- 버그 수정: 메모리 누수 해결
+변경사항의 종류를 선택해주세요 (해당하는 항목의 [ ]를 [x]로 변경):
+- [ ] 새로운 기능 추가 (New feature)
+- [ ] 버그 수정 (Bug fix)
+- [ ] 성능 개선 (Performance improvement)
+- [ ] 리팩토링 (Refactoring)
+- [ ] 문서 업데이트 (Documentation update)
+- [ ] 기타 (Other)
 -->
 
 ## Changes
@@ -15,9 +17,9 @@
 <!--
 구체적인 변경사항을 나열해주세요.
 예시:
-- [ ] JWT 기반 인증 시스템 구현
-- [ ] 사용자 로그인/로그아웃 API 추가
-- [ ] 인증 미들웨어 구현
+• JWT 기반 인증 시스템 구현
+• 사용자 로그인/로그아웃 API 추가
+• 인증 미들웨어 구현
 -->
 
 ## How to test

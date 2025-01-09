@@ -1,7 +1,7 @@
 {
   "build": {
     "args": {
-      "VARIANT": "ubuntu-22.04"
+      "VARIANT": "24.04"
     },
     "dockerfile": "Dockerfile"
   },
@@ -16,6 +16,18 @@
         "esbenp.prettier-vscode"
       ],
       "settings": {
+        "[terraform-vars]": {
+          "editor.defaultFormatter": "hashicorp.terraform",
+          "editor.formatOnSave": true,
+          "editor.formatOnSaveMode": "file",
+          "editor.tabSize": 2
+        },
+        "[terraform]": {
+          "editor.defaultFormatter": "hashicorp.terraform",
+          "editor.formatOnSave": true,
+          "editor.formatOnSaveMode": "file",
+          "editor.tabSize": 2
+        },
         "editor.codeActionsOnSave": {
           "source.fixAll": true
         },
@@ -36,5 +48,5 @@
       "installTerraformDocs": true
     }
   },
-  "postAttachCommand": "pip3 install pre-commit git-cliff && pre-commit install"
+  "postAttachCommand": "pipx install pre-commit git-cliff && pre-commit install"
 }
