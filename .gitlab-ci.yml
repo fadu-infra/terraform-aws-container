@@ -1,12 +1,16 @@
-default:
-  tags:
-    - infra-core-docker
-
 workflow:
   rules:
-    - if: '$CI_COMMIT_TAG =~ /^v?\d+\.\d+\.\d+$/'
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
       when: always
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+      when: always
+    - when: never
+
+stages:
+  - pre
+  - release
+  - post
 
 include:
   - local: '.gitlab/workflows/release.yml'
-  - local: '.gitlab/workflows/terraform-docs.yml'
+  - local: '.gitlab/workflows/terraform-doc.yml'
