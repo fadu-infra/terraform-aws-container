@@ -50,7 +50,7 @@ upload-terraform-doc:
           \"branch\": \"${CI_DEFAULT_BRANCH}\",
           \"encoding\": \"base64\",
           \"content\": \"${CONTENT}\",
-          \"commit_message\": \"docs: Update module documentation for ${MODULE_PATH}[skip ci]\"
+          \"commit_message\": \"doc: update module documentation for ${MODULE_PATH}[skip ci]\"
         }" 2>&1)
 
       if [ $? -ne 0 ]; then
