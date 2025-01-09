@@ -42,21 +42,15 @@ upload-terraform-doc:
       FILE_PATH=$(echo "${MODULE_PATH}/${DOC_FILENAME}" | sed 's/\//%2F/g')
       CONTENT=$(cat "${MODULE_PATH}/${DOC_FILENAME}" | base64 -w 0)
 
-      RESPONSE=$(curl -v --fail --request PUT \
-        --header "PRIVATE-TOKEN: ${GITLAB_API_TOKEN}" \
-        --header "Content-Type: application/json" \
-        "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/repository/files/${FILE_PATH}" \
-        --data "{
-          \"branch\": \"${CI_DEFAULT_BRANCH}\",
-          \"encoding\": \"base64\",
-          \"content\": \"${CONTENT}\",
-          \"commit_message\": \"doc: update module documentation for ${MODULE_PATH}[skip ci]\"
-        }" 2>&1)
+      curl --request PUT --header "PRIVATE-TOKEN: $GITLAB_API_TOKEN" \
+      --header "Content-Type: application/json" "$CI_API_V4_URL/projects/$CI_PROJECT_ID/repository/files/${FILE_PATH}" \
+      --data '{
+        "branch": "'"$CI_DEFAULT_BRANCH"'",
+        "encoding": "base64",
+        "content": "'"$CONTENT"'",
+        "commit_message": "doc: update module documentation for ${MODULE_PATH} [skip ci]"
+      }'
 
-      if [ $? -ne 0 ]; then
-        echo "Error uploading file: $RESPONSE"
-        exit 1
-      fi
   needs:
     - job: create-terraform-doc
       artifacts: true
