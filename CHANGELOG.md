@@ -2,6 +2,47 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.1] - 2025-01-10
+
+### 🚀 New Features
+
+- Add rules to release workflow (effa761)
+- Add terraform-docs file (f6005d0)
+
+### 🔧 CI changes
+
+- Update terraform-docs pipeline trigger conditions (869af0a)
+
+### 🧰 Maintenance
+
+- Enhance terraform-docs workflow with additional options (537ea6c)
+- Add stages for ci configuration (9a0b00b)
+- Fix release workflow rules to include a 'never' condition (457708b)
+- Remove changes variables (9a16068)
+- Update terraform-docs workflow to use variables (8aff250)
+- Remove workflow rules and include terraform-docs workflow (40c0744)
+
+### 🚜 Refactor
+
+- Change workflow rules (dadbcd2)
+- Add comments for logging in pipeline (e305c87)
+- Add comments in pipeline (9d4bcb4)
+- Change variables in pipeline (933991f)
+- Update variables in pipeline (1c88551)
+- Update workflow rules in pipeline (48ebb71)
+- Remove pipeline rules for release tags (9601280)
+- Add pipeline rules for release tags (c402330)
+- Remove security commit parser from cliff.toml (8656e6a)
+- Improve json handling in workflow (e8c9b18)
+
+### 📚 Documentation
+
+- Update module documentation for modules/ecs-asg-cluster [skip ci] (0d85345)
+- Update module documentation for modules/ecs-asg-cluster [skip ci] (74ade31)
+
+### 💼 Other
+
+- Update CHANGELOG.md for version v0.2.0 (01d8c0d)
 ## [0.2.0] - 2024-12-23
 
 ### 🐛 Bug Fixes
