@@ -9,6 +9,15 @@ create-terraform-doc:
   image:
     name: quay.io/terraform-docs/terraform-docs:latest
     entrypoint: ['']
+  before_script:
+    - |
+      echo "=== Debug Variables ==="
+      echo "CI_COMMIT_REF_NAME: $CI_COMMIT_REF_NAME"
+      echo "CI_DEFAULT_BRANCH: $CI_DEFAULT_BRANCH"
+      echo "CI_COMMIT_TAG: $CI_COMMIT_TAG"
+      echo "CI_COMMIT_BRANCH: $CI_COMMIT_BRANCH"
+      echo "CI_PIPELINE_SOURCE: $CI_PIPELINE_SOURCE"
+      echo "======================="
   script:
     - |
       terraform-docs markdown table \
