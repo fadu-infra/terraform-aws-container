@@ -3,21 +3,13 @@ updates:
   - package-ecosystem: 'terraform'
     directory: '/'
 
-    auto-merge:
-      enable: false
-      allow:
-        - dependency-type: 'all'
+    auto-merge: false
 
-    merge-train: true
     open-pull-requests-limit: 10
     rebase-strategy: 'auto'
 
     commit-message:
       prefix: 'fix'
       prefix-development: 'chore'
-      include-scope: true
 
-    labels:
-      - 'dependencies'
-      - 'terraform'
-      - 'auto-merge'
+    labels: ['dependencies', 'terraform', 'auto-merge']
