@@ -1,16 +1,9 @@
-workflow:
-  rules:
-    - if: '$CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH || $CI_COMMIT_TAG =~ /^v?\d+\.\d+\.\d+$/'
-      when: always
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
-      when: always
-    - when: never
+include:
+  - local: '.gitlab/workflows/docs.yml'
+  - local: '.gitlab/workflows/release.yml'
 
 stages:
   - pre
+  - docs
   - release
   - post
-
-include:
-  - local: '.gitlab/workflows/release.yml'
-  - local: '.gitlab/workflows/terraform-doc.yml'

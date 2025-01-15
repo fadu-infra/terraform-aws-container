@@ -1,0 +1,13 @@
+.default_branch: &default_branch
+  if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+
+.rules:default_on_changes:
+  rules:
+    - <<: *default_branch
+      changes:
+        - ${MODULE_PATH}/**/*.tf
+
+.rules:default_on_success:
+  rules:
+    - <<: *default_branch
+      when: on_success
