@@ -42,3 +42,14 @@
   rules:
     - <<: *tag
       when: always
+
+.rules:default_on_changes:
+  rules:
+    - <<: *default_branch
+      changes:
+        - ${MODULE_PATH}/**/*.tf
+
+.rules:default_on_success:
+  rules:
+    - <<: *default_branch
+      when: on_success
