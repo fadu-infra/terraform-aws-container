@@ -1,8 +1,16 @@
 include:
   - local: '.gitlab/workflows/docs.yml'
   - local: '.gitlab/workflows/release.yml'
+  - template: Jobs/SAST-IaC.gitlab-ci.yml
+  - component: $CI_SERVER_FQDN/tech/components/secret-detection/secret-detection@1.1.2
+  - component: $CI_SERVER_FQDN/tech/components/dependabot-standalone/template@3.38.0
+    inputs:
+      stage_name: dependabot
+      gitlab_access_token: $GITLAB_API_TOKEN
 
 stages:
+  - test
+  - dependabot
   - pre
   - release
   - post
