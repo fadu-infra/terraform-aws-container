@@ -1,7 +1,7 @@
 include:
   - local: 'ci/rules.gitlab-ci.yml'
 
-release:
+semantic-release:
   stage: release
   image: node:20-buster-slim
   extends: .rules:default_on_success
