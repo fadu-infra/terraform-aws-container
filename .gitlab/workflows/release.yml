@@ -24,7 +24,7 @@ github-release:
   before_script:
     - apk add --no-cache curl jq
   variables:
-    GITHUB_REPO: 'fadu-infra/ci-release-terraform-doc'
+    GITHUB_REPO: 'fadu-infra/terraform-aws-container'
     GITHUB_API_URL: 'https://api.github.com'
   script:
     - |
