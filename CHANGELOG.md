@@ -1,3 +1,25 @@
+## [0.3.0](https://gitlab.fadutec.dev/infra/devops/terraform-aws-container/compare/v0.2.1...v0.3.0) (2025-01-20)
+
+### 🚀 New Features
+
+* add dependabot components ([4e8f020](https://gitlab.fadutec.dev/infra/devops/terraform-aws-container/commit/4e8f020ea5e2ac21282abe44d8fbd5030ff9e767))
+* refactoring ci pipelines using semantic-release ([04b68c4](https://gitlab.fadutec.dev/infra/devops/terraform-aws-container/commit/04b68c4adb2d170aa24f2063c21e9aeab3f43793))
+* remove unused files for using semantic-release ([4df074c](https://gitlab.fadutec.dev/infra/devops/terraform-aws-container/commit/4df074cddd76c4c55c3af0027ea676ec39edd09f))
+
+### 🐛 Bug Fixes
+
+* correct GitLab pre-defined variable name ([ee04861](https://gitlab.fadutec.dev/infra/devops/terraform-aws-container/commit/ee0486132456429f9052014c36c43961e87989db))
+
+### 🧰 Maintenance
+
+* apply latest project template ([839cc01](https://gitlab.fadutec.dev/infra/devops/terraform-aws-container/commit/839cc015bbf92eed6586302b9740e97dd94d5adf))
+* change github repository name ([33150b8](https://gitlab.fadutec.dev/infra/devops/terraform-aws-container/commit/33150b863ea90d3f70700cb90592bbd43e8c0462))
+* change github token variables ([d5fdc19](https://gitlab.fadutec.dev/infra/devops/terraform-aws-container/commit/d5fdc190f5840405f4f3c7b67988c0c70200e052))
+* change job name to semantic-release ([9dcc21e](https://gitlab.fadutec.dev/infra/devops/terraform-aws-container/commit/9dcc21e5533feba62d4190c5e1254568bbb69551))
+* change to github pat token ([96b8f18](https://gitlab.fadutec.dev/infra/devops/terraform-aws-container/commit/96b8f185e77bba55f050888118f3d60dc22a81a2))
+* remove unused stages(docs) ([2f8f5b2](https://gitlab.fadutec.dev/infra/devops/terraform-aws-container/commit/2f8f5b245fe48a16b32416dce5c81205c4ea3626))
+* update GitLab CI and Dependabot configurations ([b4d701b](https://gitlab.fadutec.dev/infra/devops/terraform-aws-container/commit/b4d701b3cef43f7dafbc50a41cb58c2f29d4ebbc))
+
 # Changelog
 
 All notable changes to this project will be documented in this file.
