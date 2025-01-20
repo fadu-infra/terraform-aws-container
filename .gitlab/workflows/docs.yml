@@ -1,0 +1,31 @@
+include:
+  - local: 'ci/rules.gitlab-ci.yml'
+
+# Global variables used across jobs
+variables:
+  MODULE_PATH: modules/ecs-asg-cluster
+  DOC_FILENAME: README.md
+
+# Generate Terraform documentation
+create-terraform-doc:
+  stage: pre
+  extends: .rules:default_on_changes
+  image:
+    name: quay.io/terraform-docs/terraform-docs:latest
+    entrypoint: ['']
+  script:
+    - |
+      terraform-docs markdown table \
+        --output-file=${DOC_FILENAME} \
+        --output-mode=replace \
+        --sort=true \
+        --sort-by=required \
+        --hide-empty=true \
+        --sensitive=true \
+        --read-comments=true \
+        --escape=false \
+        --indent=2 \
+        ${MODULE_PATH}
+  artifacts:
+    paths:
+      - ${MODULE_PATH}/${DOC_FILENAME}
