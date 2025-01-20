@@ -1,0 +1,15 @@
+version: 2
+updates:
+  - package-ecosystem: 'terraform'
+    directory: '/'
+
+    auto-merge: false
+
+    open-pull-requests-limit: 10
+    rebase-strategy: 'auto'
+
+    commit-message:
+      prefix: 'fix'
+      prefix-development: 'chore'
+
+    labels: ['dependencies', 'terraform', 'auto-merge']

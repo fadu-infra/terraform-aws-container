@@ -1,0 +1,90 @@
+{
+  "branches": [
+    "main"
+  ],
+  "plugins": [
+    [
+      "@semantic-release/commit-analyzer",
+      {
+        "parserOpts": {
+          "noteKeywords": [
+            "BREAKING CHANGE",
+            "BREAKING CHANGES",
+            "MAJOR CHANGE"
+          ]
+        },
+        "preset": "conventionalcommits"
+      }
+    ],
+    [
+      "@semantic-release/release-notes-generator",
+      {
+        "preset": "conventionalcommits",
+        "presetConfig": {
+          "types": [
+            {
+              "hidden": false,
+              "section": "\ud83d\ude80 New Features",
+              "type": "feat"
+            },
+            {
+              "hidden": false,
+              "section": "\ud83d\udc1b Bug Fixes",
+              "type": "fix"
+            },
+            {
+              "hidden": false,
+              "section": "\ud83d\udd27 Maintenance",
+              "type": "ci"
+            },
+            {
+              "hidden": false,
+              "section": "\ud83e\uddf0 Maintenance",
+              "type": "chore"
+            },
+            {
+              "hidden": false,
+              "section": "\ud83d\ude9c Refactor",
+              "type": "refactor"
+            },
+            {
+              "hidden": false,
+              "section": "\ud83d\udcda Documentation",
+              "type": "docs"
+            },
+            {
+              "hidden": false,
+              "section": "\u26a1\ufe0f Performance Improvements \u26a1\ufe0f",
+              "type": "perf"
+            }
+          ]
+        }
+      }
+    ],
+    [
+      "@semantic-release/changelog",
+      {
+        "changelogFile": "CHANGELOG.md"
+      }
+    ],
+    [
+      "@semantic-release/git",
+      {
+        "assets": [
+          "CHANGELOG.md",
+          "modules/ecs-asg-cluster/README.md"
+        ],
+        "message": "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
+      }
+    ],
+    [
+      "@semantic-release/gitlab",
+      {
+        "labels": false,
+        "releasedLabels": false,
+        "successComment": "This ${issue.iid ? 'issue has been resolved' : 'merge request is included'} in version ${nextRelease.version} \ud83c\udf89"
+      }
+    ]
+  ],
+  "tagFormat": "v${version}"
+}

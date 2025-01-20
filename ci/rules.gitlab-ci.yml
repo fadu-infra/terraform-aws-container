@@ -1,0 +1,55 @@
+# Base conditions
+.mr: &mr
+  if: $CI_PIPELINE_SOURCE == "merge_request_event"
+
+.default_branch: &default_branch
+  if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+.default_branch_or_mr: &default_branch_or_mr
+  if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH || $CI_PIPELINE_SOURCE == "merge_request_event"
+
+.schedule: &schedule
+  if: $CI_PIPELINE_SOURCE == "schedule"
+
+.tag: &tag
+  if: $CI_COMMIT_TAG
+
+.trigger-downstream: &trigger_downstream
+  if: $CI_PIPELINE_SOURCE == "parent_pipeline"
+
+# Rules definitions
+.rules:mr:
+  rules:
+    - <<: *mr
+      when: always
+
+.rules:default:
+  rules:
+    - <<: *default_branch
+      when: always
+
+.rules:default_branch_or_mr:
+  rules:
+    - <<: *default_branch_or_mr
+      when: always
+
+.rules:schedule:
+  rules:
+    - <<: *schedule
+      when: always
+
+.rules:tag:
+  rules:
+    - <<: *tag
+      when: always
+
+.rules:default_on_changes:
+  rules:
+    - <<: *default_branch
+      changes:
+        - ${MODULE_PATH}/**/*.tf
+
+.rules:default_on_success:
+  rules:
+    - <<: *default_branch
+      when: on_success
