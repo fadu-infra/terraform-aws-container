@@ -4,10 +4,10 @@ resource "aws_ecs_cluster" "default" {
 }
 
 resource "aws_ecs_capacity_provider" "asg" {
-  name = aws_autoscaling_group.ecs_nodes.name
+  name = aws_autoscaling_group.this.name
 
   auto_scaling_group_provider {
-    auto_scaling_group_arn         = aws_autoscaling_group.ecs_nodes.arn
+    auto_scaling_group_arn         = aws_autoscaling_group.this.arn
     managed_termination_protection = local.protect_from_scale_in ? "ENABLED" : "DISABLED"
 
     managed_scaling {

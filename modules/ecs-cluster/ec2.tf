@@ -2,7 +2,7 @@
 # Auto Scaling Group
 ################################################################################
 
-resource "aws_autoscaling_group" "ecs_nodes" {
+resource "aws_autoscaling_group" "this" {
   name                  = "${local.name}-asg"
   max_size              = local.asg_max_size
   min_size              = local.asg_min_size
@@ -28,8 +28,8 @@ resource "aws_autoscaling_group" "ecs_nodes" {
 
     launch_template {
       launch_template_specification {
-        launch_template_id = aws_launch_template.node.id
-        version            = aws_launch_template.node.latest_version
+        launch_template_id = aws_launch_template.this.id
+        version            = aws_launch_template.this.latest_version
       }
 
       dynamic "override" {
@@ -79,7 +79,7 @@ resource "aws_autoscaling_group" "ecs_nodes" {
 # ECS Cluster Capacity Providers
 ################################################################################
 
-resource "aws_ecs_cluster_capacity_providers" "example" {
+resource "aws_ecs_cluster_capacity_providers" "this" {
   cluster_name = aws_ecs_cluster.default.name
 
   capacity_providers = [aws_ecs_capacity_provider.asg.name]
@@ -124,7 +124,7 @@ data "cloudinit_config" "config" {
   }
 }
 
-resource "aws_launch_template" "node" {
+resource "aws_launch_template" "this" {
   name                   = "${local.name}-lt"
   image_id               = local.ami_id
   instance_type          = keys(local.instance_types)[0]
