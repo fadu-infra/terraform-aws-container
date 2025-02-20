@@ -1,7 +1,4 @@
-################################################################################
 # Auto Scaling Group
-################################################################################
-
 resource "aws_autoscaling_group" "this" {
   name                  = "${local.name}-asg"
   max_size              = local.asg_max_size
@@ -74,32 +71,8 @@ resource "aws_autoscaling_group" "this" {
   }
 }
 
-
-################################################################################
-# ECS Cluster Capacity Providers
-################################################################################
-
-resource "aws_ecs_cluster_capacity_providers" "this" {
-  cluster_name = aws_ecs_cluster.default.name
-
-  capacity_providers = [aws_ecs_capacity_provider.asg.name]
-
-  dynamic "default_capacity_provider_strategy" {
-    for_each = var.enabled_default_capacity_provider ? [1] : []
-    content {
-      base              = 1
-      weight            = 100
-      capacity_provider = aws_ecs_capacity_provider.asg.name
-    }
-  }
-}
-
-
-################################################################################
 # Launch Template
-################################################################################
-
-data "cloudinit_config" "config" {
+data "cloudinit_config" "this" {
   gzip          = false
   base64_encode = true
 
@@ -128,7 +101,7 @@ resource "aws_launch_template" "this" {
   name                   = "${local.name}-lt"
   image_id               = local.ami_id
   instance_type          = keys(local.instance_types)[0]
-  user_data              = data.cloudinit_config.config.rendered
+  user_data              = data.cloudinit_config.this.rendered
   tags                   = local.tags
   update_default_version = true
 
