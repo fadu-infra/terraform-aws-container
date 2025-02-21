@@ -8,6 +8,9 @@ include:
       stage_name: dependabot
       gitlab_access_token: $GITLAB_API_TOKEN
 
+variables:
+  PACKAGE_MANAGER_SET: 'terraform'
+
 stages:
   - test
   - dependabot
