@@ -3,7 +3,7 @@
   if: $CI_PIPELINE_SOURCE == "merge_request_event"
 
 .default_branch: &default_branch
-  if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+  if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE != "schedule"
 
 .default_branch_or_mr: &default_branch_or_mr
   if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH || $CI_PIPELINE_SOURCE == "merge_request_event"

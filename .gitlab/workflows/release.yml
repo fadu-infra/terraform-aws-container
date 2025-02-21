@@ -1,5 +1,5 @@
 include:
-  - local: 'ci/rules.gitlab-ci.yml'
+  - local: '.gitlab/ci/*.gitlab-ci.yml'
 
 semantic-release:
   stage: release
