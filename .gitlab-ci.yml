@@ -10,6 +10,7 @@ include:
 
 variables:
   PACKAGE_MANAGER_SET: 'terraform'
+  DIRECTORY: 'modules/'
 
 stages:
   - test
