@@ -7,9 +7,9 @@ output "capacity_provider" {
 
 output "ecs_cluster_details" {
   value = {
-    arn  = aws_ecs_cluster.default.arn
-    id   = aws_ecs_cluster.default.id
-    name = aws_ecs_cluster.default.name
+    arn  = aws_ecs_cluster.this.arn
+    id   = aws_ecs_cluster.this.id
+    name = aws_ecs_cluster.this.name
   }
   description = "Details of the ECS cluster including ARN, ID, and name."
 }
