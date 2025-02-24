@@ -224,6 +224,12 @@ variable "user_data" {
   nullable    = false
 }
 
+variable "common_name_prefix" {
+  description = "The common name prefix for the Cluster"
+  type        = string
+  nullable    = false
+}
+
 data "aws_ssm_parameter" "ecs_ami" {
   name = "/aws/service/ecs/optimized-ami/amazon-linux-2/recommended/image_id"
 }
@@ -242,7 +248,6 @@ locals {
   name                    = replace(var.cluster_name, " ", "_")
   on_demand_base_capacity = var.on_demand_base_capacity
   protect_from_scale_in   = var.protect_from_scale_in
-  sg_ids                  = distinct(concat(var.security_group_ids, [aws_security_group.ecs_nodes.id]))
   public                  = var.nodes_with_public_ip
   spot                    = var.spot == true ? 0 : 100
   target_capacity         = var.target_capacity
@@ -251,6 +256,6 @@ locals {
   vpc_id                  = var.vpc_id
   subnet_ids              = var.subnet_ids
 
-  common_name_prefix = "fadu-${var.cluster_name}"
+  common_name_prefix = var.common_name_prefix
   tags               = var.tags
 }

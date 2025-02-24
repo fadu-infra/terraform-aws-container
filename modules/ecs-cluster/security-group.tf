@@ -1,30 +1,29 @@
-resource "aws_security_group" "ecs_nodes" {
+module "ecs_security_group" {
+  source = "git::git@gitlab.fadutec.dev:infra/devops/terraform-aws-network.git//modules/security-group?ref=feature/INFRAOPS-308"
+  # source = "app.terraform.io/fadutec/network/aws//modules/security-group"
+
   name        = "${local.name}-sg"
   description = "ECS nodes for ${local.name}"
   vpc_id      = local.vpc_id
   tags        = local.tags
 
-  lifecycle {
-    ignore_changes = [
-      vpc_id,
-    ]
-  }
-}
+  ingress_rules = [
+    {
+      id         = "ingress_rule"
+      protocol   = "-1"
+      from_port  = 0
+      to_port    = 0
+      ipv4_cidrs = local.trusted_cidr_blocks
+    }
+  ]
 
-resource "aws_security_group_rule" "ingress" {
-  from_port         = 0
-  to_port           = 0
-  protocol          = "-1"
-  cidr_blocks       = local.trusted_cidr_blocks
-  security_group_id = aws_security_group.ecs_nodes.id
-  type              = "ingress"
-}
-
-resource "aws_security_group_rule" "egress" {
-  from_port         = 0
-  to_port           = 0
-  protocol          = "-1"
-  cidr_blocks       = ["0.0.0.0/0"]
-  security_group_id = aws_security_group.ecs_nodes.id
-  type              = "egress"
+  egress_rules = [
+    {
+      id         = "egress_rule"
+      protocol   = "-1"
+      from_port  = 0
+      to_port    = 0
+      ipv4_cidrs = ["0.0.0.0/0"]
+    }
+  ]
 }

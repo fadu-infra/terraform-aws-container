@@ -32,8 +32,8 @@ output "iam_instance_role" {
 
 output "security_group" {
   value = {
-    id   = aws_security_group.ecs_nodes.id
-    name = aws_security_group.ecs_nodes.name
+    id   = module.ecs_security_group.id
+    name = module.ecs_security_group.name
   }
   description = "The ID and name of the ECS nodes security group."
 }
