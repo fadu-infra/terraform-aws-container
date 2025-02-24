@@ -10,7 +10,7 @@ locals {
 }
 
 # ECS Instance Role
-resource "aws_iam_role" "ecs_instance" {
+resource "aws_iam_role" "this" {
   name        = local.ecs_instance_role_name
   description = "Allows EC2 instances to call AWS services on your behalf"
 
@@ -30,16 +30,16 @@ resource "aws_iam_role" "ecs_instance" {
   }
 }
 
-resource "aws_iam_role_policy_attachment" "ecs_instance" {
+resource "aws_iam_role_policy_attachment" "this" {
   count = length(local.ecs_instance_policies)
 
-  role       = aws_iam_role.ecs_instance.name
+  role       = aws_iam_role.this.name
   policy_arn = local.ecs_instance_policies[count.index]
 }
 
-resource "aws_iam_instance_profile" "ecs_instance" {
+resource "aws_iam_instance_profile" "this" {
   name = "${local.ecs_instance_role_name}-profile"
-  role = aws_iam_role.ecs_instance.name
+  role = aws_iam_role.this.name
 
   lifecycle {
     create_before_destroy = true

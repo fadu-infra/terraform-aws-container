@@ -16,16 +16,16 @@ output "ecs_cluster_details" {
 
 output "iam_instance_profile" {
   value = {
-    arn  = aws_iam_instance_profile.ecs_instance.arn
-    name = aws_iam_instance_profile.ecs_instance.name
+    arn  = aws_iam_instance_profile.this.arn
+    name = aws_iam_instance_profile.this.name
   }
   description = "The ARN and name of the IAM instance profile."
 }
 
 output "iam_instance_role" {
   value = {
-    arn  = aws_iam_role.ecs_instance.arn
-    name = aws_iam_role.ecs_instance.name
+    arn  = aws_iam_role.this.arn
+    name = aws_iam_role.this.name
   }
   description = "The ARN and name of the IAM instance role."
 }

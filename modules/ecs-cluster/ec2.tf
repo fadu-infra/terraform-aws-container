@@ -118,7 +118,7 @@ resource "aws_launch_template" "this" {
   }
 
   iam_instance_profile {
-    name = aws_iam_instance_profile.ecs_instance.name
+    name = aws_iam_instance_profile.this.name
   }
 
   monitoring {
