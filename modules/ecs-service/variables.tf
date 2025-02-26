@@ -33,9 +33,18 @@ variable "ignore_task_definition_changes" {
 }
 
 variable "alarms" {
-  description = "Information about the CloudWatch alarms"
-  type        = any
-  default     = {}
+  description = <<-EOT
+    Information about the CloudWatch alarms. The alarms configuration block supports the following:
+    - `alarm_names` (Required): One or more CloudWatch alarm names.
+    - `enable` (Required): Whether to use the CloudWatch alarm option in the service deployment process.
+    - `rollback` (Required): Whether to configure Amazon ECS to roll back the service if a service deployment fails. If rollback is used, when a service deployment fails, the service is rolled back to the last deployment that completed successfully.
+  EOT
+  type = map(object({
+    alarm_names = list(string)
+    enable      = bool
+    rollback    = bool
+  }))
+  default = {}
 }
 
 variable "capacity_provider_strategy" {
@@ -68,22 +77,24 @@ variable "cluster_arn" {
   default     = ""
 }
 
-variable "deployment_circuit_breaker" {
-  description = "Configuration block for deployment circuit breaker"
-  type        = any
-  default     = {}
-}
+variable "deployment_setting" {
+  description = <<-EOT
+    Deployment settings including:
+    - `circuit_breaker`: Configuration block for deployment circuit breaker
+    - `maximum_percent`: Upper limit (as a percentage of the service's `desired_count`) of the number of running tasks that can be running in a service during a deployment
+    - `minimum_healthy_percent`: Lower limit (as a percentage of the service's `desired_count`) of the number of running tasks that must remain running and healthy in a service during a deployment
+  EOT
 
-variable "deployment_maximum_percent" {
-  description = "Upper limit (as a percentage of the service's `desired_count`) of the number of running tasks that can be running in a service during a deployment"
-  type        = number
-  default     = 200
-}
-
-variable "deployment_minimum_healthy_percent" {
-  description = "Lower limit (as a percentage of the service's `desired_count`) of the number of running tasks that must remain running and healthy in a service during a deployment"
-  type        = number
-  default     = 66
+  type = object({
+    circuit_breaker         = any
+    maximum_percent         = number
+    minimum_healthy_percent = number
+  })
+  default = {
+    circuit_breaker         = {}
+    maximum_percent         = 200
+    minimum_healthy_percent = 66
+  }
 }
 
 variable "desired_count" {
@@ -139,22 +150,24 @@ variable "name" {
   default     = null
 }
 
-variable "assign_public_ip" {
-  description = "Assign a public IP address to the ENI (Fargate launch type only)"
-  type        = bool
-  default     = false
-}
+variable "network_configuration" {
+  description = <<-EOT
+  Network configuration for the ECS service, including:
+  - `assign_public_ip`: Assign a public IP address to the ENI (Fargate launch type only).
+  - `security_group_ids`: List of security groups to associate with the task or service.
+  - `subnet_ids`: List of subnets to associate with the task or service.
+  EOT
 
-variable "security_group_ids" {
-  description = "List of security groups to associate with the task or service"
-  type        = list(string)
-  default     = []
-}
-
-variable "subnet_ids" {
-  description = "List of subnets to associate with the task or service"
-  type        = list(string)
-  default     = []
+  type = object({
+    assign_public_ip   = bool
+    security_group_ids = list(string)
+    subnet_ids         = list(string)
+  })
+  default = {
+    assign_public_ip   = false
+    security_group_ids = []
+    subnet_ids         = []
+  }
 }
 
 variable "ordered_placement_strategy" {
@@ -219,8 +232,14 @@ variable "service_connect_configuration" {
   default     = {}
 }
 
-variable "service_registries" {
-  description = "Service discovery registries for the service"
+variable "service_discovery_registries" {
+  description = <<-EOT
+    Service discovery registries for the service. Supports the following:
+    - `registry_arn` (Required): ARN of the Service Registry. The currently supported service registry is Amazon Route 53 Auto Naming Service (aws_service_discovery_service).
+    - `port` (Optional): Port value used if your Service Discovery service specified an SRV record.
+    - `container_port` (Optional): Port value, already specified in the task definition, to be used for your service discovery service.
+    - `container_name` (Optional): Container name value, already specified in the task definition, to be used for your service discovery service.
+  EOT
   type        = any
   default     = {}
 }

@@ -6,9 +6,7 @@ locals {
   account_id = data.aws_caller_identity.current.account_id
   partition  = data.aws_partition.current.partition
   region     = data.aws_region.current.name
-}
 
-locals {
   metadata = {
     package = "terraform-aws-container"
     module  = basename(path.module)
@@ -28,18 +26,14 @@ locals {
   is_daemon  = var.scheduling_strategy == "DAEMON"
   is_fargate = var.launch_type == "FARGATE"
 
-  # Flattened `network_configuration`
-  network_configuration = {
-    assign_public_ip = var.assign_public_ip
-    security_groups  = var.security_group_ids
-    subnets          = var.subnet_ids
-  }
-
   create_service = var.create && var.create_service
 }
 
 resource "aws_ecs_service" "this" {
   count = local.create_service ? 1 : 0
+
+  cluster = var.cluster_arn
+  name    = var.name
 
   dynamic "alarms" {
     for_each = length(var.alarms) > 0 ? [var.alarms] : []
@@ -61,10 +55,8 @@ resource "aws_ecs_service" "this" {
     }
   }
 
-  cluster = var.cluster_arn
-
   dynamic "deployment_circuit_breaker" {
-    for_each = length(var.deployment_circuit_breaker) > 0 ? [var.deployment_circuit_breaker] : []
+    for_each = length(var.deployment_setting.circuit_breaker) > 0 ? [var.deployment_setting.circuit_breaker] : []
 
     content {
       enable   = deployment_circuit_breaker.value.enable
@@ -72,8 +64,8 @@ resource "aws_ecs_service" "this" {
     }
   }
 
-  deployment_maximum_percent         = local.is_daemon ? null : var.deployment_maximum_percent
-  deployment_minimum_healthy_percent = local.is_daemon ? null : var.deployment_minimum_healthy_percent
+  deployment_maximum_percent         = local.is_daemon ? null : var.deployment_setting.maximum_percent
+  deployment_minimum_healthy_percent = local.is_daemon ? null : var.deployment_setting.minimum_healthy_percent
   desired_count                      = local.is_daemon ? null : var.desired_count
   enable_ecs_managed_tags            = var.enable_ecs_managed_tags
   enable_execute_command             = var.enable_execute_command
@@ -82,21 +74,8 @@ resource "aws_ecs_service" "this" {
   iam_role                           = local.iam_role_arn
   launch_type                        = length(var.capacity_provider_strategy) > 0 ? null : var.launch_type
 
-  dynamic "load_balancer" {
-    for_each = { for k, v in var.load_balancer : k => v }
-
-    content {
-      container_name   = load_balancer.value.container_name
-      container_port   = load_balancer.value.container_port
-      elb_name         = try(load_balancer.value.elb_name, null)
-      target_group_arn = try(load_balancer.value.target_group_arn, null)
-    }
-  }
-
-  name = var.name
-
   dynamic "network_configuration" {
-    for_each = var.network_mode == "awsvpc" ? [local.network_configuration] : []
+    for_each = var.network_mode == "awsvpc" ? [var.network_configuration] : []
 
     content {
       assign_public_ip = network_configuration.value.assign_public_ip
@@ -125,6 +104,17 @@ resource "aws_ecs_service" "this" {
 
   platform_version    = local.is_fargate ? var.platform_version : null
   scheduling_strategy = local.is_fargate ? "REPLICA" : var.scheduling_strategy
+
+  dynamic "load_balancer" {
+    for_each = { for k, v in var.load_balancer : k => v }
+
+    content {
+      container_name   = load_balancer.value.container_name
+      container_port   = load_balancer.value.container_port
+      elb_name         = try(load_balancer.value.elb_name, null)
+      target_group_arn = try(load_balancer.value.target_group_arn, null)
+    }
+  }
 
   dynamic "service_connect_configuration" {
     for_each = length(var.service_connect_configuration) > 0 ? [var.service_connect_configuration] : []
@@ -175,7 +165,7 @@ resource "aws_ecs_service" "this" {
   }
 
   dynamic "service_registries" {
-    for_each = length(var.service_registries) > 0 ? [{ for k, v in var.service_registries : k => v if !local.is_daemon }] : []
+    for_each = length(var.service_discovery_registries) > 0 ? [{ for k, v in var.service_discovery_registries : k => v if !local.is_daemon }] : []
 
     content {
       container_name = try(service_registries.value.container_name, null)
