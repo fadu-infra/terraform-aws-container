@@ -375,11 +375,13 @@ variable "family" {
   default     = null
 }
 
+/*
 variable "inference_accelerator" {
   description = "Configuration block(s) with Inference Accelerators settings"
   type        = any
   default     = {}
 }
+*/
 
 variable "ipc_mode" {
   description = "IPC resource namespace to be used for the containers in the task The valid values are `host`, `task`, and `none`"
@@ -411,11 +413,13 @@ variable "task_definition_placement_constraints" {
   default     = {}
 }
 
+/*
 variable "proxy_configuration" {
   description = "Configuration block for the App Mesh proxy"
   type        = any
   default     = {}
 }
+*/
 
 variable "requires_compatibilities" {
   description = "Set of launch types required by the task. The valid values are `EC2` and `FARGATE`"
