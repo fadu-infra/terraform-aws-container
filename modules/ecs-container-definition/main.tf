@@ -69,6 +69,15 @@ locals {
 
   # Strip out all null values, ECS API will provide defaults in place of null/empty values
   container_definition = { for k, v in local.definition : k => v if v != null }
+
+  metadata = {
+    package = "terraform-aws-container"
+    module  = basename(path.module)
+    name    = var.name
+  }
+  module_tags = var.module_tags_enabled ? {
+    "module.terraform.io/name" = "${local.metadata.package}/${local.metadata.module}"
+  } : {}
 }
 
 resource "aws_cloudwatch_log_group" "this" {
@@ -79,5 +88,11 @@ resource "aws_cloudwatch_log_group" "this" {
   retention_in_days = var.cloudwatch_log_group_retention_in_days
   kms_key_id        = var.cloudwatch_log_group_kms_key_id
 
-  tags = var.tags
+  tags = merge(
+    {
+      "Name" = local.metadata.name
+    },
+    var.tags,
+    local.module_tags
+  )
 }
