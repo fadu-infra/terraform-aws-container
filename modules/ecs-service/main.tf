@@ -180,7 +180,14 @@ resource "aws_ecs_service" "this" {
   wait_for_steady_state = var.wait_for_steady_state
 
   propagate_tags = var.propagate_tags
-  tags           = merge(var.tags, local.module_tags, var.service_tags)
+  tags = merge(
+    {
+      "Name" = local.metadata.name
+    },
+    var.service_tags,
+    var.tags,
+    local.module_tags
+  )
 
   timeouts {
     create = try(var.timeouts.create, null)
@@ -238,7 +245,14 @@ resource "aws_iam_role" "service" {
   permissions_boundary  = var.iam_role_permissions_boundary
   force_detach_policies = true
 
-  tags = merge(var.tags, local.module_tags, var.iam_role_tags)
+  tags = merge(
+    {
+      "Name" = local.metadata.name
+    },
+    var.iam_role_tags,
+    var.tags,
+    local.module_tags
+  )
 }
 
 data "aws_iam_policy_document" "service" {
@@ -308,7 +322,14 @@ resource "aws_iam_policy" "service" {
   description = coalesce(var.iam_role_description, "ECS service policy that allows Amazon ECS to make calls to your load balancer on your behalf")
   policy      = data.aws_iam_policy_document.service[0].json
 
-  tags = merge(var.tags, local.module_tags, var.iam_role_tags)
+  tags = merge(
+    {
+      "Name" = local.metadata.name
+    },
+    var.iam_role_tags,
+    var.tags,
+    local.module_tags
+  )
 }
 
 resource "aws_iam_role_policy_attachment" "service" {
@@ -380,7 +401,13 @@ module "container_definition" {
   cloudwatch_log_group_retention_in_days = try(each.value.cloudwatch_log_group_retention_in_days, var.container_definition_defaults.cloudwatch_log_group_retention_in_days, 14)
   cloudwatch_log_group_kms_key_id        = try(each.value.cloudwatch_log_group_kms_key_id, var.container_definition_defaults.cloudwatch_log_group_kms_key_id, null)
 
-  tags = merge(var.tags, local.module_tags)
+  tags = merge(
+    {
+      "Name" = local.metadata.name
+    },
+    var.tags,
+    local.module_tags
+  )
 }
 
 ################################################################################
@@ -539,7 +566,14 @@ resource "aws_ecs_task_definition" "this" {
     }
   }
 
-  tags = merge(var.tags, local.module_tags, var.task_tags)
+  tags = merge(
+    {
+      "Name" = local.metadata.name
+    },
+    var.task_tags,
+    local.module_tags,
+    var.tags
+  )
 
   depends_on = [
     aws_iam_role_policy_attachment.tasks,
@@ -591,7 +625,14 @@ resource "aws_iam_role" "task_exec" {
   permissions_boundary  = var.task_exec_iam_role_permissions_boundary
   force_detach_policies = true
 
-  tags = merge(var.tags, local.module_tags, var.task_exec_iam_role_tags)
+  tags = merge(
+    {
+      "Name" = local.metadata.name
+    },
+    var.task_exec_iam_role_tags,
+    var.tags,
+    local.module_tags
+  )
 }
 
 resource "aws_iam_role_policy_attachment" "task_exec_additional" {
@@ -696,7 +737,14 @@ resource "aws_iam_policy" "task_exec" {
   description = coalesce(var.task_exec_iam_role_description, "Task execution role IAM policy")
   policy      = data.aws_iam_policy_document.task_exec[0].json
   path        = var.task_exec_iam_policy_path
-  tags        = merge(var.tags, local.module_tags, var.task_exec_iam_role_tags)
+  tags = merge(
+    {
+      "Name" = local.metadata.name
+    },
+    var.tags,
+    local.module_tags,
+    var.task_exec_iam_role_tags
+  )
 }
 
 resource "aws_iam_role_policy_attachment" "task_exec" {
@@ -755,7 +803,14 @@ resource "aws_iam_role" "tasks" {
   permissions_boundary  = var.tasks_iam_role_permissions_boundary
   force_detach_policies = true
 
-  tags = merge(var.tags, local.module_tags, var.tasks_iam_role_tags)
+  tags = merge(
+    {
+      "Name" = local.metadata.name
+    },
+    var.tasks_iam_role_tags,
+    var.tags,
+    local.module_tags
+  )
 }
 
 resource "aws_iam_role_policy_attachment" "tasks" {
