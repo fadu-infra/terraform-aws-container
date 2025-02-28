@@ -29,11 +29,3 @@ output "iam_instance_role" {
   }
   description = "The ARN and name of the IAM instance role."
 }
-
-output "security_group" {
-  value = {
-    id   = module.ecs_security_group.id
-    name = module.ecs_security_group.name
-  }
-  description = "The ID and name of the ECS nodes security group."
-}
