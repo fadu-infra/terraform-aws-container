@@ -1,0 +1,84 @@
+<!-- BEGIN_TF_DOCS -->
+## Requirements
+
+| Name | Version |
+|------|---------|
+| <a name="requirement_terraform"></a> [terraform](#requirement_terraform) | >= 1.10 |
+| <a name="requirement_aws"></a> [aws](#requirement_aws) | >= 5.83 |
+
+## Providers
+
+| Name | Version |
+|------|---------|
+| <a name="provider_aws"></a> [aws](#provider_aws) | >= 5.83 |
+
+## Resources
+
+| Name | Type |
+|------|------|
+| [aws_cloudwatch_log_group.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/cloudwatch_log_group) | resource |
+| [aws_region.current](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/region) | data source |
+
+## Inputs
+
+| Name | Description | Type | Default | Required |
+|------|-------------|------|---------|:--------:|
+| <a name="input_cloudwatch_log_group_kms_key_id"></a> [cloudwatch_log_group_kms_key_id](#input_cloudwatch_log_group_kms_key_id) | (Optional) If a KMS Key ARN is set, this key will be used to encrypt the corresponding log group. Please be sure that the KMS Key has an appropriate key policy (https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/encrypt-log-data-kms.html) | `string` | `null` | no |
+| <a name="input_cloudwatch_log_group_name"></a> [cloudwatch_log_group_name](#input_cloudwatch_log_group_name) | (Optional) Custom name of CloudWatch log group for a service associated with the container definition | `string` | `""` | no |
+| <a name="input_cloudwatch_log_group_retention_in_days"></a> [cloudwatch_log_group_retention_in_days](#input_cloudwatch_log_group_retention_in_days) | (Optional) Number of days to retain log events. Default is 30 days | `number` | `30` | no |
+| <a name="input_cloudwatch_log_group_use_name_prefix"></a> [cloudwatch_log_group_use_name_prefix](#input_cloudwatch_log_group_use_name_prefix) | (Optional) Determines whether the log group name should be used as a prefix | `bool` | `false` | no |
+| <a name="input_command"></a> [command](#input_command) | The command that's passed to the container | `list(string)` | `[]` | no |
+| <a name="input_cpu"></a> [cpu](#input_cpu) | (Optional) The number of cpu units to reserve for the container. This is optional for tasks using Fargate launch type and the total amount of `cpu` of all containers in a task will need to be lower than the task-level cpu value | `number` | `null` | no |
+| <a name="input_create_cloudwatch_log_group"></a> [create_cloudwatch_log_group](#input_create_cloudwatch_log_group) | (Optional) Determines whether a log group is created by this module. If not, AWS will automatically create one if logging is enabled | `bool` | `true` | no |
+| <a name="input_dependencies"></a> [dependencies](#input_dependencies) | (Optional) The dependencies defined for container startup and shutdown. A container can contain multiple dependencies. When a dependency is defined for container startup, for container shutdown it is reversed. The condition can be one of START, COMPLETE, SUCCESS or HEALTHY | <pre>list(object({<br/>    condition     = string<br/>    containerName = string<br/>  }))</pre> | `[]` | no |
+| <a name="input_disable_networking"></a> [disable_networking](#input_disable_networking) | (Optional) When this parameter is true, networking is disabled within the container | `bool` | `null` | no |
+| <a name="input_dns_search_domains"></a> [dns_search_domains](#input_dns_search_domains) | (Optional) Container DNS search domains. A list of DNS search domains that are presented to the container | `list(string)` | `[]` | no |
+| <a name="input_dns_servers"></a> [dns_servers](#input_dns_servers) | (Optional) Container DNS servers. This is a list of strings specifying the IP addresses of the DNS servers | `list(string)` | `[]` | no |
+| <a name="input_docker_labels"></a> [docker_labels](#input_docker_labels) | (Optional) A key/value map of labels to add to the container | `map(string)` | `{}` | no |
+| <a name="input_docker_security_options"></a> [docker_security_options](#input_docker_security_options) | (Optional) A list of strings to provide custom labels for SELinux and AppArmor multi-level security systems. This field isn't valid for containers in tasks using the Fargate launch type | `list(string)` | `[]` | no |
+| <a name="input_enable_cloudwatch_logging"></a> [enable_cloudwatch_logging](#input_enable_cloudwatch_logging) | (Optional) Determines whether CloudWatch logging is configured for this container definition. Set to `false` to use other logging drivers | `bool` | `true` | no |
+| <a name="input_enable_execute_command"></a> [enable_execute_command](#input_enable_execute_command) | (Optional) Specifies whether to enable Amazon ECS Exec for the tasks within the service | `bool` | `false` | no |
+| <a name="input_entrypoint"></a> [entrypoint](#input_entrypoint) | (Optional) The entry point that is passed to the container | `list(string)` | `[]` | no |
+| <a name="input_environment"></a> [environment](#input_environment) | (Optional) The environment variables to pass to the container | <pre>list(object({<br/>    name  = string<br/>    value = string<br/>  }))</pre> | `[]` | no |
+| <a name="input_environment_files"></a> [environment_files](#input_environment_files) | (Optional) A list of files containing the environment variables to pass to a container | <pre>list(object({<br/>    value = string<br/>    type  = string<br/>  }))</pre> | `[]` | no |
+| <a name="input_essential"></a> [essential](#input_essential) | (Optional) If the `essential` parameter of a container is marked as `true`, and that container fails or stops for any reason, all other containers that are part of the task are stopped | `bool` | `null` | no |
+| <a name="input_extra_hosts"></a> [extra_hosts](#input_extra_hosts) | (Optional) A list of hostnames and IP address mappings to append to the `/etc/hosts` file on the container | <pre>list(object({<br/>    hostname  = string<br/>    ipAddress = string<br/>  }))</pre> | `[]` | no |
+| <a name="input_firelens_configuration"></a> [firelens_configuration](#input_firelens_configuration) | (Optional) The FireLens configuration for the container, used to specify and configure a log router for container logs. For more details, refer to the Amazon ECS Developer Guide on Custom Log Routing.<br/>- `options`: (Optional) A map of key-value pairs to configure the log router. These options allow customization of the log routing behavior.<br/>- `type`: (Optional) The log router to use. Valid values are `fluentd` or `fluentbit`. | <pre>object({<br/>    options = optional(map(string))<br/>    type    = optional(string)<br/>  })</pre> | `{}` | no |
+| <a name="input_health_check"></a> [health_check](#input_health_check) | (Optional) The container health check command and associated configuration parameters for the container. See [HealthCheck](https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_HealthCheck.html) | <pre>object({<br/>    command     = optional(list(string))<br/>    interval    = optional(number)<br/>    timeout     = optional(number)<br/>    retries     = optional(number)<br/>    startPeriod = optional(number)<br/>  })</pre> | `{}` | no |
+| <a name="input_hostname"></a> [hostname](#input_hostname) | (Optional) The hostname to use for your container | `string` | `null` | no |
+| <a name="input_image"></a> [image](#input_image) | (Optional) The image used to start a container. This string is passed directly to the Docker daemon. By default, images in the Docker Hub registry are available. Other repositories are specified with either `repository-url/image:tag` or `repository-url/image@digest` | `string` | `null` | no |
+| <a name="input_interactive"></a> [interactive](#input_interactive) | (Optional) When this parameter is `true`, you can deploy containerized applications that require `stdin` or a `tty` to be allocated | `bool` | `false` | no |
+| <a name="input_links"></a> [links](#input_links) | (Optional) The links parameter allows containers to communicate with each other without the need for port mappings. This parameter is only supported if the network mode of a task definition is `bridge` | `list(string)` | `[]` | no |
+| <a name="input_linux_parameters"></a> [linux_parameters](#input_linux_parameters) | (Optional) Linux-specific modifications that are applied to the container, such as Linux kernel capabilities.<br/>This includes:<br/>- capabilities: The Linux capabilities for the container that are added to or dropped from the default configuration provided by Docker.<br/>- devices: Any host devices to expose to the container.<br/>- initProcessEnabled: Run an init process inside the container that forwards signals and reaps processes.<br/>- maxSwap: The total amount of swap memory (in MiB) a container can use.<br/>- sharedMemorySize: The size (in MiB) of the /dev/shm volume.<br/>- swappiness: Tune a container's memory swappiness behavior.<br/>- tmpfs: The container path, mount options, and size (in MiB) of the tmpfs mount.<br/><br/>Note: Some parameters are not supported for tasks using the Fargate launch type. | <pre>object({<br/>    capabilities = optional(object({<br/>      add  = optional(list(string))<br/>      drop = optional(list(string))<br/>    }))<br/>    devices = optional(list(object({<br/>      hostPath      = string<br/>      containerPath = optional(string)<br/>      permissions   = optional(list(string))<br/>    })))<br/>    maxSwap          = optional(number)<br/>    sharedMemorySize = optional(number)<br/>    swappiness       = optional(number)<br/>    tmpfs = optional(list(object({<br/>      containerPath = string<br/>      size          = number<br/>      mountOptions  = optional(list(string))<br/>    })))<br/>  })</pre> | `{}` | no |
+| <a name="input_log_configuration"></a> [log_configuration](#input_log_configuration) | (Optional) The log configuration for the container. For more information see [LogConfiguration](https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_LogConfiguration.html) | `any` | `{}` | no |
+| <a name="input_memory"></a> [memory](#input_memory) | (Optional) The amount (in MiB) of memory to present to the container. If your container attempts to exceed the memory specified here, the container is killed. The total amount of memory reserved for all containers within a task must be lower than the task `memory` value, if one is specified | `number` | `null` | no |
+| <a name="input_memory_reservation"></a> [memory_reservation](#input_memory_reservation) | (Optional) The soft limit (in MiB) of memory to reserve for the container. When system memory is under heavy contention, Docker attempts to keep the container memory to this soft limit. However, your container can consume more memory when it needs to, up to either the hard limit specified with the `memory` parameter (if applicable), or all of the available memory on the container instance | `number` | `null` | no |
+| <a name="input_module_tags_enabled"></a> [module_tags_enabled](#input_module_tags_enabled) | (Optional) Whether to create AWS Resource Tags for the module informations. | `bool` | `true` | no |
+| <a name="input_mount_points"></a> [mount_points](#input_mount_points) | (Optional) The mount points for data volumes in your container | <pre>list(object({<br/>    containerPath = string<br/>    readOnly      = bool<br/>    sourceVolume  = string<br/>  }))</pre> | `[]` | no |
+| <a name="input_name"></a> [name](#input_name) | (Optional) The name of a container. If you're linking multiple containers together in a task definition, the name of one container can be entered in the links of another container to connect the containers. Up to 255 letters (uppercase and lowercase), numbers, underscores, and hyphens are allowed | `string` | `null` | no |
+| <a name="input_operating_system_family"></a> [operating_system_family](#input_operating_system_family) | (Optional) The OS family for task | `string` | `"LINUX"` | no |
+| <a name="input_port_mappings"></a> [port_mappings](#input_port_mappings) | (Optional) The list of port mappings for the container. Port mappings allow containers to access ports on the host container instance to send or receive traffic. For task definitions that use the awsvpc network mode, only specify the containerPort. The hostPort can be left blank or it must be the same value as the containerPort | <pre>list(object({<br/>    containerPort      = number<br/>    hostPort           = optional(number)<br/>    protocol           = optional(string, "tcp")<br/>    appProtocol        = optional(string)<br/>    containerPortRange = optional(string)<br/>    name               = optional(string)<br/>  }))</pre> | `[]` | no |
+| <a name="input_privileged"></a> [privileged](#input_privileged) | (Optional) When this parameter is true, the container is given elevated privileges on the host container instance (similar to the root user) | `bool` | `false` | no |
+| <a name="input_pseudo_terminal"></a> [pseudo_terminal](#input_pseudo_terminal) | (Optional) When this parameter is true, a `TTY` is allocated | `bool` | `false` | no |
+| <a name="input_readonly_root_filesystem"></a> [readonly_root_filesystem](#input_readonly_root_filesystem) | (Optional) When this parameter is true, the container is given read-only access to its root file system | `bool` | `true` | no |
+| <a name="input_repository_credentials"></a> [repository_credentials](#input_repository_credentials) | (Optional) Container repository credentials; required when using a private repo.  This map currently supports a single key; "credentialsParameter", which should be the ARN of a Secrets Manager's secret holding the credentials | `map(string)` | `{}` | no |
+| <a name="input_resource_requirements"></a> [resource_requirements](#input_resource_requirements) | (Optional) The type and amount of a resource to assign to a container. The only supported resource is a GPU | <pre>list(object({<br/>    type  = string<br/>    value = string<br/>  }))</pre> | `[]` | no |
+| <a name="input_secrets"></a> [secrets](#input_secrets) | (Optional) The secrets to pass to the container. For more information, see [Specifying Sensitive Data](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/specifying-sensitive-data.html) in the Amazon Elastic Container Service Developer Guide | <pre>list(object({<br/>    name      = string<br/>    valueFrom = string<br/>  }))</pre> | `[]` | no |
+| <a name="input_service"></a> [service](#input_service) | (Optional) The name of the service that the container definition is associated with | `string` | `""` | no |
+| <a name="input_start_timeout"></a> [start_timeout](#input_start_timeout) | (Optional) Time duration (in seconds) to wait before giving up on resolving dependencies for a container | `number` | `30` | no |
+| <a name="input_stop_timeout"></a> [stop_timeout](#input_stop_timeout) | (Optional) Time duration (in seconds) to wait before the container is forcefully killed if it doesn't exit normally on its own | `number` | `120` | no |
+| <a name="input_system_controls"></a> [system_controls](#input_system_controls) | (Optional) A list of namespaced kernel parameters to set in the container | <pre>list(object({<br/>    namespace = string<br/>    value     = string<br/>  }))</pre> | `[]` | no |
+| <a name="input_tags"></a> [tags](#input_tags) | (Optional) A map of tags to add to all resources | `map(string)` | `{}` | no |
+| <a name="input_ulimits"></a> [ulimits](#input_ulimits) | (Optional) A list of ulimits to set in the container. If a ulimit value is specified in a task definition, it overrides the default values set by Docker | <pre>list(object({<br/>    hardLimit = number<br/>    name      = string<br/>    softLimit = number<br/>  }))</pre> | `[]` | no |
+| <a name="input_user"></a> [user](#input_user) | (Optional) The user to run as inside the container. Can be any of these formats: user, user:group, uid, uid:gid, user:gid, uid:group. The default (null) will use the container's configured `USER` directive or root if not set | `string` | `null` | no |
+| <a name="input_volumes_from"></a> [volumes_from](#input_volumes_from) | (Optional) Data volumes to mount from another container | `list(any)` | `[]` | no |
+| <a name="input_working_directory"></a> [working_directory](#input_working_directory) | (Optional) The working directory to run commands inside the container | `string` | `null` | no |
+
+## Outputs
+
+| Name | Description |
+|------|-------------|
+| <a name="output_cloudwatch_log_group_arn"></a> [cloudwatch_log_group_arn](#output_cloudwatch_log_group_arn) | ARN of CloudWatch log group created |
+| <a name="output_cloudwatch_log_group_name"></a> [cloudwatch_log_group_name](#output_cloudwatch_log_group_name) | Name of CloudWatch log group created |
+| <a name="output_container_definition"></a> [container_definition](#output_container_definition) | Container definition |
+<!-- END_TF_DOCS -->
