@@ -1,26 +1,26 @@
 # Auto Scaling Group
 resource "aws_autoscaling_group" "this" {
   name                  = "${var.cluster_name}-asg"
-  max_size              = var.asg_max_size
-  min_size              = var.asg_min_size
-  vpc_zone_identifier   = var.subnet_ids
-  protect_from_scale_in = var.protect_from_scale_in
-  desired_capacity_type = "units"
+  max_size              = var.asg_settings.max_size
+  min_size              = var.asg_settings.min_size
+  vpc_zone_identifier   = var.asg_settings.subnet_ids
+  protect_from_scale_in = var.asg_settings.protect_from_scale_in
+  desired_capacity_type = var.asg_settings.desired_capacity_type
 
   instance_refresh {
     strategy = "Rolling"
     preferences {
-      min_healthy_percentage = 100
-      instance_warmup        = 300
-      checkpoint_delay       = 300
+      min_healthy_percentage = var.asg_settings.min_healthy_percentage
+      instance_warmup        = var.asg_settings.instance_warmup
+      checkpoint_delay       = var.asg_settings.checkpoint_delay
       checkpoint_percentages = [50, 100]
     }
   }
 
   mixed_instances_policy {
     instances_distribution {
-      on_demand_base_capacity                  = var.on_demand_base_capacity
-      on_demand_percentage_above_base_capacity = var.spot ? 0 : 100
+      on_demand_base_capacity                  = var.asg_settings.on_demand_base_capacity
+      on_demand_percentage_above_base_capacity = var.asg_settings.spot ? 0 : 100
     }
 
     launch_template {
@@ -30,7 +30,7 @@ resource "aws_autoscaling_group" "this" {
       }
 
       dynamic "override" {
-        for_each = var.instance_types
+        for_each = var.asg_settings.instance_types
 
         content {
           instance_type     = override.key
@@ -41,7 +41,7 @@ resource "aws_autoscaling_group" "this" {
   }
 
   dynamic "initial_lifecycle_hook" {
-    for_each = var.lifecycle_hooks
+    for_each = var.asg_settings.lifecycle_hooks
     iterator = hook
     content {
       name                    = hook.value.name
@@ -83,13 +83,13 @@ data "cloudinit_config" "this" {
       echo ECS_CLUSTER="${var.cluster_name}" >> /etc/ecs/ecs.config
       echo ECS_LOGLEVEL="debug" >> /etc/ecs/ecs.config
       echo ECS_ENABLE_CONTAINER_METADATA=true >> /etc/ecs/ecs.config
-      echo ECS_ENABLE_SPOT_INSTANCE_DRAINING=${tostring(var.spot)} >> /etc/ecs/ecs.config
+      echo ECS_ENABLE_SPOT_INSTANCE_DRAINING=${tostring(var.asg_settings.spot)} >> /etc/ecs/ecs.config
       echo ECS_AVAILABLE_LOGGING_DRIVERS=["json-file","awslogs"]
     EOT
   }
 
   dynamic "part" {
-    for_each = var.user_data
+    for_each = var.asg_settings.user_data
     content {
       content_type = "text/x-shellscript"
       content      = part.value
@@ -99,34 +99,34 @@ data "cloudinit_config" "this" {
 
 resource "aws_launch_template" "this" {
   name                   = "${var.cluster_name}-lt"
-  image_id               = var.ami_id
-  instance_type          = keys(var.instance_types)[0]
+  image_id               = var.asg_settings.ami_id
+  instance_type          = keys(var.asg_settings.instance_types)[0]
   user_data              = data.cloudinit_config.this.rendered
   tags                   = var.tags
   update_default_version = true
 
   metadata_options {
-    http_endpoint               = "enabled"
-    http_tokens                 = "required"
-    http_put_response_hop_limit = 1
-    instance_metadata_tags      = "enabled"
+    http_endpoint               = var.launch_template_settings["http_endpoint"]
+    http_tokens                 = var.launch_template_settings["http_tokens"]
+    http_put_response_hop_limit = var.launch_template_settings["http_put_response_hop_limit"]
+    instance_metadata_tags      = var.launch_template_settings["instance_metadata_tags"]
   }
 
   network_interfaces {
-    associate_public_ip_address = var.public
-    security_groups             = var.security_group_ids
+    associate_public_ip_address = var.asg_settings.public
+    security_groups             = var.asg_settings.security_group_ids
   }
 
   iam_instance_profile {
-    name = aws_iam_instance_profile.this.name
+    name = aws_iam_instance_profile.ecs_instance.name
   }
 
   monitoring {
-    enabled = true
+    enabled = var.launch_template_settings["monitoring_enabled"]
   }
 
   dynamic "block_device_mappings" {
-    for_each = var.ebs_disks
+    for_each = var.asg_settings.ebs_disks
     content {
       device_name = block_device_mappings.key
 
@@ -134,7 +134,7 @@ resource "aws_launch_template" "this" {
         delete_on_termination = block_device_mappings.value.delete_on_termination
         volume_size           = block_device_mappings.value.volume_size
         volume_type           = "gp3"
-        snapshot_id           = var.use_snapshot ? var.snapshot_id : null
+        snapshot_id           = var.asg_settings.use_snapshot ? var.asg_settings.snapshot_id : null
       }
     }
   }
@@ -201,7 +201,7 @@ resource "aws_iam_role" "ecs_instance" {
   }
 }
 
-resource "aws_iam_instance_profile" "this" {
+resource "aws_iam_instance_profile" "ecs_instance" {
   name = "${var.cluster_name}-Ec2InstanceRole-profile"
   role = aws_iam_role.ecs_instance.name
 

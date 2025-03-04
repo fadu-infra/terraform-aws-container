@@ -180,95 +180,108 @@ variable "task_exec_iam_statements" {
 # Auto Scaling Group
 ################################################################################
 
-variable "asg_max_size" {
-  description = "(Optional)The maximum size the auto scaling group (measured in EC2 instances)."
-  type        = number
-  default     = 10
-
-  validation {
-    condition     = var.asg_max_size >= 0
-    error_message = "ASG max size must be a non-negative number."
+variable "asg_settings" {
+  description = <<-EOT
+    Settings for the Auto Scaling Group:
+    - `max_size`: (Required) The maximum size of the Auto Scaling Group.
+    - `min_size`: (Required) The minimum size of the Auto Scaling Group.
+    - `desired_capacity_type`: (Required) The type of desired capacity, e.g., "units".
+    - `protect_from_scale_in`: (Required) Whether to protect instances from scale-in.
+    - `min_healthy_percentage`: (Required) The minimum healthy percentage of instances.
+    - `instance_warmup`: (Required) The time, in seconds, that instances need to warm up.
+    - `checkpoint_delay`: (Required) The delay, in seconds, for checkpointing.
+    - `instance_types`: (Required) A map of instance types and their weights.
+    - `lifecycle_hooks`: (Optional) A list of lifecycle hooks with configurations.
+    - `on_demand_base_capacity`: (Required) The base capacity for on-demand instances.
+    - `spot`: (Required) Whether to use spot instances.
+    - `subnet_ids`: (Required) A list of subnet IDs for the Auto Scaling Group.
+    - `security_group_ids`: (Required) A list of security group IDs.
+    - `ebs_disks`: (Optional) A map of EBS disk configurations.
+    - `use_snapshot`: (Required) Whether to use a snapshot for the instances.
+    - `snapshot_id`: (Optional) The ID of the snapshot to use.
+    - `public`: (Required) Whether the instances should have public IPs.
+    - `ami_id`: (Optional) The ID of the AMI to use for the instances.
+    - `user_data`: (Optional) A list of shell scripts to be executed at EC2 instance start.
+  EOT
+  type = object({
+    max_size               = number
+    min_size               = number
+    desired_capacity_type  = string
+    protect_from_scale_in  = bool
+    min_healthy_percentage = number
+    instance_warmup        = number
+    checkpoint_delay       = number
+    instance_types         = map(number)
+    lifecycle_hooks = list(object({
+      name                    = string
+      lifecycle_transition    = string
+      default_result          = optional(string)
+      heartbeat_timeout       = optional(number)
+      role_arn                = optional(string)
+      notification_target_arn = optional(string)
+      notification_metadata   = optional(string)
+    }))
+    tags                    = map(string)
+    on_demand_base_capacity = number
+    spot                    = bool
+    subnet_ids              = list(string)
+    security_group_ids      = list(string)
+    ebs_disks = map(object({
+      volume_size           = optional(number)
+      delete_on_termination = optional(bool)
+    }))
+    use_snapshot = bool
+    snapshot_id  = string
+    public       = bool
+    ami_id       = string
+    user_data    = optional(list(string))
+  })
+  default = {
+    max_size                = 10
+    min_size                = 0
+    desired_capacity_type   = "units"
+    protect_from_scale_in   = true
+    min_healthy_percentage  = 100
+    instance_warmup         = 300
+    checkpoint_delay        = 300
+    instance_types          = { "t3a.small" = 2 }
+    lifecycle_hooks         = []
+    tags                    = {}
+    on_demand_base_capacity = 0
+    spot                    = false
+    subnet_ids              = []
+    security_group_ids      = []
+    ebs_disks               = {}
+    use_snapshot            = false
+    snapshot_id             = ""
+    public                  = false
+    ami_id                  = ""
+    user_data               = []
   }
-}
-
-variable "asg_min_size" {
-  description = "(Optional) The minimum size the auto scaling group (measured in EC2 instances)."
-  type        = number
-  default     = 0
-  nullable    = false
 
   validation {
-    condition     = var.asg_min_size >= 0
-    error_message = "ASG min size must be a non-negative number."
-  }
-}
-
-variable "user_data" {
-  description = "(Optional) A shell script will be executed at once at EC2 instance start."
-  type        = list(string)
-  default     = []
-}
-
-variable "spot" {
-  description = "(Optional) Choose should we use spot instances or on-demand to populate ECS cluster."
-  type        = bool
-  default     = false
-}
-
-variable "protect_from_scale_in" {
-  description = "(Optional) The autoscaling group will not select instances with this setting for termination during scale in events."
-  type        = bool
-  default     = true
-}
-
-variable "on_demand_base_capacity" {
-  description = "(Optional) The minimum number of on-demand EC2 instances."
-  type        = number
-  default     = 0
-
-  validation {
-    condition     = var.on_demand_base_capacity >= 0
-    error_message = "The on_demand_base_capacity value must be a non-negative number."
-  }
-}
-
-variable "subnet_ids" {
-  description = "(Required) A list of subnet IDs."
-  type        = list(string)
-  nullable    = false
-
-  validation {
-    condition     = length(var.subnet_ids) > 0
+    condition     = length(var.asg_settings.subnet_ids) > 0
     error_message = "At least one subnet ID must be provided."
   }
-}
 
-variable "lifecycle_hooks" {
-  description = <<EOF
-  (Optional) A list of lifecycle hook actions. See details at https://docs.aws.amazon.com/autoscaling/ec2/userguide/lifecycle-hooks.html.
-    (Required) `name` - The name of the lifecycle hook.
-    (Required) `lifecycle_transition` - The lifecycle transition.
-    (Optional) `default_result` - The default result of the lifecycle hook.
-    (Optional) `heartbeat_timeout` - The heartbeat timeout.
-    (Optional) `role_arn` - The ARN of the IAM role.
-    (Optional) `notification_target_arn` - The ARN of the notification target.
-    (Optional) `notification_metadata` - The metadata of the notification.
-  EOF
-  type = list(object({
-    name                    = string
-    lifecycle_transition    = string
-    default_result          = optional(string)
-    heartbeat_timeout       = optional(number)
-    role_arn                = optional(string)
-    notification_target_arn = optional(string)
-    notification_metadata   = optional(string)
-  }))
-  default  = []
-  nullable = false
+  validation {
+    condition     = alltrue([for weight in values(var.asg_settings.instance_types) : weight > 0])
+    error_message = "All instance type weights must be positive numbers."
+  }
+
+  validation {
+    condition     = alltrue([for disk in var.asg_settings.ebs_disks : disk.volume_size == null || (disk.volume_size >= 1 && disk.volume_size <= 16384)])
+    error_message = "EBS volume size must be between 1 GB and 16384 GB."
+  }
+
+  validation {
+    condition     = var.asg_settings.on_demand_base_capacity >= 0
+    error_message = "The on_demand_base_capacity value must be a non-negative number."
+  }
 
   validation {
     condition = alltrue([
-      for hook in var.lifecycle_hooks :
+      for hook in var.asg_settings.lifecycle_hooks :
       length(hook.name) > 0 &&
       contains([
         "autoscaling:EC2_INSTANCE_LAUNCHING",
@@ -279,69 +292,21 @@ variable "lifecycle_hooks" {
   }
 }
 
-variable "instance_types" {
-  description = "(Optional) ECS node instance types. Maps of pairs like `type = weight`. Where weight gives the instance type a proportional weight to other instance types."
-  type        = map(number)
-  default = {
-    "t3a.small" = 2
-  }
-  nullable = false
-
-  validation {
-    condition     = alltrue([for weight in values(var.instance_types) : weight > 0])
-    error_message = "All instance type weights must be positive numbers."
-  }
-}
-
-variable "security_group_ids" {
-  description = "(Optional) Additional security group IDs. Default security group would be merged with the provided list."
-  type        = list(string)
-  default     = []
-  nullable    = false
-}
-
-variable "ebs_disks" {
+variable "launch_template_settings" {
   description = <<EOF
-  (Optional) A list of additional EBS disks.
-    (Optional) `volume_size` - The size of the EBS disk in GB. Range: 1-16384
-    (Optional) `delete_on_termination` - Whether the volume should be destroyed on instance termination
+  Settings for the Launch Template
+    http_endpoint               - HTTP endpoint for metadata options
+    http_tokens                 - HTTP tokens for metadata options
+    http_put_response_hop_limit - HTTP put response hop limit for metadata options
+    instance_metadata_tags      - Instance metadata tags option
+    monitoring_enabled          - Enable monitoring for the instance
   EOF
-  type = map(object({
-    volume_size           = optional(number)
-    delete_on_termination = optional(bool)
-  }))
-  default  = {}
-  nullable = false
-
-  validation {
-    condition     = alltrue([for disk in var.ebs_disks : disk.volume_size == null || (disk.volume_size >= 1 && disk.volume_size <= 16384)])
-    error_message = "EBS volume size must be between 1 GB and 16384 GB."
+  type        = map(any)
+  default = {
+    http_endpoint               = "enabled"
+    http_tokens                 = "required"
+    http_put_response_hop_limit = 1
+    instance_metadata_tags      = "enabled"
+    monitoring_enabled          = true
   }
-}
-
-variable "use_snapshot" {
-  description = "(Optional) Use snapshot to create ECS nodes."
-  type        = bool
-  default     = false
-  nullable    = false
-}
-
-variable "snapshot_id" {
-  description = "(Optional) The snapshot ID to use to create ECS nodes."
-  type        = string
-  default     = ""
-  nullable    = false
-}
-
-variable "public" {
-  description = "Boolean to determine if the instances should have a public IP address"
-  type        = bool
-  default     = false
-}
-
-variable "ami_id" {
-  description = "(Optional) The AMI ID to use for ECS nodes. If not provided, a default AMI will be used based on the architecture."
-  type        = string
-  default     = ""
-  nullable    = false
 }
