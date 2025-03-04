@@ -1,10 +1,10 @@
 # Auto Scaling Group
 resource "aws_autoscaling_group" "this" {
-  name                  = "${local.name}-asg"
-  max_size              = local.asg_max_size
-  min_size              = local.asg_min_size
-  vpc_zone_identifier   = local.subnet_ids
-  protect_from_scale_in = local.protect_from_scale_in
+  name                  = "${var.cluster_name}-asg"
+  max_size              = var.asg_max_size
+  min_size              = var.asg_min_size
+  vpc_zone_identifier   = var.subnet_ids
+  protect_from_scale_in = var.protect_from_scale_in
   desired_capacity_type = "units"
 
   instance_refresh {
@@ -19,8 +19,8 @@ resource "aws_autoscaling_group" "this" {
 
   mixed_instances_policy {
     instances_distribution {
-      on_demand_base_capacity                  = local.on_demand_base_capacity
-      on_demand_percentage_above_base_capacity = local.spot
+      on_demand_base_capacity                  = var.on_demand_base_capacity
+      on_demand_percentage_above_base_capacity = var.spot ? 0 : 100
     }
 
     launch_template {
@@ -30,7 +30,7 @@ resource "aws_autoscaling_group" "this" {
       }
 
       dynamic "override" {
-        for_each = local.instance_types
+        for_each = var.instance_types
 
         content {
           instance_type     = override.key
@@ -41,7 +41,7 @@ resource "aws_autoscaling_group" "this" {
   }
 
   dynamic "initial_lifecycle_hook" {
-    for_each = local.lifecycle_hooks
+    for_each = var.lifecycle_hooks
     iterator = hook
     content {
       name                    = hook.value.name
@@ -60,7 +60,7 @@ resource "aws_autoscaling_group" "this" {
   }
 
   dynamic "tag" {
-    for_each = merge(local.tags, {
+    for_each = merge(var.tags, {
       AmazonECSManaged = "true"
     })
     content {
@@ -80,7 +80,7 @@ data "cloudinit_config" "this" {
     content_type = "text/x-shellscript"
     content      = <<-EOT
       #!/bin/bash
-      echo ECS_CLUSTER="${local.name}" >> /etc/ecs/ecs.config
+      echo ECS_CLUSTER="${var.cluster_name}" >> /etc/ecs/ecs.config
       echo ECS_LOGLEVEL="debug" >> /etc/ecs/ecs.config
       echo ECS_ENABLE_CONTAINER_METADATA=true >> /etc/ecs/ecs.config
       echo ECS_ENABLE_SPOT_INSTANCE_DRAINING=${tostring(var.spot)} >> /etc/ecs/ecs.config
@@ -89,7 +89,7 @@ data "cloudinit_config" "this" {
   }
 
   dynamic "part" {
-    for_each = local.user_data
+    for_each = var.user_data
     content {
       content_type = "text/x-shellscript"
       content      = part.value
@@ -98,11 +98,11 @@ data "cloudinit_config" "this" {
 }
 
 resource "aws_launch_template" "this" {
-  name                   = "${local.name}-lt"
-  image_id               = local.ami_id
-  instance_type          = keys(local.instance_types)[0]
+  name                   = "${var.cluster_name}-lt"
+  image_id               = var.ami_id
+  instance_type          = keys(var.instance_types)[0]
   user_data              = data.cloudinit_config.this.rendered
-  tags                   = local.tags
+  tags                   = var.tags
   update_default_version = true
 
   metadata_options {
@@ -113,7 +113,7 @@ resource "aws_launch_template" "this" {
   }
 
   network_interfaces {
-    associate_public_ip_address = local.public
+    associate_public_ip_address = var.public
     security_groups             = var.security_group_ids
   }
 
@@ -126,7 +126,7 @@ resource "aws_launch_template" "this" {
   }
 
   dynamic "block_device_mappings" {
-    for_each = local.ebs_disks
+    for_each = var.ebs_disks
     content {
       device_name = block_device_mappings.key
 
@@ -141,11 +141,71 @@ resource "aws_launch_template" "this" {
 
   tag_specifications {
     resource_type = "instance"
-    tags          = local.tags
+    tags          = var.tags
   }
 
   tag_specifications {
     resource_type = "volume"
-    tags          = local.tags
+    tags          = var.tags
+  }
+}
+
+# ECS Instance Policies
+resource "aws_iam_policy" "ecs_instance_policy_ec2_role" {
+  name        = "${var.cluster_name}-EC2RolePolicy"
+  description = "Policy for EC2 role in ECS cluster"
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action   = "ec2:Describe*",
+        Effect   = "Allow",
+        Resource = "*"
+      },
+      {
+        Action   = "ssm:*",
+        Effect   = "Allow",
+        Resource = "*"
+      },
+      {
+        Action   = "logs:*",
+        Effect   = "Allow",
+        Resource = "*"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "ecs_instance_policy_attachment" {
+  role       = aws_iam_role.ecs_instance.name
+  policy_arn = aws_iam_policy.ecs_instance_policy_ec2_role.arn
+}
+
+resource "aws_iam_role" "ecs_instance" {
+  name        = "${var.cluster_name}-Ec2InstanceRole"
+  description = "Allows EC2 instances to call AWS services on your behalf"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Action = "sts:AssumeRole"
+      Effect = "Allow"
+      Principal = {
+        Service = "ec2.amazonaws.com"
+      }
+    }]
+  })
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+resource "aws_iam_instance_profile" "this" {
+  name = "${var.cluster_name}-Ec2InstanceRole-profile"
+  role = aws_iam_role.ecs_instance.name
+
+  lifecycle {
+    create_before_destroy = true
   }
 }
