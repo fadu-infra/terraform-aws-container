@@ -1,5 +1,7 @@
 # Auto Scaling Group
 resource "aws_autoscaling_group" "this" {
+  count = length(var.autoscaling_capacity_providers) > 0 ? 1 : 0
+
   name                  = "${var.cluster_name}-asg"
   max_size              = var.asg_settings.max_size
   min_size              = var.asg_settings.min_size
@@ -25,8 +27,8 @@ resource "aws_autoscaling_group" "this" {
 
     launch_template {
       launch_template_specification {
-        launch_template_id = aws_launch_template.this.id
-        version            = aws_launch_template.this.latest_version
+        launch_template_id = aws_launch_template.this[0].id
+        version            = aws_launch_template.this[0].latest_version
       }
 
       dynamic "override" {
@@ -98,6 +100,8 @@ data "cloudinit_config" "this" {
 }
 
 resource "aws_launch_template" "this" {
+  count = length(var.autoscaling_capacity_providers) > 0 ? 1 : 0
+
   name                   = "${var.cluster_name}-lt"
   image_id               = var.asg_settings.ami_id
   instance_type          = keys(var.asg_settings.instance_types)[0]
@@ -118,7 +122,7 @@ resource "aws_launch_template" "this" {
   }
 
   iam_instance_profile {
-    name = aws_iam_instance_profile.ecs_instance.name
+    name = aws_iam_instance_profile.ecs_instance[0].name
   }
 
   monitoring {
@@ -152,6 +156,8 @@ resource "aws_launch_template" "this" {
 
 # ECS Instance Policies
 resource "aws_iam_policy" "ecs_instance_policy_ec2_role" {
+  count = length(var.autoscaling_capacity_providers) > 0 ? 1 : 0
+
   name        = "${var.cluster_name}-EC2RolePolicy"
   description = "Policy for EC2 role in ECS cluster"
   policy = jsonencode({
@@ -177,11 +183,15 @@ resource "aws_iam_policy" "ecs_instance_policy_ec2_role" {
 }
 
 resource "aws_iam_role_policy_attachment" "ecs_instance_policy_attachment" {
-  role       = aws_iam_role.ecs_instance.name
-  policy_arn = aws_iam_policy.ecs_instance_policy_ec2_role.arn
+  count = length(var.autoscaling_capacity_providers) > 0 ? 1 : 0
+
+  role       = aws_iam_role.ecs_instance[0].name
+  policy_arn = aws_iam_policy.ecs_instance_policy_ec2_role[0].arn
 }
 
 resource "aws_iam_role" "ecs_instance" {
+  count = length(var.autoscaling_capacity_providers) > 0 ? 1 : 0
+
   name        = "${var.cluster_name}-Ec2InstanceRole"
   description = "Allows EC2 instances to call AWS services on your behalf"
 
@@ -202,8 +212,10 @@ resource "aws_iam_role" "ecs_instance" {
 }
 
 resource "aws_iam_instance_profile" "ecs_instance" {
+  count = length(var.autoscaling_capacity_providers) > 0 ? 1 : 0
+
   name = "${var.cluster_name}-Ec2InstanceRole-profile"
-  role = aws_iam_role.ecs_instance.name
+  role = aws_iam_role.ecs_instance[0].name
 
   lifecycle {
     create_before_destroy = true
