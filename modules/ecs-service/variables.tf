@@ -2,18 +2,21 @@ variable "create" {
   description = "(Optional) Determines whether resources will be created (affects all resources)"
   type        = bool
   default     = true
+  nullable    = false
 }
 
 variable "create_service" {
   description = "(Optional) Determines whether service resource will be created (set to `false` in case you want to create task definition only)"
   type        = bool
   default     = true
+  nullable    = false
 }
 
 variable "tags" {
   description = "(Optional) A map of tags to add to all resources"
   type        = map(string)
   default     = {}
+  nullable    = false
 }
 
 variable "module_tags_enabled" {
@@ -69,6 +72,7 @@ variable "cluster_arn" {
   description = "(Optional) ARN of the ECS cluster where the resources will be provisioned"
   type        = string
   default     = ""
+  nullable    = false
 }
 
 variable "deployment_setting" {
@@ -80,10 +84,11 @@ variable "deployment_setting" {
   EOT
 
   type = object({
-    circuit_breaker         = any
-    maximum_percent         = number
-    minimum_healthy_percent = number
+    circuit_breaker         = optional(any, {})
+    maximum_percent         = optional(number, 200)
+    minimum_healthy_percent = optional(number, 66)
   })
+  nullable = false
   default = {
     circuit_breaker         = {}
     maximum_percent         = 200
@@ -118,7 +123,8 @@ variable "force_new_deployment" {
 variable "health_check_grace_period_seconds" {
   description = "(Optional) Seconds to ignore failing load balancer health checks on newly instantiated tasks to prevent premature shutdown, up to 2147483647. Only valid for services configured to use load balancers"
   type        = number
-  default     = null
+  default     = 0
+  nullable    = false
 
   validation {
     condition     = var.health_check_grace_period_seconds == null || var.health_check_grace_period_seconds <= 2147483647
@@ -141,7 +147,8 @@ variable "load_balancer" {
 variable "name" {
   description = "(Required) Name of the service (up to 255 letters, numbers, hyphens, and underscores)"
   type        = string
-  default     = null
+  default     = ""
+  nullable    = false
 }
 
 variable "network_configuration" {
@@ -153,10 +160,11 @@ variable "network_configuration" {
   EOT
 
   type = object({
-    assign_public_ip   = bool
-    security_group_ids = list(string)
-    subnet_ids         = list(string)
+    assign_public_ip   = optional(bool, false)
+    security_group_ids = optional(list(string), [])
+    subnet_ids         = optional(list(string), [])
   })
+  nullable = false
   default = {
     assign_public_ip   = false
     security_group_ids = []
@@ -201,12 +209,14 @@ variable "platform_version" {
   description = "(Optional) Platform version on which to run your service. Only applicable for `launch_type` set to `FARGATE`. Defaults to `LATEST`"
   type        = string
   default     = null
+  nullable    = true
 }
 
 variable "propagate_tags" {
   description = "(Optional) Specifies whether to propagate the tags from the task definition or the service to the tasks. The valid values are `SERVICE` and `TASK_DEFINITION`"
   type        = string
   default     = null
+  nullable    = true
 }
 
 variable "scheduling_strategy" {
@@ -253,7 +263,8 @@ variable "timeouts" {
     update = optional(string, "20m")
     delete = optional(string, "20m")
   })
-  default = {}
+  nullable = false
+  default  = {}
 }
 
 variable "triggers" {
@@ -266,6 +277,7 @@ variable "wait_for_steady_state" {
   description = "(Optional) If true, Terraform will wait for the service to reach a steady state before continuing. Default is `false`"
   type        = bool
   default     = null
+  nullable    = true
 }
 
 variable "service_tags" {
@@ -467,9 +479,10 @@ variable "runtime_platform" {
     - `cpu_architecture`: (Optional) Must be set to either `X86_64` or `ARM64`.
   EOT
   type = object({
-    operating_system_family = optional(string)
-    cpu_architecture        = optional(string)
+    operating_system_family = optional(string, "LINUX")
+    cpu_architecture        = optional(string, "X86_64")
   })
+  nullable = false
   default = {
     operating_system_family = "LINUX"
     cpu_architecture        = "X86_64"
@@ -533,7 +546,6 @@ variable "task_tags" {
 
 ################################################################################
 # Task Execution - IAM Role
-# https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_execution_IAM_role.html
 ################################################################################
 
 variable "create_task_exec_iam_role" {
@@ -552,6 +564,7 @@ variable "task_exec_iam_role_name" {
   description = "(Optional) Name to use on IAM role created"
   type        = string
   default     = null
+  nullable    = true
 }
 
 variable "task_exec_iam_role_use_name_prefix" {
@@ -564,18 +577,21 @@ variable "task_exec_iam_role_path" {
   description = "(Optional) IAM role path"
   type        = string
   default     = null
+  nullable    = true
 }
 
 variable "task_exec_iam_role_description" {
   description = "(Optional) Description of the role"
   type        = string
   default     = null
+  nullable    = true
 }
 
 variable "task_exec_iam_role_permissions_boundary" {
   description = "(Optional) ARN of the policy that is used to set the permissions boundary for the IAM role"
   type        = string
   default     = null
+  nullable    = true
 }
 
 variable "task_exec_iam_role_tags" {
@@ -628,7 +644,6 @@ variable "task_exec_iam_policy_path" {
 
 ################################################################################
 # Tasks - IAM role
-# https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-iam-roles.html
 ################################################################################
 
 variable "create_tasks_iam_role" {

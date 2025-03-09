@@ -2,6 +2,7 @@ variable "operating_system_family" {
   description = "(Optional) The OS family for task"
   type        = string
   default     = "LINUX"
+  nullable    = false
 }
 
 ################################################################################
@@ -12,12 +13,14 @@ variable "command" {
   description = "The command that's passed to the container"
   type        = list(string)
   default     = []
+  nullable    = false
 }
 
 variable "cpu" {
   description = "(Optional) The number of cpu units to reserve for the container. This is optional for tasks using Fargate launch type and the total amount of `cpu` of all containers in a task will need to be lower than the task-level cpu value"
   type        = number
   default     = null
+  nullable    = true
 }
 
 variable "dependencies" {
@@ -33,6 +36,7 @@ variable "disable_networking" {
   description = "(Optional) When this parameter is true, networking is disabled within the container"
   type        = bool
   default     = null
+  nullable    = true
 }
 
 variable "dns_search_domains" {
@@ -93,6 +97,7 @@ variable "essential" {
   description = "(Optional) If the `essential` parameter of a container is marked as `true`, and that container fails or stops for any reason, all other containers that are part of the task are stopped"
   type        = bool
   default     = null
+  nullable    = true
 }
 
 variable "extra_hosts" {
@@ -133,18 +138,21 @@ variable "hostname" {
   description = "(Optional) The hostname to use for your container"
   type        = string
   default     = null
+  nullable    = true
 }
 
 variable "image" {
   description = "(Optional) The image used to start a container. This string is passed directly to the Docker daemon. By default, images in the Docker Hub registry are available. Other repositories are specified with either `repository-url/image:tag` or `repository-url/image@digest`"
   type        = string
   default     = null
+  nullable    = true
 }
 
 variable "interactive" {
   description = "(Optional) When this parameter is `true`, you can deploy containerized applications that require `stdin` or a `tty` to be allocated"
   type        = bool
   default     = false
+  nullable    = false
 }
 
 variable "links" {
@@ -199,6 +207,7 @@ variable "memory" {
   description = "(Optional) The amount (in MiB) of memory to present to the container. If your container attempts to exceed the memory specified here, the container is killed. The total amount of memory reserved for all containers within a task must be lower than the task `memory` value, if one is specified"
   type        = number
   default     = null
+  nullable    = true
 
   validation {
     condition     = var.memory == null || var.memory >= 6
@@ -210,6 +219,7 @@ variable "memory_reservation" {
   description = "(Optional) The soft limit (in MiB) of memory to reserve for the container. When system memory is under heavy contention, Docker attempts to keep the container memory to this soft limit. However, your container can consume more memory when it needs to, up to either the hard limit specified with the `memory` parameter (if applicable), or all of the available memory on the container instance"
   type        = number
   default     = null
+  nullable    = true
 
   validation {
     condition     = var.memory_reservation == null || var.memory_reservation >= 6
@@ -236,6 +246,7 @@ variable "name" {
   description = "(Optional) The name of a container. If you're linking multiple containers together in a task definition, the name of one container can be entered in the links of another container to connect the containers. Up to 255 letters (uppercase and lowercase), numbers, underscores, and hyphens are allowed"
   type        = string
   default     = null
+  nullable    = true
 }
 
 variable "port_mappings" {
@@ -355,6 +366,7 @@ variable "user" {
   description = "(Optional) The user to run as inside the container. Can be any of these formats: user, user:group, uid, uid:gid, user:gid, uid:group. The default (null) will use the container's configured `USER` directive or root if not set"
   type        = string
   default     = null
+  nullable    = true
 }
 
 variable "volumes_from" {
@@ -367,6 +379,7 @@ variable "working_directory" {
   description = "(Optional) The working directory to run commands inside the container"
   type        = string
   default     = null
+  nullable    = true
 }
 
 ################################################################################
@@ -395,7 +408,7 @@ variable "cloudwatch_log_group_name" {
   description = "(Optional) Custom name of CloudWatch log group for a service associated with the container definition"
   type        = string
   default     = ""
-  nullable    = false
+  nullable    = true
 }
 
 variable "cloudwatch_log_group_use_name_prefix" {
@@ -414,6 +427,7 @@ variable "cloudwatch_log_group_kms_key_id" {
   description = "(Optional) If a KMS Key ARN is set, this key will be used to encrypt the corresponding log group. Please be sure that the KMS Key has an appropriate key policy (https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/encrypt-log-data-kms.html)"
   type        = string
   default     = null
+  nullable    = true
 }
 
 variable "tags" {
