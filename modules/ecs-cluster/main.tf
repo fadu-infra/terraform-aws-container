@@ -3,6 +3,15 @@
 ################################################################################
 
 locals {
+  metadata = {
+    package = "terraform-aws-container"
+    module  = basename(path.module)
+    name    = var.cluster_name
+  }
+  module_tags = var.module_tags_enabled ? {
+    "module.terraform.io/name" = "${local.metadata.package}/${local.metadata.module}"
+  } : {}
+
   execute_command_configuration = {
     logging = "OVERRIDE"
     log_configuration = {
@@ -87,7 +96,13 @@ resource "aws_ecs_cluster" "this" {
     }
   }
 
-  tags = var.tags
+  tags = merge(
+    {
+      "Name" = local.metadata.name
+    },
+    var.tags,
+    local.module_tags
+  )
 }
 
 ################################################################################
@@ -100,7 +115,14 @@ resource "aws_cloudwatch_log_group" "this" {
   retention_in_days = var.cloudwatch_log_group_retention_in_days
   kms_key_id        = var.cloudwatch_log_group_kms_key_id
 
-  tags = merge(var.tags, var.cloudwatch_log_group_tags)
+  tags = merge(
+    {
+      "Name" = local.metadata.name
+    },
+    var.cloudwatch_log_group_tags,
+    var.tags,
+    local.module_tags
+  )
 }
 
 ################################################################################
@@ -167,7 +189,14 @@ resource "aws_ecs_capacity_provider" "this" {
     }
   }
 
-  tags = merge(var.tags, try(each.value.tags, {}))
+  tags = merge(
+    {
+      "Name" = local.metadata.name
+    },
+    try(each.value.tags, {}),
+    var.tags,
+    local.module_tags
+  )
 }
 
 ################################################################################
@@ -208,7 +237,14 @@ resource "aws_iam_role" "task_exec" {
   permissions_boundary  = var.task_exec_iam_role_permissions_boundary
   force_detach_policies = true
 
-  tags = merge(var.tags, var.task_exec_iam_role_tags)
+  tags = merge(
+    {
+      "Name" = local.metadata.name
+    },
+    var.task_exec_iam_role_tags,
+    var.tags,
+    local.module_tags
+  )
 }
 
 resource "aws_iam_role_policy_attachment" "task_exec_additional" {
@@ -313,7 +349,14 @@ resource "aws_iam_policy" "task_exec" {
   description = coalesce(var.task_exec_iam_role_description, "Task execution role IAM policy")
   policy      = data.aws_iam_policy_document.task_exec[0].json
 
-  tags = merge(var.tags, var.task_exec_iam_role_tags)
+  tags = merge(
+    {
+      "Name" = local.metadata.name
+    },
+    var.task_exec_iam_role_tags,
+    var.tags,
+    local.module_tags
+  )
 }
 
 resource "aws_iam_role_policy_attachment" "task_exec" {

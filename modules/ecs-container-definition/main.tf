@@ -1,6 +1,15 @@
 data "aws_region" "current" {}
 
 locals {
+  metadata = {
+    package = "terraform-aws-container"
+    module  = basename(path.module)
+    name    = var.name
+  }
+  module_tags = var.module_tags_enabled ? {
+    "module.terraform.io/name" = "${local.metadata.package}/${local.metadata.module}"
+  } : {}
+
   is_not_windows = contains(["LINUX"], var.operating_system_family)
 
   log_group_name = try(coalesce(var.cloudwatch_log_group_name, "/aws/ecs/${var.service}/${var.name}"), "/aws/ecs/${var.service}/default")
@@ -69,15 +78,6 @@ locals {
 
   # Strip out all null values, ECS API will provide defaults in place of null/empty values
   container_definition = { for k, v in local.definition : k => v if v != null }
-
-  metadata = {
-    package = "terraform-aws-container"
-    module  = basename(path.module)
-    name    = var.name
-  }
-  module_tags = var.module_tags_enabled ? {
-    "module.terraform.io/name" = "${local.metadata.package}/${local.metadata.module}"
-  } : {}
 }
 
 resource "aws_cloudwatch_log_group" "this" {

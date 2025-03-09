@@ -62,9 +62,16 @@ resource "aws_autoscaling_group" "this" {
   }
 
   dynamic "tag" {
-    for_each = merge(var.tags, {
-      AmazonECSManaged = "true"
-    })
+    for_each = merge(
+      {
+        "Name" = var.cluster_name
+      },
+      var.tags,
+      local.module_tags,
+      {
+        AmazonECSManaged = "true"
+      }
+    )
     content {
       key                 = tag.key
       value               = tag.value
