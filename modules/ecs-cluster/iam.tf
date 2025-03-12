@@ -4,7 +4,7 @@
 ################################################################################
 
 locals {
-  task_exec_iam_role_name = try(coalesce(var.task_exec_iam_role_name, var.cluster_name), "")
+  task_exec_iam_role_name = try(coalesce(var.task_exec_iam_role_name, var.name), "")
 
   create_task_exec_iam_role = var.create && var.create_task_exec_iam_role
   create_task_exec_policy   = local.create_task_exec_iam_role && var.create_task_exec_policy
@@ -30,7 +30,7 @@ resource "aws_iam_role" "task_exec" {
   name        = var.task_exec_iam_role_use_name_prefix ? null : local.task_exec_iam_role_name
   name_prefix = var.task_exec_iam_role_use_name_prefix ? "${local.task_exec_iam_role_name}-" : null
   path        = var.task_exec_iam_role_path
-  description = coalesce(var.task_exec_iam_role_description, "Task execution role for ${var.cluster_name}")
+  description = coalesce(var.task_exec_iam_role_description, "Task execution role for ${var.name}")
 
   assume_role_policy    = data.aws_iam_policy_document.task_exec_assume[0].json
   permissions_boundary  = var.task_exec_iam_role_permissions_boundary

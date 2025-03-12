@@ -2,7 +2,7 @@
 resource "aws_autoscaling_group" "this" {
   count = length(var.autoscaling_capacity_providers) > 0 ? 1 : 0
 
-  name                  = "${var.cluster_name}-asg"
+  name                  = "${var.name}-asg"
   max_size              = var.asg_settings.max_size
   min_size              = var.asg_settings.min_size
   vpc_zone_identifier   = var.asg_settings.subnet_ids
@@ -64,7 +64,7 @@ resource "aws_autoscaling_group" "this" {
   dynamic "tag" {
     for_each = merge(
       {
-        "Name" = var.cluster_name
+        "Name" = var.name
       },
       var.tags,
       local.module_tags,
@@ -89,7 +89,7 @@ data "cloudinit_config" "this" {
     content_type = "text/x-shellscript"
     content      = <<-EOT
       #!/bin/bash
-      echo ECS_CLUSTER="${var.cluster_name}" >> /etc/ecs/ecs.config
+      echo ECS_CLUSTER="${var.name}" >> /etc/ecs/ecs.config
       echo ECS_LOGLEVEL="debug" >> /etc/ecs/ecs.config
       echo ECS_ENABLE_CONTAINER_METADATA=true >> /etc/ecs/ecs.config
       echo ECS_ENABLE_SPOT_INSTANCE_DRAINING=${tostring(var.asg_settings.spot)} >> /etc/ecs/ecs.config
@@ -109,7 +109,7 @@ data "cloudinit_config" "this" {
 resource "aws_launch_template" "this" {
   count = length(var.autoscaling_capacity_providers) > 0 ? 1 : 0
 
-  name                   = "${var.cluster_name}-lt"
+  name                   = "${var.name}-lt"
   image_id               = var.asg_settings.ami_id
   instance_type          = keys(var.asg_settings.instance_types)[0]
   user_data              = data.cloudinit_config.this.rendered
@@ -165,7 +165,7 @@ resource "aws_launch_template" "this" {
 resource "aws_iam_policy" "ecs_instance_policy_ec2_role" {
   count = length(var.autoscaling_capacity_providers) > 0 ? 1 : 0
 
-  name        = "${var.cluster_name}-EC2RolePolicy"
+  name        = "${var.name}-EC2RolePolicy"
   description = "Policy for EC2 role in ECS cluster"
   policy = jsonencode({
     Version = "2012-10-17"
@@ -199,7 +199,7 @@ resource "aws_iam_role_policy_attachment" "ecs_instance_policy_attachment" {
 resource "aws_iam_role" "ecs_instance" {
   count = length(var.autoscaling_capacity_providers) > 0 ? 1 : 0
 
-  name        = "${var.cluster_name}-Ec2InstanceRole"
+  name        = "${var.name}-Ec2InstanceRole"
   description = "Allows EC2 instances to call AWS services on your behalf"
 
   assume_role_policy = jsonencode({
@@ -221,7 +221,7 @@ resource "aws_iam_role" "ecs_instance" {
 resource "aws_iam_instance_profile" "ecs_instance" {
   count = length(var.autoscaling_capacity_providers) > 0 ? 1 : 0
 
-  name = "${var.cluster_name}-Ec2InstanceRole-profile"
+  name = "${var.name}-Ec2InstanceRole-profile"
   role = aws_iam_role.ecs_instance[0].name
 
   lifecycle {

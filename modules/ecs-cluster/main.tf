@@ -5,12 +5,14 @@
 locals {
   metadata = {
     package = "terraform-aws-container"
+    version = trimspace(file("${path.module}/../../VERSION"))
     module  = basename(path.module)
-    name    = var.cluster_name
+    name    = var.name
   }
-  module_tags = var.module_tags_enabled ? {
-    "module.terraform.io/name" = "${local.metadata.package}/${local.metadata.module}"
-  } : {}
+  module_tags = {
+    "module.terraform.io/name"    = "${local.metadata.package}/${local.metadata.module}"
+    "module.terraform.io/version" = local.metadata.version
+  }
 
   execute_command_configuration = {
     logging = "OVERRIDE"
@@ -23,7 +25,7 @@ locals {
 resource "aws_ecs_cluster" "this" {
   count = var.create ? 1 : 0
 
-  name = var.cluster_name
+  name = var.name
 
   dynamic "configuration" {
     for_each = var.create_cloudwatch_log_group ? [var.cluster_configuration] : []
@@ -98,10 +100,10 @@ resource "aws_ecs_cluster" "this" {
 
   tags = merge(
     {
-      "Name" = local.metadata.name
+      "Name" = var.name
     },
+    local.module_tags,
     var.tags,
-    local.module_tags
   )
 }
 
@@ -111,7 +113,7 @@ resource "aws_ecs_cluster" "this" {
 resource "aws_cloudwatch_log_group" "this" {
   count = var.create && var.create_cloudwatch_log_group ? 1 : 0
 
-  name              = try(coalesce(var.cloudwatch_log_group_name, "/aws/ecs/${var.cluster_name}"), "")
+  name              = try(coalesce(var.cloudwatch_log_group_name, "/aws/ecs/${var.name}"), "")
   retention_in_days = var.cloudwatch_log_group_retention_in_days
   kms_key_id        = var.cloudwatch_log_group_kms_key_id
 

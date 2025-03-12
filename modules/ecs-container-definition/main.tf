@@ -3,12 +3,14 @@ data "aws_region" "current" {}
 locals {
   metadata = {
     package = "terraform-aws-container"
+    version = trimspace(file("${path.module}/../../VERSION"))
     module  = basename(path.module)
     name    = var.name
   }
-  module_tags = var.module_tags_enabled ? {
-    "module.terraform.io/name" = "${local.metadata.package}/${local.metadata.module}"
-  } : {}
+  module_tags = {
+    "module.terraform.io/name"    = "${local.metadata.package}/${local.metadata.module}"
+    "module.terraform.io/version" = local.metadata.version
+  }
 
   is_not_windows = contains(["LINUX"], var.operating_system_family)
 
