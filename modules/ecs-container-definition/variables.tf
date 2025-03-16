@@ -435,9 +435,3 @@ variable "tags" {
   type        = map(string)
   default     = {}
 }
-
-variable "module_tags_enabled" {
-  description = "(Optional) Whether to create AWS Resource Tags for the module informations."
-  type        = bool
-  default     = true
-}
