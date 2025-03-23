@@ -31,8 +31,15 @@ variable "cluster_configuration" {
 }
 
 variable "cluster_settings" {
-  description = "List of configuration block(s) with cluster settings. For example, this can be used to enable CloudWatch Container Insights for a cluster"
-  type        = any
+  description = <<-EOT
+  (Optional) List of configuration block(s) with cluster settings. For example, this can be used to enable CloudWatch Container Insights for a cluster
+  - `name`: (Required) The name of the setting to change. Available settings are containerInsights
+  - `value`: (Required) The value to assign to the setting. Available values are enhanced and enabled and disabled
+  EOT
+  type = list(object({
+    name  = string
+    value = string
+  }))
   default = [
     {
       name  = "containerInsights"
@@ -40,6 +47,15 @@ variable "cluster_settings" {
     }
   ]
   nullable = false
+
+  validation {
+    condition = alltrue([
+      for setting in var.cluster_settings :
+      setting.name == "containerInsights" &&
+      contains(["enabled", "disabled", "enhanced"], setting.value)
+    ])
+    error_message = "Cluster settings only support 'containerInsights' for name and values must be one of: 'enabled', 'disabled', or 'enhanced'."
+  }
 }
 
 variable "cluster_service_connect_defaults" {
@@ -106,11 +122,68 @@ variable "fargate_capacity_providers" {
   nullable    = false
 }
 
-variable "autoscaling_capacity_providers" {
-  description = "Map of autoscaling capacity provider definitions to create for the cluster"
-  type        = any
-  default     = {}
-  nullable    = false
+variable "autoscaling_capacity_provider" {
+  description = <<-EOT
+    Autoscaling capacity provider definition with the following settings:
+    - `name` - (Optional) Name of the capacity provider
+    - `managed_termination_protection` - (Optional) Managed termination protection setting. Only valid when managed_scaling is configured ('ENABLED' or 'DISABLED')
+    - `managed_draining` - (Optional) Enables or disables a graceful shutdown of instances without disturbing workloads. ('ENABLED' or 'DISABLED') The default value is ENABLED when a capacity provider is created.
+    - `managed_scaling` - (Optional) Object containing managed scaling settings:
+      - `instance_warmup_period` - (Optional) Period of time, in seconds, to wait before considering a newly launched instance ready. default: 300
+      - `maximum_scaling_step_size` - (Optional) Maximum step adjustment size (1-10000)
+      - `minimum_scaling_step_size` - (Optional) Minimum step adjustment size (1-10000)
+      - `status` - (Optional) Status of managed scaling ('ENABLED' or 'ENABLED')
+      - `target_capacity` - (Optional) Target capacity percentage (1-100)
+    Note: When managed termination protection is enabled, managed scaling must also be configured.
+  EOT
+  type = object({
+    name                           = optional(string)
+    managed_termination_protection = optional(string)
+    managed_draining               = optional(string)
+    managed_scaling = optional(object({
+      instance_warmup_period    = optional(number)
+      maximum_scaling_step_size = optional(number)
+      minimum_scaling_step_size = optional(number)
+      status                    = optional(string)
+      target_capacity           = optional(number)
+    }))
+  })
+  default  = {}
+  nullable = false
+
+  validation {
+    condition = alltrue([
+      !can(var.autoscaling_capacity_provider.managed_termination_protection) ||
+      contains(["ENABLED", "DISABLED"], var.autoscaling_capacity_provider.managed_termination_protection),
+
+      !can(var.autoscaling_capacity_provider.managed_draining) ||
+      contains(["ENABLED", "DISABLED"], var.autoscaling_capacity_provider.managed_draining),
+
+      !can(var.autoscaling_capacity_provider.managed_scaling) || alltrue([
+        !can(var.autoscaling_capacity_provider.managed_scaling.status) ||
+        contains(["ENABLED", "DISABLED"], var.autoscaling_capacity_provider.managed_scaling.status),
+
+        !can(var.autoscaling_capacity_provider.managed_scaling.target_capacity) ||
+        (
+          var.autoscaling_capacity_provider.managed_scaling.target_capacity >= 1 &&
+          var.autoscaling_capacity_provider.managed_scaling.target_capacity <= 100
+        ),
+
+        !can(var.autoscaling_capacity_provider.managed_scaling.maximum_scaling_step_size) ||
+        (
+          var.autoscaling_capacity_provider.managed_scaling.maximum_scaling_step_size >= 1 &&
+          var.autoscaling_capacity_provider.managed_scaling.maximum_scaling_step_size <= 10000
+        ),
+
+        !can(var.autoscaling_capacity_provider.managed_scaling.minimum_scaling_step_size) ||
+        (
+          var.autoscaling_capacity_provider.managed_scaling.minimum_scaling_step_size >= 1 &&
+          var.autoscaling_capacity_provider.managed_scaling.minimum_scaling_step_size <= 10000
+        )
+      ])
+    ])
+    error_message = "Invalid configuration. Check: managed_termination_protection and managed_draining must be 'ENABLED' or 'DISABLED', managed_scaling.status must be 'ENABLED' or 'DISABLED', target_capacity must be between 1 and 100, scaling step sizes must be between 1 and 10000"
+  }
 }
 
 ################################################################################

@@ -1,6 +1,6 @@
 # Auto Scaling Group
 resource "aws_autoscaling_group" "this" {
-  count = length(var.autoscaling_capacity_providers) > 0 ? 1 : 0
+  count = var.autoscaling_capacity_provider != null ? 1 : 0
 
   name                  = "${var.name}-asg"
   max_size              = var.asg_settings.max_size
@@ -107,7 +107,7 @@ data "cloudinit_config" "this" {
 }
 
 resource "aws_launch_template" "this" {
-  count = length(var.autoscaling_capacity_providers) > 0 ? 1 : 0
+  count = var.autoscaling_capacity_provider != null ? 1 : 0
 
   name                   = "${var.name}-lt"
   image_id               = var.asg_settings.ami_id
@@ -163,7 +163,7 @@ resource "aws_launch_template" "this" {
 
 # ECS Instance Policies
 resource "aws_iam_policy" "ecs_instance_policy_ec2_role" {
-  count = length(var.autoscaling_capacity_providers) > 0 ? 1 : 0
+  count = var.autoscaling_capacity_provider != null ? 1 : 0
 
   name        = "${var.name}-EC2RolePolicy"
   description = "Policy for EC2 role in ECS cluster"
@@ -190,14 +190,14 @@ resource "aws_iam_policy" "ecs_instance_policy_ec2_role" {
 }
 
 resource "aws_iam_role_policy_attachment" "ecs_instance_policy_attachment" {
-  count = length(var.autoscaling_capacity_providers) > 0 ? 1 : 0
+  count = var.autoscaling_capacity_provider != null ? 1 : 0
 
   role       = aws_iam_role.ecs_instance[0].name
   policy_arn = aws_iam_policy.ecs_instance_policy_ec2_role[0].arn
 }
 
 resource "aws_iam_role" "ecs_instance" {
-  count = length(var.autoscaling_capacity_providers) > 0 ? 1 : 0
+  count = var.autoscaling_capacity_provider != null ? 1 : 0
 
   name        = "${var.name}-Ec2InstanceRole"
   description = "Allows EC2 instances to call AWS services on your behalf"
@@ -219,7 +219,7 @@ resource "aws_iam_role" "ecs_instance" {
 }
 
 resource "aws_iam_instance_profile" "ecs_instance" {
-  count = length(var.autoscaling_capacity_providers) > 0 ? 1 : 0
+  count = var.autoscaling_capacity_provider != null ? 1 : 0
 
   name = "${var.name}-Ec2InstanceRole-profile"
   role = aws_iam_role.ecs_instance[0].name

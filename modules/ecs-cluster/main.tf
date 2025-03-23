@@ -90,7 +90,7 @@ resource "aws_ecs_cluster" "this" {
   }
 
   dynamic "setting" {
-    for_each = flatten([var.cluster_settings])
+    for_each = var.cluster_settings
 
     content {
       name  = setting.value.name
@@ -134,17 +134,17 @@ resource "aws_cloudwatch_log_group" "this" {
 locals {
   default_capacity_providers = merge(
     { for k, v in var.fargate_capacity_providers : k => v if var.default_capacity_provider_use_fargate },
-    { for k, v in var.autoscaling_capacity_providers : k => v if !var.default_capacity_provider_use_fargate }
+    { for k, v in var.autoscaling_capacity_provider : k => v if !var.default_capacity_provider_use_fargate }
   )
 }
 
 resource "aws_ecs_cluster_capacity_providers" "this" {
-  count = var.create && length(merge(var.fargate_capacity_providers, var.autoscaling_capacity_providers)) > 0 ? 1 : 0
+  count = var.create && length(merge(var.fargate_capacity_providers, var.autoscaling_capacity_provider)) > 0 ? 1 : 0
 
   cluster_name = aws_ecs_cluster.this[0].name
   capacity_providers = distinct(concat(
     [for k, v in var.fargate_capacity_providers : try(v.name, k)],
-    [for k, v in var.autoscaling_capacity_providers : try(v.name, k)]
+    [for k, v in var.autoscaling_capacity_provider : try(v.name, k)]
   ))
 
   # https://docs.aws.amazon.com/AmazonECS/latest/developerguide/cluster-capacity-providers.html#capacity-providers-considerations
@@ -169,17 +169,17 @@ resource "aws_ecs_cluster_capacity_providers" "this" {
 ################################################################################
 
 resource "aws_ecs_capacity_provider" "this" {
-  for_each = { for k, v in var.autoscaling_capacity_providers : k => v if var.create }
+  count = var.create && length(var.autoscaling_capacity_provider) > 0 ? 1 : 0
 
-  name = try(each.value.name, each.key)
+  name = try(var.autoscaling_capacity_provider.name, "default-capacity-provider")
 
   auto_scaling_group_provider {
-    auto_scaling_group_arn = each.value.auto_scaling_group_arn
+    auto_scaling_group_arn = aws_autoscaling_group.this[0].arn
     # When you use managed termination protection, you must also use managed scaling otherwise managed termination protection won't work
-    managed_termination_protection = length(try([each.value.managed_scaling], [])) == 0 ? "DISABLED" : try(each.value.managed_termination_protection, null)
+    managed_termination_protection = try(var.autoscaling_capacity_provider.managed_termination_protection, "DISABLED")
 
     dynamic "managed_scaling" {
-      for_each = try([each.value.managed_scaling], [])
+      for_each = try([var.autoscaling_capacity_provider.managed_scaling], [])
 
       content {
         instance_warmup_period    = try(managed_scaling.value.instance_warmup_period, null)
@@ -195,7 +195,6 @@ resource "aws_ecs_capacity_provider" "this" {
     {
       "Name" = local.metadata.name
     },
-    try(each.value.tags, {}),
     var.tags,
     local.module_tags
   )
