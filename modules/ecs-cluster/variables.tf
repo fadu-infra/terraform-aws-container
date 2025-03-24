@@ -24,10 +24,45 @@ variable "name" {
 }
 
 variable "cluster_configuration" {
-  description = "The execute command configuration for the cluster"
-  type        = any
-  default     = {}
-  nullable    = false
+  description = <<-EOT
+  Configuration block for execute command configuration for the cluster
+  Structure should include:
+    - `execute_command_configuration` - (Optional) The details of the execute command configuration
+      - `kms_key_id` - (Optional) KMS key ID to encrypt the data between local client and container
+      - `log_configuration` - (Optional) The log configuration for the results of the execute command actions
+        - `cloud_watch_encryption_enabled` - (Optional) Whether encryption for CloudWatch logs is enabled
+        - `cloud_watch_log_group_name` - (Optional) The name of the CloudWatch log group to send logs to
+        - `s3_bucket_name` - (Optional) The name of the S3 bucket to send logs to
+        - `s3_bucket_encryption_enabled` - (Optional) Whether encryption for S3 bucket logs is enabled
+        - `s3_key_prefix` - (Optional) The S3 bucket prefix for logs
+      - `logging` - (Optional) The log setting to use for redirecting logs. ('NONE', 'DEFAULT', and 'OVERRIDE'. Default is 'DEFAULT')
+  EOT
+  type = list(object({
+    execute_command_configuration = optional(object({
+      kms_key_id = optional(string, null)
+      logging    = optional(string, "DEFAULT")
+      log_configuration = optional(object({
+        cloud_watch_encryption_enabled = optional(bool, null)
+        cloud_watch_log_group_name     = optional(string, null)
+        s3_bucket_name                 = optional(string, null)
+        s3_bucket_encryption_enabled   = optional(bool, null)
+        s3_key_prefix                  = optional(string, null)
+      }))
+    }))
+  }))
+  default  = [{}]
+  nullable = false
+
+  validation {
+    condition = alltrue([
+      for config in var.cluster_configuration :
+      config.execute_command_configuration == null || (
+        config.execute_command_configuration.logging == null ||
+        contains(["NONE", "DEFAULT", "OVERRIDE"], config.execute_command_configuration.logging)
+      )
+    ])
+    error_message = "The logging parameter must be one of: NONE, DEFAULT, or OVERRIDE."
+  }
 }
 
 variable "cluster_settings" {
