@@ -1,8 +1,11 @@
+################################################################################
+# Auto Scaling Group
+################################################################################
+
 locals {
   create_asg = length(var.autoscaling_capacity_provider) > 0 ? 1 : 0
 }
 
-# Auto Scaling Group
 resource "aws_autoscaling_group" "this" {
   count = local.create_asg
 
@@ -84,7 +87,10 @@ resource "aws_autoscaling_group" "this" {
   }
 }
 
+################################################################################
 # Launch Template
+################################################################################
+
 data "cloudinit_config" "this" {
   gzip          = false
   base64_encode = true

@@ -84,6 +84,7 @@ resource "aws_ecs_cluster" "this" {
 ################################################################################
 # CloudWatch Log Group
 ################################################################################
+
 resource "aws_cloudwatch_log_group" "this" {
   count = var.create && var.cloudwatch_log_group.create ? 1 : 0
 

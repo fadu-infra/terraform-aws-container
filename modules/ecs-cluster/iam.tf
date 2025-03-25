@@ -220,6 +220,14 @@ resource "aws_iam_role" "ecs_instance" {
     }]
   })
 
+  tags = merge(
+    {
+      "Name" = local.metadata.name
+    },
+    var.tags,
+    local.module_tags
+  )
+
   lifecycle {
     create_before_destroy = true
   }

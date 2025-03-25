@@ -76,7 +76,11 @@ variable "entrypoint" {
 }
 
 variable "environment" {
-  description = "(Optional) The environment variables to pass to the container"
+  description = <<-EOT
+    (Optional) The environment variables to pass to the container
+    - `name`: (Required) The name of the environment variable
+    - `value`: (Required) The value of the environment variable
+  EOT
   type = list(object({
     name  = string
     value = string
@@ -85,7 +89,11 @@ variable "environment" {
 }
 
 variable "environment_files" {
-  description = "(Optional) A list of files containing the environment variables to pass to a container"
+  description = <<-EOT
+    (Optional) A list of files containing the environment variables to pass to a container
+    - `value`: (Required) The value of the environment variable
+    - `type`: (Required) The type of the environment variable
+  EOT
   type = list(object({
     value = string
     type  = string
@@ -101,7 +109,11 @@ variable "essential" {
 }
 
 variable "extra_hosts" {
-  description = "(Optional) A list of hostnames and IP address mappings to append to the `/etc/hosts` file on the container"
+  description = <<-EOT
+    (Optional) A list of hostnames and IP address mappings to append to the `/etc/hosts` file on the container
+    - `hostname`: (Required) The hostname to add
+    - `ipAddress`: (Required) The IP address to add
+  EOT
   type = list(object({
     hostname  = string
     ipAddress = string
@@ -112,8 +124,8 @@ variable "extra_hosts" {
 variable "firelens_configuration" {
   description = <<-EOT
     (Optional) The FireLens configuration for the container, used to specify and configure a log router for container logs. For more details, refer to the Amazon ECS Developer Guide on Custom Log Routing.
-    - `options`: (Optional) A map of key-value pairs to configure the log router. These options allow customization of the log routing behavior.
-    - `type`: (Optional) The log router to use. Valid values are `fluentd` or `fluentbit`.
+      (Optional) `options`: A map of key-value pairs to configure the log router. These options allow customization of the log routing behavior.
+      (Optional) `type`: The log router to use. Valid values are `fluentd` or `fluentbit`.
   EOT
   type = object({
     options = optional(map(string))
