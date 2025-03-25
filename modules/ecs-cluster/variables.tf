@@ -25,16 +25,15 @@ variable "name" {
 variable "cluster_configuration" {
   description = <<-EOT
   (Optional) Configuration block for execute command configuration for the cluster
-  Structure should include:
-    - `execute_command_configuration` - (Optional) The details of the execute command configuration
-      - `kms_key_id` - (Optional) KMS key ID to encrypt the data between local client and container
-      - `log_configuration` - (Optional) The log configuration for the results of the execute command actions
-        - `cloud_watch_encryption_enabled` - (Optional) Whether encryption for CloudWatch logs is enabled
-        - `cloud_watch_log_group_name` - (Optional) The name of the CloudWatch log group to send logs to
-        - `s3_bucket_name` - (Optional) The name of the S3 bucket to send logs to
-        - `s3_bucket_encryption_enabled` - (Optional) Whether encryption for S3 bucket logs is enabled
-        - `s3_key_prefix` - (Optional) The S3 bucket prefix for logs
-      - `logging` - (Optional) The log setting to use for redirecting logs. ('NONE', 'DEFAULT', and 'OVERRIDE'. Default is 'DEFAULT')
+    (Optional) `execute_command_configuration` - The details of the execute command configuration
+      (Optional) `kms_key_id` - KMS key ID to encrypt the data between local client and container
+      (Optional) `log_configuration` - The log configuration for the results of the execute command actions
+        (Optional) `cloud_watch_encryption_enabled` - Whether encryption for CloudWatch logs is enabled
+          (Optional) `cloud_watch_log_group_name` - The name of the CloudWatch log group to send logs to
+          (Optional) `s3_bucket_name` - The name of the S3 bucket to send logs to
+          (Optional) `s3_bucket_encryption_enabled` - Whether encryption for S3 bucket logs is enabled
+          (Optional) `s3_key_prefix` - The S3 bucket prefix for logs
+      (Optional) `logging` - The log setting to use for redirecting logs. ('NONE', 'DEFAULT', and 'OVERRIDE'. Default is 'DEFAULT')
   EOT
   type = list(object({
     execute_command_configuration = optional(object({
@@ -67,9 +66,8 @@ variable "cluster_configuration" {
 variable "cluster_settings" {
   description = <<-EOT
   (Optional) List of configuration block(s) with cluster settings. For example, this can be used to enable CloudWatch Container Insights for a cluster
-  Structure should include:
-    - `name`: (Required) The name of the setting to change. Available settings are containerInsights
-    - `value`: (Required) The value to assign to the setting. Available values are enhanced and enabled and disabled
+    (Required) `name` - The name of the setting to change. Available settings are containerInsights
+    (Required) `value` - The value to assign to the setting. Available values are enhanced and enabled and disabled
   EOT
   type = list(object({
     name  = string
@@ -96,8 +94,7 @@ variable "cluster_settings" {
 variable "cluster_service_connect_defaults" {
   description = <<EOT
   (Optional) Configures a default Service Connect namespace
-  Structure should include:
-    - `namespace` - (Required) The namespace to use for Service Connect
+    (Required) `namespace` - The namespace to use for Service Connect
   EOT
   type = list(object({
     namespace = string
@@ -130,11 +127,10 @@ variable "cloudwatch_log_group" {
 variable "fargate_capacity_providers" {
   description = <<-EOT
   (Optional) Map of Fargate capacity provider definitions to use for the cluster."
-  Structure should include:
-    - `name` - (Required) Name of the capacity provider. ("FARGATE" or "FARGATE_SPOT")
-    - `default_capacity_provider_strategy` - (Required) Object containing default capacity provider strategy settings:
-      - `base` - (Optional) The relative percentage of the total number of launched tasks that should use the specified capacity provider. The weight value is taken into consideration after the base count of tasks has been satisfied.
-      - `weight` - (Optional) The number of tasks, at a minimum, to run on the specified capacity provider. Only one capacity provider in a capacity provider strategy can have a base defined.
+    (Required) `name` - Name of the capacity provider. ("FARGATE" or "FARGATE_SPOT")
+    (Required) `default_capacity_provider_strategy` - Object containing default capacity provider strategy settings:
+      (Optional) `base` - The relative percentage of the total number of launched tasks that should use the specified capacity provider. The weight value is taken into consideration after the base count of tasks has been satisfied.
+      (Optional) `weight` - The number of tasks, at a minimum, to run on the specified capacity provider. Only one capacity provider in a capacity provider strategy can have a base defined.
   EOT
   type = map(object({
     name = string
@@ -158,19 +154,18 @@ variable "fargate_capacity_providers" {
 variable "autoscaling_capacity_provider" {
   description = <<-EOT
    (Optional) Autoscaling capacity provider definition with the following settings:
-   Structure should include:
-    - `name` - (Optional) Name of the capacity provider
-    - `managed_termination_protection` - (Optional) Managed termination protection setting. Only valid when managed_scaling is configured ('ENABLED' or 'DISABLED')
-    - `managed_draining` - (Optional) Enables or disables a graceful shutdown of instances without disturbing workloads. ('ENABLED' or 'DISABLED') The default value is ENABLED when a capacity provider is created.
-    - `default_capacity_provider_strategy` - (Required) Object containing default capacity provider strategy settings:
-      - `base` - (Optional) The number of tasks, at a minimum, to run on the specified capacity provider
-      - `weight` - (Optional) The relative percentage of the total number of launched tasks that should use the specified capacity provider
-    - `managed_scaling` - (Optional) Object containing managed scaling settings:
-      - `instance_warmup_period` - (Optional) Period of time, in seconds, to wait before considering a newly launched instance ready. default: 300
-      - `maximum_scaling_step_size` - (Optional) Maximum step adjustment size (1-10000)
-      - `minimum_scaling_step_size` - (Optional) Minimum step adjustment size (1-10000)
-      - `status` - (Optional) Status of managed scaling ('ENABLED' or 'ENABLED')
-      - `target_capacity` - (Optional) Target capacity percentage (1-100)
+    (Optional) `name` - Name of the capacity provider
+    (Optional) `managed_termination_protection` - Managed termination protection setting. Only valid when managed_scaling is configured ('ENABLED' or 'DISABLED')
+    (Optional) `managed_draining` - Enables or disables a graceful shutdown of instances without disturbing workloads. ('ENABLED' or 'DISABLED') The default value is ENABLED when a capacity provider is created.
+    (Required) `default_capacity_provider_strategy` - Object containing default capacity provider strategy settings:
+      (Optional) `base` - The number of tasks, at a minimum, to run on the specified capacity provider
+      (Optional) `weight` - The relative percentage of the total number of launched tasks that should use the specified capacity provider
+    (Optional) `managed_scaling` - Object containing managed scaling settings:
+      (Optional) `instance_warmup_period` - Period of time, in seconds, to wait before considering a newly launched instance ready. default: 300
+      (Optional) `maximum_scaling_step_size` - Maximum step adjustment size (1-10000)
+      (Optional) `minimum_scaling_step_size` - Minimum step adjustment size (1-10000)
+      (Optional) `status` - Status of managed scaling ('ENABLED' or 'ENABLED')
+      (Optional) `target_capacity` - Target capacity percentage (1-100)
     Note: When managed termination protection is enabled, managed scaling must also be configured.
   EOT
   type = object({
@@ -311,24 +306,23 @@ variable "task_exec_secret_arns" {
 
 variable "task_exec_iam_statements" {
   description = <<-EOT
-  A list of IAM policy statements for custom permission usage. Each statement should be an object with the following attributes:
-  Structure should include:
-    - `sid` (Optional) - A unique identifier for the statement.
-    - `actions` (Optional) - A list of actions that are allowed or denied.
-    - `not_actions` (Optional) - A list of actions that are explicitly not allowed.
-    - `effect` (Optional) - The effect of the statement, either "Allow" or "Deny".
-    - `resources` (Optional) - A list of resources to which the actions apply.
-    - `not_resources` (Optional) - A list of resources to which the actions do not apply.
-    - `principals` (Optional) - A list of principals to which the statement applies.
-      - `type` (Required) - The type of principal, ("Service", "AWS", "Federated", "CanonicalUser", "*")
-      - `identifiers` (Required) - A list of identifiers for the principal, e.g., "ecs.amazonaws.com".
-    - `not_principals` (Optional) - A list of principals to which the statement does not apply.
-      - `type` (Required) - The type of principal, ("Service", "AWS", "Federated", "CanonicalUser", "*")
-      - `identifiers` (Required) - A list of identifiers for the principal, e.g., "ecs.amazonaws.com".
-    - `conditions` (Optional) - A list of conditions that must be met for the statement to apply.
-      - `test` (Required) - Name of the IAM condition operator to evaluate.
-      - `values` (Required) - A list of values to test against the condition.
-      - `variable` (Required) - The variable to test against the condition.
+  (Optional)  A list of IAM policy statements for custom permission usage. Each statement should be an object with the following attributes:
+    (Optional) `sid` - A unique identifier for the statement.
+    (Optional) `actions` - A list of actions that are allowed or denied.
+    (Optional) `not_actions` - A list of actions that are explicitly not allowed.
+    (Optional) `effect` - The effect of the statement, either "Allow" or "Deny".
+    (Optional) `resources` - A list of resources to which the actions apply.
+    (Optional) `not_resources` - A list of resources to which the actions do not apply.
+    (Optional) `principals` - A list of principals to which the statement applies.
+      (Required) `type` - The type of principal, ("Service", "AWS", "Federated", "CanonicalUser", "*")
+      (Required) `identifiers` - A list of identifiers for the principal, e.g., "ecs.amazonaws.com".
+    (Optional) `not_principals` - A list of principals to which the statement does not apply.
+      (Required) `type` - The type of principal, ("Service", "AWS", "Federated", "CanonicalUser", "*")
+      (Required) `identifiers` - A list of identifiers for the principal, e.g., "ecs.amazonaws.com".
+    (Optional) `conditions` - A list of conditions that must be met for the statement to apply.
+      (Required) `test` - Name of the IAM condition operator to evaluate.
+      (Required) `values` - A list of values to test against the condition.
+      (Required) `variable` - The variable to test against the condition.
   EOT
   type = list(object({
     sid           = optional(string, null)
@@ -362,24 +356,23 @@ variable "task_exec_iam_statements" {
 variable "asg_settings" {
   description = <<-EOT
     (Optional) Settings for the Auto Scaling Group. Required if var.autoscaling_capacity_provider is set.
-    Structure should include:
-    - `max_size`: (Required) The maximum size of the Auto Scaling Group.
-    - `min_size`: (Required) The minimum size of the Auto Scaling Group.
-    - `desired_capacity_type`: (Optional) The type of desired capacity, e.g., "units".
-    - `protect_from_scale_in`: (Optional) Whether to protect instances from scale-in.
-    - `min_healthy_percentage`: (Optional) The minimum healthy percentage of instances.
-    - `instance_warmup`: (Optional) The time, in seconds, that instances need to warm up.
-    - `checkpoint_delay`: (Optional) The delay, in seconds, for checkpointing.
-    - `instance_types`: (Optional) A map of instance types and their weights.
-    - `lifecycle_hooks`: (Optional) A list of lifecycle hooks with configurations.
-    - `on_demand_base_capacity`: (Optional) The base capacity for on-demand instances.
-    - `spot`: (Optional) Whether to use spot instances.
-    - `subnet_ids`: (Required) A list of subnet IDs for the Auto Scaling Group.
-    - `security_group_ids`: (Optional) A list of security group IDs.
-    - `ebs_disks`: (Optional) A map of EBS disk configurations.
-    - `public`: (Optional) Whether the instances should have public IPs.
-    - `ami_id`: (Optional) The ID of the AMI to use for the instances.
-    - `user_data`: (Optional) A list of shell scripts to be executed at EC2 instance start.
+      (Required) `max_size` - The maximum size of the Auto Scaling Group.
+      (Required) `min_size` - The minimum size of the Auto Scaling Group.
+      (Optional) `desired_capacity_type` - The type of desired capacity, e.g., "units".
+      (Optional) `protect_from_scale_in` - Whether to protect instances from scale-in.
+      (Optional) `min_healthy_percentage` - The minimum healthy percentage of instances.
+      (Optional) `instance_warmup` - The time, in seconds, that instances need to warm up.
+      (Optional) `checkpoint_delay` - The delay, in seconds, for checkpointing.
+      (Optional) `instance_types` - A map of instance types and their weights.
+      (Optional) `lifecycle_hooks` - A list of lifecycle hooks with configurations.
+      (Optional) `on_demand_base_capacity` - The base capacity for on-demand instances.
+      (Optional) `spot` - Whether to use spot instances.
+      (Required) `subnet_ids` - A list of subnet IDs for the Auto Scaling Group.
+      (Optional) `security_group_ids` - A list of security group IDs.
+      (Optional) `ebs_disks` - A map of EBS disk configurations.
+      (Optional) `public` - Whether the instances should have public IPs.
+      (Optional) `ami_id` - The ID of the AMI to use for the instances.
+      (Optional) `user_data` - A list of shell scripts to be executed at EC2 instance start.
   EOT
   type = object({
     max_size               = number
@@ -455,13 +448,12 @@ variable "asg_settings" {
 
 variable "launch_template_settings" {
   description = <<EOF
-  Settings for the Launch Template
-  Structure should include:
-    - `http_endpoint`: (Optional) HTTP endpoint for metadata options
-    - `http_tokens`: (Optional) HTTP tokens for metadata options
-    - `http_put_response_hop_limit`: (Optional) HTTP put response hop limit for metadata options
-    - `instance_metadata_tags`: (Optional) Instance metadata tags option
-    - `monitoring_enabled`: (Optional) Enable monitoring for the instance
+  (Optional)Settings for the Launch Template
+    (Optional) `http_endpoint` - HTTP endpoint for metadata options
+    (Optional) `http_tokens` - HTTP tokens for metadata options
+    (Optional) `http_put_response_hop_limit` - HTTP put response hop limit for metadata options
+    (Optional) `instance_metadata_tags` - Instance metadata tags option
+    (Optional) `monitoring_enabled` - Enable monitoring for the instance
   EOF
   type = object({
     http_endpoint               = optional(string, "enabled")
