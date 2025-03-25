@@ -94,10 +94,15 @@ variable "cluster_settings" {
 }
 
 variable "cluster_service_connect_defaults" {
-  description = "Configures a default Service Connect namespace"
-  type        = map(string)
-  default     = {}
-  nullable    = false
+  description = <<EOT
+  Configures a default Service Connect namespace
+  - `namespace` - (Required) The namespace to use for Service Connect
+  EOT
+  type = list(object({
+    namespace = string
+  }))
+  default  = []
+  nullable = false
 }
 
 ################################################################################

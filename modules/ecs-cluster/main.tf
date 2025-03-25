@@ -56,7 +56,7 @@ resource "aws_ecs_cluster" "this" {
   }
 
   dynamic "service_connect_defaults" {
-    for_each = length(var.cluster_service_connect_defaults) > 0 ? [var.cluster_service_connect_defaults] : []
+    for_each = var.cluster_service_connect_defaults
 
     content {
       namespace = service_connect_defaults.value.namespace
