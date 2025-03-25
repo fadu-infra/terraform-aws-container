@@ -135,7 +135,14 @@ variable "firelens_configuration" {
 }
 
 variable "health_check" {
-  description = "(Optional) The container health check command and associated configuration parameters for the container. See [HealthCheck](https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_HealthCheck.html)"
+  description = <<-EOT
+    (Optional) The container health check command and associated configuration parameters for the container. See [HealthCheck](https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_HealthCheck.html)
+      (Optional) `command`: The command that the container runs to determine if it is healthy.
+      (Optional) `interval`: The time period in seconds between each health check execution.
+      (Optional) `timeout`: The time period in seconds to wait for a health check to succeed.
+      (Optional) `retries`: The number of times to retry a failed health check before the container is considered unhealthy.
+      (Optional) `startPeriod`: The time period in seconds to wait for a health check to get a response from the command.
+  EOT
   type = object({
     command     = optional(list(string))
     interval    = optional(number)
@@ -176,14 +183,13 @@ variable "links" {
 variable "linux_parameters" {
   description = <<-EOT
     (Optional) Linux-specific modifications that are applied to the container, such as Linux kernel capabilities.
-    This includes:
-    - capabilities: The Linux capabilities for the container that are added to or dropped from the default configuration provided by Docker.
-    - devices: Any host devices to expose to the container.
-    - initProcessEnabled: Run an init process inside the container that forwards signals and reaps processes.
-    - maxSwap: The total amount of swap memory (in MiB) a container can use.
-    - sharedMemorySize: The size (in MiB) of the /dev/shm volume.
-    - swappiness: Tune a container's memory swappiness behavior.
-    - tmpfs: The container path, mount options, and size (in MiB) of the tmpfs mount.
+      (Optional) `capabilities`: The Linux capabilities for the container that are added to or dropped from the default configuration provided by Docker.
+      (Optional) `devices`: Any host devices to expose to the container.
+      (Optional) `initProcessEnabled`: Run an init process inside the container that forwards signals and reaps processes.
+      (Optional) `maxSwap`: The total amount of swap memory (in MiB) a container can use.
+      (Optional) `sharedMemorySize`: The size (in MiB) of the /dev/shm volume.
+      (Optional) `swappiness`: Tune a container's memory swappiness behavior.
+      (Optional) `tmpfs`: The container path, mount options, and size (in MiB) of the tmpfs mount.
 
     Note: Some parameters are not supported for tasks using the Fargate launch type.
   EOT
@@ -210,9 +216,21 @@ variable "linux_parameters" {
 }
 
 variable "log_configuration" {
-  description = "(Optional) The log configuration for the container. For more information see [LogConfiguration](https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_LogConfiguration.html)"
-  type        = any
-  default     = {}
+  description = <<-EOT
+    (Optional) The log configuration for the container. For more information see [LogConfiguration](https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_LogConfiguration.html)
+      (Optional) `logDriver`: The log driver to use for the container.
+      (Optional) `options`: The configuration options to send to the log driver.
+      (Optional) `secretOptions`: The secrets to pass to the log configuration.
+  EOT
+  type = object({
+    logDriver = optional(string)
+    options   = optional(map(string))
+    secretOptions = optional(list(object({
+      name      = string
+      valueFrom = string
+    })))
+  })
+  default = {}
 }
 
 variable "memory" {
@@ -245,7 +263,12 @@ variable "memory_reservation" {
 }
 
 variable "mount_points" {
-  description = "(Optional) The mount points for data volumes in your container"
+  description = <<-EOT
+    (Optional) The mount points for data volumes in your container
+      (Optional) `containerPath`: The path on the container to mount the volume at.
+      (Optional) `readOnly`: If this value is `true`, the container has read-only access to the volume.
+      (Optional) `sourceVolume`: The name of the volume to mount.
+  EOT
   type = list(object({
     containerPath = string
     readOnly      = bool
@@ -262,7 +285,13 @@ variable "name" {
 }
 
 variable "port_mappings" {
-  description = "(Optional) The list of port mappings for the container. Port mappings allow containers to access ports on the host container instance to send or receive traffic. For task definitions that use the awsvpc network mode, only specify the containerPort. The hostPort can be left blank or it must be the same value as the containerPort"
+  description = <<-EOT
+    (Optional) The list of port mappings for the container. Port mappings allow containers to access ports on the host container instance to send or receive traffic. For task definitions that use the awsvpc network mode, only specify the containerPort. The hostPort can be left blank or it must be the same value as the containerPort
+      (Optional) `containerPort`: The port number on the container that is used with the network protocol.
+      (Optional) `hostPort`: The port number on the host that is used with the network protocol.
+      (Optional) `protocol`: The protocol used for the port mapping.
+      (Optional) `appProtocol`: The application protocol to use for the port mapping.
+  EOT
   type = list(object({
     containerPort      = number
     hostPort           = optional(number)
@@ -299,7 +328,11 @@ variable "repository_credentials" {
 }
 
 variable "resource_requirements" {
-  description = "(Optional) The type and amount of a resource to assign to a container. The only supported resource is a GPU"
+  description = <<-EOT
+    (Optional) The type and amount of a resource to assign to a container. The only supported resource is a GPU
+      (Optional) `type`: The type of resource to assign to the container
+      (Optional) `value`: The value of the resource
+  EOT
   type = list(object({
     type  = string
     value = string
@@ -308,7 +341,11 @@ variable "resource_requirements" {
 }
 
 variable "secrets" {
-  description = "(Optional) The secrets to pass to the container. For more information, see [Specifying Sensitive Data](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/specifying-sensitive-data.html) in the Amazon Elastic Container Service Developer Guide"
+  description = <<-EOT
+    (Optional) The secrets to pass to the container. For more information, see [Specifying Sensitive Data](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/specifying-sensitive-data.html) in the Amazon Elastic Container Service Developer Guide
+      (Optional) `name`: The name of the secret to pass to the container
+      (Optional) `valueFrom`: The value from the secret to pass to the container
+  EOT
   type = list(object({
     name      = string
     valueFrom = string
@@ -339,7 +376,11 @@ variable "stop_timeout" {
 }
 
 variable "system_controls" {
-  description = "(Optional) A list of namespaced kernel parameters to set in the container"
+  description = <<-EOT
+    (Optional) A list of namespaced kernel parameters to set in the container
+      (Optional) `namespace`: The namespace to set the kernel parameter in
+      (Optional) `value`: The value of the kernel parameter
+  EOT
   type = list(object({
     namespace = string
     value     = string
@@ -348,7 +389,12 @@ variable "system_controls" {
 }
 
 variable "ulimits" {
-  description = "(Optional) A list of ulimits to set in the container. If a ulimit value is specified in a task definition, it overrides the default values set by Docker"
+  description = <<-EOT
+    (Optional) A list of ulimits to set in the container. If a ulimit value is specified in a task definition, it overrides the default values set by Docker
+      (Optional) `hardLimit`: The hard limit for the ulimit
+      (Optional) `name`: The name of the ulimit
+      (Optional) `softLimit`: The soft limit for the ulimit
+  EOT
   type = list(object({
     hardLimit = number
     name      = string

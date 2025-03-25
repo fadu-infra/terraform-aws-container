@@ -16,15 +16,20 @@ locals {
 
   log_group_name = try(coalesce(var.cloudwatch_log_group_name, "/aws/ecs/${var.service}/${var.name}"), "/aws/ecs/${var.service}/default")
 
+  default_log_config = var.enable_cloudwatch_logging ? {
+    logDriver = "awslogs"
+    options = {
+      awslogs-region        = data.aws_region.current.name
+      awslogs-group         = try(aws_cloudwatch_log_group.this[0].name, "")
+      awslogs-stream-prefix = "ecs"
+    }
+    } : {
+    logDriver = null
+    options   = {}
+  }
+
   log_configuration = merge(
-    { for k, v in {
-      logDriver = "awslogs",
-      options = {
-        awslogs-region        = data.aws_region.current.name,
-        awslogs-group         = try(aws_cloudwatch_log_group.this[0].name, ""),
-        awslogs-stream-prefix = "ecs"
-      },
-    } : k => v if var.enable_cloudwatch_logging },
+    local.default_log_config,
     var.log_configuration
   )
 
