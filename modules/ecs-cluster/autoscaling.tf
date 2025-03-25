@@ -1,5 +1,5 @@
 locals {
-  create_asg = var.autoscaling_capacity_provider != null ? 1 : 0
+  create_asg = length(var.autoscaling_capacity_provider) > 0 ? 1 : 0
 }
 
 # Auto Scaling Group
@@ -149,7 +149,7 @@ resource "aws_launch_template" "this" {
         delete_on_termination = block_device_mappings.value.delete_on_termination
         volume_size           = block_device_mappings.value.volume_size
         volume_type           = "gp3"
-        snapshot_id           = var.asg_settings.use_snapshot ? var.asg_settings.snapshot_id : null
+        snapshot_id           = var.asg_settings.snapshot_id
       }
     }
   }

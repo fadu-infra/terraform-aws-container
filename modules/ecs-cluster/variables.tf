@@ -1,12 +1,12 @@
 variable "create" {
-  description = "Determines whether resources will be created (affects all resources)"
+  description = "(Optional) Determines whether resources will be created (affects all resources)"
   type        = bool
   default     = true
   nullable    = false
 }
 
 variable "tags" {
-  description = "A map of tags to add to all resources"
+  description = "(Optional) A map of tags to add to all resources"
   type        = map(string)
   default     = {}
   nullable    = false
@@ -17,15 +17,14 @@ variable "tags" {
 ################################################################################
 
 variable "name" {
-  description = "Name of the cluster (up to 255 letters, numbers, hyphens, and underscores)"
+  description = "(Required) Name of the cluster (up to 255 letters, numbers, hyphens, and underscores)"
   type        = string
-  default     = ""
   nullable    = false
 }
 
 variable "cluster_configuration" {
   description = <<-EOT
-  Configuration block for execute command configuration for the cluster
+  (Optional) Configuration block for execute command configuration for the cluster
   Structure should include:
     - `execute_command_configuration` - (Optional) The details of the execute command configuration
       - `kms_key_id` - (Optional) KMS key ID to encrypt the data between local client and container
@@ -68,8 +67,9 @@ variable "cluster_configuration" {
 variable "cluster_settings" {
   description = <<-EOT
   (Optional) List of configuration block(s) with cluster settings. For example, this can be used to enable CloudWatch Container Insights for a cluster
-  - `name`: (Required) The name of the setting to change. Available settings are containerInsights
-  - `value`: (Required) The value to assign to the setting. Available values are enhanced and enabled and disabled
+  Structure should include:
+    - `name`: (Required) The name of the setting to change. Available settings are containerInsights
+    - `value`: (Required) The value to assign to the setting. Available values are enhanced and enabled and disabled
   EOT
   type = list(object({
     name  = string
@@ -95,8 +95,9 @@ variable "cluster_settings" {
 
 variable "cluster_service_connect_defaults" {
   description = <<EOT
-  Configures a default Service Connect namespace
-  - `namespace` - (Required) The namespace to use for Service Connect
+  (Optional) Configures a default Service Connect namespace
+  Structure should include:
+    - `namespace` - (Required) The namespace to use for Service Connect
   EOT
   type = list(object({
     namespace = string
@@ -109,55 +110,27 @@ variable "cluster_service_connect_defaults" {
 # CloudWatch Log Group
 ################################################################################
 
-variable "create_cloudwatch_log_group" {
-  description = "Determines whether a log group is created by this module for the cluster logs. If not, AWS will automatically create one if logging is enabled"
-  type        = bool
-  default     = true
-  nullable    = false
-}
-
-variable "cloudwatch_log_group_name" {
-  description = "Custom name of CloudWatch Log Group for ECS cluster"
-  type        = string
-  default     = null
-  nullable    = true
-}
-
-variable "cloudwatch_log_group_retention_in_days" {
-  description = "Number of days to retain log events"
-  type        = number
-  default     = 90
-  nullable    = false
-}
-
-variable "cloudwatch_log_group_kms_key_id" {
-  description = "If a KMS Key ARN is set, this key will be used to encrypt the corresponding log group. Please be sure that the KMS Key has an appropriate key policy (https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/encrypt-log-data-kms.html)"
-  type        = string
-  default     = null
-  nullable    = true
-}
-
-variable "cloudwatch_log_group_tags" {
-  description = "A map of additional tags to add to the log group created"
-  type        = map(string)
-  default     = {}
-  nullable    = false
+variable "cloudwatch_log_group" {
+  description = "(Optional) CloudWatch Log Group configuration for the ECS cluster"
+  type = object({
+    create            = optional(bool, true)
+    name              = optional(string, null)
+    retention_in_days = optional(number, 90)
+    kms_key_id        = optional(string, null)
+    tags              = optional(map(string), {})
+  })
+  default  = {}
+  nullable = false
 }
 
 ################################################################################
 # Capacity Providers
 ################################################################################
 
-variable "default_capacity_provider_use_fargate" {
-  description = "Determines whether to use Fargate or autoscaling for default capacity provider strategy"
-  type        = bool
-  default     = true
-  nullable    = false
-}
-
 variable "fargate_capacity_providers" {
   description = <<-EOT
-  Map of Fargate capacity provider definitions to use for the cluster."
+  (Optional) Map of Fargate capacity provider definitions to use for the cluster."
+  Structure should include:
     - `name` - (Required) Name of the capacity provider. ("FARGATE" or "FARGATE_SPOT")
     - `default_capacity_provider_strategy` - (Required) Object containing default capacity provider strategy settings:
       - `base` - (Optional) The relative percentage of the total number of launched tasks that should use the specified capacity provider. The weight value is taken into consideration after the base count of tasks has been satisfied.
@@ -184,7 +157,8 @@ variable "fargate_capacity_providers" {
 
 variable "autoscaling_capacity_provider" {
   description = <<-EOT
-    Autoscaling capacity provider definition with the following settings:
+   (Optional) Autoscaling capacity provider definition with the following settings:
+   Structure should include:
     - `name` - (Optional) Name of the capacity provider
     - `managed_termination_protection` - (Optional) Managed termination protection setting. Only valid when managed_scaling is configured ('ENABLED' or 'DISABLED')
     - `managed_draining` - (Optional) Enables or disables a graceful shutdown of instances without disturbing workloads. ('ENABLED' or 'DISABLED') The default value is ENABLED when a capacity provider is created.
@@ -200,24 +174,22 @@ variable "autoscaling_capacity_provider" {
     Note: When managed termination protection is enabled, managed scaling must also be configured.
   EOT
   type = object({
-    name                           = optional(string)
-    managed_termination_protection = optional(string)
+    name                           = optional(string, "default-capacity-provider")
+    managed_termination_protection = optional(string, "DISABLED")
     managed_draining               = optional(string)
-    default_capacity_provider_strategy = object({
+    default_capacity_provider_strategy = optional(object({
       base   = optional(number, null)
       weight = optional(number, null)
-    })
-    managed_scaling = optional(object({
-      instance_warmup_period    = optional(number)
-      maximum_scaling_step_size = optional(number)
-      minimum_scaling_step_size = optional(number)
-      status                    = optional(string)
-      target_capacity           = optional(number)
     }))
+    managed_scaling = optional(object({
+      instance_warmup_period    = optional(number, null)
+      maximum_scaling_step_size = optional(number, null)
+      minimum_scaling_step_size = optional(number, null)
+      status                    = optional(string, null)
+      target_capacity           = optional(number, null)
+    }), {})
   })
-  default = {
-    default_capacity_provider_strategy = {}
-  }
+  default  = {}
   nullable = false
 
   validation {
@@ -261,87 +233,126 @@ variable "autoscaling_capacity_provider" {
 ################################################################################
 
 variable "create_task_exec_iam_role" {
-  description = "Determines whether the ECS task definition IAM role should be created"
+  description = "(Optional) Determines whether the ECS task definition IAM role should be created"
   type        = bool
   default     = false
   nullable    = false
 }
 
 variable "task_exec_iam_role_name" {
-  description = "Name to use on IAM role created"
+  description = "(Optional) Name to use on IAM role created"
   type        = string
   default     = null
   nullable    = true
 }
 
 variable "task_exec_iam_role_use_name_prefix" {
-  description = "Determines whether the IAM role name (`task_exec_iam_role_name`) is used as a prefix"
+  description = "(Optional) Determines whether the IAM role name (`task_exec_iam_role_name`) is used as a prefix"
   type        = bool
   default     = true
   nullable    = false
 }
 
 variable "task_exec_iam_role_path" {
-  description = "IAM role path"
+  description = "(Optional) IAM role path"
   type        = string
   default     = null
   nullable    = true
 }
 
 variable "task_exec_iam_role_description" {
-  description = "Description of the role"
+  description = "(Optional) Description of the role"
   type        = string
   default     = null
   nullable    = true
 }
 
 variable "task_exec_iam_role_permissions_boundary" {
-  description = "ARN of the policy that is used to set the permissions boundary for the IAM role"
+  description = "(Optional) ARN of the policy that is used to set the permissions boundary for the IAM role"
   type        = string
   default     = null
   nullable    = true
 }
 
 variable "task_exec_iam_role_tags" {
-  description = "A map of additional tags to add to the IAM role created"
+  description = "(Optional) A map of additional tags to add to the IAM role created"
   type        = map(string)
   default     = {}
   nullable    = false
 }
 
 variable "task_exec_iam_role_policies" {
-  description = "Map of IAM role policy ARNs to attach to the IAM role"
+  description = "(Optional) Map of IAM role policy ARNs to attach to the IAM role"
   type        = map(string)
   default     = {}
   nullable    = false
 }
 
 variable "create_task_exec_policy" {
-  description = "Determines whether the ECS task definition IAM policy should be created. This includes permissions included in AmazonECSTaskExecutionRolePolicy as well as access to secrets and SSM parameters"
+  description = "(Optional) Determines whether the ECS task definition IAM policy should be created. This includes permissions included in AmazonECSTaskExecutionRolePolicy as well as access to secrets and SSM parameters"
   type        = bool
   default     = true
   nullable    = false
 }
 
 variable "task_exec_ssm_param_arns" {
-  description = "List of SSM parameter ARNs the task execution role will be permitted to get/read"
+  description = "(Optional) List of SSM parameter ARNs the task execution role will be permitted to get/read"
   type        = list(string)
   default     = ["arn:aws:ssm:*:*:parameter/*"]
   nullable    = false
 }
 
 variable "task_exec_secret_arns" {
-  description = "List of SecretsManager secret ARNs the task execution role will be permitted to get/read"
+  description = "(Optional) List of SecretsManager secret ARNs the task execution role will be permitted to get/read"
   type        = list(string)
   default     = ["arn:aws:secretsmanager:*:*:secret:*"]
   nullable    = false
 }
 
 variable "task_exec_iam_statements" {
-  description = "A map of IAM policy [statements](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document#statement) for custom permission usage"
-  type        = any
-  default     = {}
-  nullable    = false
+  description = <<-EOT
+  A list of IAM policy statements for custom permission usage. Each statement should be an object with the following attributes:
+  Structure should include:
+    - `sid` (Optional) - A unique identifier for the statement.
+    - `actions` (Optional) - A list of actions that are allowed or denied.
+    - `not_actions` (Optional) - A list of actions that are explicitly not allowed.
+    - `effect` (Optional) - The effect of the statement, either "Allow" or "Deny".
+    - `resources` (Optional) - A list of resources to which the actions apply.
+    - `not_resources` (Optional) - A list of resources to which the actions do not apply.
+    - `principals` (Optional) - A list of principals to which the statement applies.
+      - `type` (Required) - The type of principal, ("Service", "AWS", "Federated", "CanonicalUser", "*")
+      - `identifiers` (Required) - A list of identifiers for the principal, e.g., "ecs.amazonaws.com".
+    - `not_principals` (Optional) - A list of principals to which the statement does not apply.
+      - `type` (Required) - The type of principal, ("Service", "AWS", "Federated", "CanonicalUser", "*")
+      - `identifiers` (Required) - A list of identifiers for the principal, e.g., "ecs.amazonaws.com".
+    - `conditions` (Optional) - A list of conditions that must be met for the statement to apply.
+      - `test` (Required) - Name of the IAM condition operator to evaluate.
+      - `values` (Required) - A list of values to test against the condition.
+      - `variable` (Required) - The variable to test against the condition.
+  EOT
+  type = list(object({
+    sid           = optional(string, null)
+    actions       = optional(list(string), null)
+    not_actions   = optional(list(string), null)
+    effect        = optional(string, null)
+    resources     = optional(list(string), null)
+    not_resources = optional(list(string), null)
+    principals = optional(list(object({
+      type        = string
+      identifiers = list(string)
+    })), [])
+    not_principals = optional(list(object({
+      type        = string
+      identifiers = list(string)
+    })), [])
+    conditions = optional(list(object({
+      test     = string
+      values   = list(string)
+      variable = string
+    })), [])
+  }))
+  default  = []
+  nullable = false
 }
 
 ################################################################################
@@ -350,37 +361,36 @@ variable "task_exec_iam_statements" {
 
 variable "asg_settings" {
   description = <<-EOT
-    Settings for the Auto Scaling Group:
+    (Optional) Settings for the Auto Scaling Group. Required if var.autoscaling_capacity_provider is set.
+    Structure should include:
     - `max_size`: (Required) The maximum size of the Auto Scaling Group.
     - `min_size`: (Required) The minimum size of the Auto Scaling Group.
-    - `desired_capacity_type`: (Required) The type of desired capacity, e.g., "units".
-    - `protect_from_scale_in`: (Required) Whether to protect instances from scale-in.
-    - `min_healthy_percentage`: (Required) The minimum healthy percentage of instances.
-    - `instance_warmup`: (Required) The time, in seconds, that instances need to warm up.
-    - `checkpoint_delay`: (Required) The delay, in seconds, for checkpointing.
-    - `instance_types`: (Required) A map of instance types and their weights.
+    - `desired_capacity_type`: (Optional) The type of desired capacity, e.g., "units".
+    - `protect_from_scale_in`: (Optional) Whether to protect instances from scale-in.
+    - `min_healthy_percentage`: (Optional) The minimum healthy percentage of instances.
+    - `instance_warmup`: (Optional) The time, in seconds, that instances need to warm up.
+    - `checkpoint_delay`: (Optional) The delay, in seconds, for checkpointing.
+    - `instance_types`: (Optional) A map of instance types and their weights.
     - `lifecycle_hooks`: (Optional) A list of lifecycle hooks with configurations.
-    - `on_demand_base_capacity`: (Required) The base capacity for on-demand instances.
-    - `spot`: (Required) Whether to use spot instances.
+    - `on_demand_base_capacity`: (Optional) The base capacity for on-demand instances.
+    - `spot`: (Optional) Whether to use spot instances.
     - `subnet_ids`: (Required) A list of subnet IDs for the Auto Scaling Group.
-    - `security_group_ids`: (Required) A list of security group IDs.
+    - `security_group_ids`: (Optional) A list of security group IDs.
     - `ebs_disks`: (Optional) A map of EBS disk configurations.
-    - `use_snapshot`: (Required) Whether to use a snapshot for the instances.
-    - `snapshot_id`: (Optional) The ID of the snapshot to use.
-    - `public`: (Required) Whether the instances should have public IPs.
+    - `public`: (Optional) Whether the instances should have public IPs.
     - `ami_id`: (Optional) The ID of the AMI to use for the instances.
     - `user_data`: (Optional) A list of shell scripts to be executed at EC2 instance start.
   EOT
   type = object({
     max_size               = number
     min_size               = number
-    desired_capacity_type  = string
-    protect_from_scale_in  = bool
-    min_healthy_percentage = number
-    instance_warmup        = number
-    checkpoint_delay       = number
-    instance_types         = map(number)
-    lifecycle_hooks = list(object({
+    desired_capacity_type  = optional(string, "units")
+    protect_from_scale_in  = optional(bool, false)
+    min_healthy_percentage = optional(number, 100)
+    instance_warmup        = optional(number, 300)
+    checkpoint_delay       = optional(number, 300)
+    instance_types         = optional(map(number), { "t3a.small" = 2 })
+    lifecycle_hooks = optional(list(object({
       name                    = string
       lifecycle_transition    = string
       default_result          = optional(string)
@@ -388,43 +398,25 @@ variable "asg_settings" {
       role_arn                = optional(string)
       notification_target_arn = optional(string)
       notification_metadata   = optional(string)
-    }))
-    tags                    = map(string)
-    on_demand_base_capacity = number
-    spot                    = bool
+    })), [])
+    tags                    = optional(map(string), {})
+    on_demand_base_capacity = optional(number, 0)
+    spot                    = optional(bool, false)
     subnet_ids              = list(string)
-    security_group_ids      = list(string)
-    ebs_disks = map(object({
+    security_group_ids      = optional(list(string), [])
+    ebs_disks = optional(map(object({
       volume_size           = optional(number)
       delete_on_termination = optional(bool)
-    }))
-    use_snapshot = bool
-    snapshot_id  = string
-    public       = bool
-    ami_id       = string
-    user_data    = optional(list(string))
+    })), {})
+    snapshot_id = optional(string, null)
+    public      = optional(bool, false)
+    ami_id      = optional(string, "")
+    user_data   = optional(list(string), [])
   })
   default = {
-    max_size                = 10
-    min_size                = 0
-    desired_capacity_type   = "units"
-    protect_from_scale_in   = true
-    min_healthy_percentage  = 100
-    instance_warmup         = 300
-    checkpoint_delay        = 300
-    instance_types          = { "t3a.small" = 2 }
-    lifecycle_hooks         = []
-    tags                    = {}
-    on_demand_base_capacity = 0
-    spot                    = false
-    subnet_ids              = []
-    security_group_ids      = []
-    ebs_disks               = {}
-    use_snapshot            = false
-    snapshot_id             = ""
-    public                  = false
-    ami_id                  = ""
-    user_data               = []
+    max_size   = 10
+    min_size   = 0
+    subnet_ids = []
   }
   nullable = false
 
@@ -464,19 +456,20 @@ variable "asg_settings" {
 variable "launch_template_settings" {
   description = <<EOF
   Settings for the Launch Template
-    http_endpoint               - HTTP endpoint for metadata options
-    http_tokens                 - HTTP tokens for metadata options
-    http_put_response_hop_limit - HTTP put response hop limit for metadata options
-    instance_metadata_tags      - Instance metadata tags option
-    monitoring_enabled          - Enable monitoring for the instance
+  Structure should include:
+    - `http_endpoint`: (Optional) HTTP endpoint for metadata options
+    - `http_tokens`: (Optional) HTTP tokens for metadata options
+    - `http_put_response_hop_limit`: (Optional) HTTP put response hop limit for metadata options
+    - `instance_metadata_tags`: (Optional) Instance metadata tags option
+    - `monitoring_enabled`: (Optional) Enable monitoring for the instance
   EOF
-  type        = map(any)
-  default = {
-    http_endpoint               = "enabled"
-    http_tokens                 = "required"
-    http_put_response_hop_limit = 1
-    instance_metadata_tags      = "enabled"
-    monitoring_enabled          = true
-  }
+  type = object({
+    http_endpoint               = optional(string, "enabled")
+    http_tokens                 = optional(string, "required")
+    http_put_response_hop_limit = optional(number, 1)
+    instance_metadata_tags      = optional(string, "enabled")
+    monitoring_enabled          = optional(bool, true)
+  })
+  default  = {}
   nullable = false
 }

@@ -33,7 +33,7 @@ resource "aws_ecs_cluster" "this" {
 
     content {
       dynamic "execute_command_configuration" {
-        for_each = var.create_cloudwatch_log_group ? [merge(local.execute_command_configuration, configuration.value.execute_command_configuration)] : [configuration.value.execute_command_configuration]
+        for_each = var.cloudwatch_log_group.create ? [merge(local.execute_command_configuration, configuration.value.execute_command_configuration)] : [configuration.value.execute_command_configuration]
 
         content {
           kms_key_id = execute_command_configuration.value.kms_key_id
@@ -85,17 +85,17 @@ resource "aws_ecs_cluster" "this" {
 # CloudWatch Log Group
 ################################################################################
 resource "aws_cloudwatch_log_group" "this" {
-  count = var.create && var.create_cloudwatch_log_group ? 1 : 0
+  count = var.create && var.cloudwatch_log_group.create ? 1 : 0
 
-  name              = try(coalesce(var.cloudwatch_log_group_name, "/aws/ecs/${var.name}"), "")
-  retention_in_days = var.cloudwatch_log_group_retention_in_days
-  kms_key_id        = var.cloudwatch_log_group_kms_key_id
+  name              = coalesce(var.cloudwatch_log_group.name, "/aws/ecs/${var.name}")
+  retention_in_days = var.cloudwatch_log_group.retention_in_days
+  kms_key_id        = var.cloudwatch_log_group.kms_key_id
 
   tags = merge(
     {
       "Name" = local.metadata.name
     },
-    var.cloudwatch_log_group_tags,
+    var.cloudwatch_log_group.tags,
     var.tags,
     local.module_tags
   )
@@ -110,7 +110,7 @@ locals {
 }
 
 resource "aws_ecs_cluster_capacity_providers" "this" {
-  count = var.create && length(merge(var.fargate_capacity_providers, var.autoscaling_capacity_provider)) > 0 ? 1 : 0
+  count = var.create && length(local.selected_capacity_providers) > 0 ? 1 : 0
 
   cluster_name       = aws_ecs_cluster.this[0].name
   capacity_providers = distinct([for provider in local.selected_capacity_providers : provider.name])
@@ -139,22 +139,22 @@ resource "aws_ecs_cluster_capacity_providers" "this" {
 resource "aws_ecs_capacity_provider" "this" {
   count = var.create && length(var.autoscaling_capacity_provider) > 0 ? 1 : 0
 
-  name = try(var.autoscaling_capacity_provider.name, "default-capacity-provider")
+  name = var.autoscaling_capacity_provider.name
 
   auto_scaling_group_provider {
     auto_scaling_group_arn = aws_autoscaling_group.this[0].arn
     # When you use managed termination protection, you must also use managed scaling otherwise managed termination protection won't work
-    managed_termination_protection = try(var.autoscaling_capacity_provider.managed_termination_protection, "DISABLED")
+    managed_termination_protection = var.autoscaling_capacity_provider.managed_termination_protection
 
     dynamic "managed_scaling" {
-      for_each = try([var.autoscaling_capacity_provider.managed_scaling], [])
+      for_each = [var.autoscaling_capacity_provider.managed_scaling]
 
       content {
-        instance_warmup_period    = try(managed_scaling.value.instance_warmup_period, null)
-        maximum_scaling_step_size = try(managed_scaling.value.maximum_scaling_step_size, null)
-        minimum_scaling_step_size = try(managed_scaling.value.minimum_scaling_step_size, null)
-        status                    = try(managed_scaling.value.status, null)
-        target_capacity           = try(managed_scaling.value.target_capacity, null)
+        instance_warmup_period    = managed_scaling.value.instance_warmup_period
+        maximum_scaling_step_size = managed_scaling.value.maximum_scaling_step_size
+        minimum_scaling_step_size = managed_scaling.value.minimum_scaling_step_size
+        status                    = managed_scaling.value.status
+        target_capacity           = managed_scaling.value.target_capacity
       }
     }
   }
