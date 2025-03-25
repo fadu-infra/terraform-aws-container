@@ -156,10 +156,30 @@ variable "default_capacity_provider_use_fargate" {
 }
 
 variable "fargate_capacity_providers" {
-  description = "Map of Fargate capacity provider definitions to use for the cluster"
-  type        = any
-  default     = {}
-  nullable    = false
+  description = <<-EOT
+  Map of Fargate capacity provider definitions to use for the cluster."
+    - `name` - (Required) Name of the capacity provider. ("FARGATE" or "FARGATE_SPOT")
+    - `default_capacity_provider_strategy` - (Required) Object containing default capacity provider strategy settings:
+      - `base` - (Optional) The relative percentage of the total number of launched tasks that should use the specified capacity provider. The weight value is taken into consideration after the base count of tasks has been satisfied.
+      - `weight` - (Optional) The number of tasks, at a minimum, to run on the specified capacity provider. Only one capacity provider in a capacity provider strategy can have a base defined.
+  EOT
+  type = map(object({
+    name = string
+    default_capacity_provider_strategy = object({
+      base   = optional(number, null)
+      weight = optional(number, null)
+    })
+  }))
+  default  = {}
+  nullable = false
+
+  validation {
+    condition = alltrue([
+      for provider in values(var.fargate_capacity_providers) :
+      contains(["FARGATE", "FARGATE_SPOT"], provider.name)
+    ])
+    error_message = "Fargate capacity provider name must be either 'FARGATE' or 'FARGATE_SPOT'."
+  }
 }
 
 variable "autoscaling_capacity_provider" {
@@ -168,6 +188,9 @@ variable "autoscaling_capacity_provider" {
     - `name` - (Optional) Name of the capacity provider
     - `managed_termination_protection` - (Optional) Managed termination protection setting. Only valid when managed_scaling is configured ('ENABLED' or 'DISABLED')
     - `managed_draining` - (Optional) Enables or disables a graceful shutdown of instances without disturbing workloads. ('ENABLED' or 'DISABLED') The default value is ENABLED when a capacity provider is created.
+    - `default_capacity_provider_strategy` - (Required) Object containing default capacity provider strategy settings:
+      - `base` - (Optional) The number of tasks, at a minimum, to run on the specified capacity provider
+      - `weight` - (Optional) The relative percentage of the total number of launched tasks that should use the specified capacity provider
     - `managed_scaling` - (Optional) Object containing managed scaling settings:
       - `instance_warmup_period` - (Optional) Period of time, in seconds, to wait before considering a newly launched instance ready. default: 300
       - `maximum_scaling_step_size` - (Optional) Maximum step adjustment size (1-10000)
@@ -180,6 +203,10 @@ variable "autoscaling_capacity_provider" {
     name                           = optional(string)
     managed_termination_protection = optional(string)
     managed_draining               = optional(string)
+    default_capacity_provider_strategy = object({
+      base   = optional(number, null)
+      weight = optional(number, null)
+    })
     managed_scaling = optional(object({
       instance_warmup_period    = optional(number)
       maximum_scaling_step_size = optional(number)
@@ -188,7 +215,9 @@ variable "autoscaling_capacity_provider" {
       target_capacity           = optional(number)
     }))
   })
-  default  = {}
+  default = {
+    default_capacity_provider_strategy = {}
+  }
   nullable = false
 
   validation {
