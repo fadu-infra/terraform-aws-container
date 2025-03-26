@@ -14,9 +14,15 @@ locals {
 
   is_not_windows = contains(["LINUX"], var.operating_system_family)
 
-  log_group_name = try(coalesce(var.cloudwatch_log_group_name, "/aws/ecs/${var.service}/${var.name}"), "/aws/ecs/${var.service}/default")
+  log_group_name = try(
+    coalesce(
+      var.cloudwatch_log_group_config.log_group_name,
+      "/aws/ecs/${var.service}/${var.name}"
+    ),
+    "/aws/ecs/${var.service}/default"
+  )
 
-  default_log_config = var.enable_cloudwatch_logging ? {
+  default_log_config = var.cloudwatch_log_group_config.enable_logging ? {
     logDriver = "awslogs"
     options = {
       awslogs-region        = data.aws_region.current.name
@@ -42,7 +48,7 @@ locals {
   }, var.health_check) : null
 
   definition = {
-    command                = length(var.command) > 0 ? var.command : null
+    command                = var.command
     cpu                    = var.cpu
     dependsOn              = length(var.dependencies) > 0 ? var.dependencies : null # depends_on is a reserved word
     disableNetworking      = local.is_not_windows ? var.disable_networking : null
@@ -88,12 +94,12 @@ locals {
 }
 
 resource "aws_cloudwatch_log_group" "this" {
-  count = var.create_cloudwatch_log_group && var.enable_cloudwatch_logging ? 1 : 0
+  count = var.cloudwatch_log_group_config.create_log_group && var.cloudwatch_log_group_config.enable_logging ? 1 : 0
 
-  name              = var.cloudwatch_log_group_use_name_prefix ? null : local.log_group_name
-  name_prefix       = var.cloudwatch_log_group_use_name_prefix ? "${local.log_group_name}-" : null
-  retention_in_days = var.cloudwatch_log_group_retention_in_days
-  kms_key_id        = var.cloudwatch_log_group_kms_key_id
+  name              = var.cloudwatch_log_group_config.use_name_prefix ? null : local.log_group_name
+  name_prefix       = var.cloudwatch_log_group_config.use_name_prefix ? "${local.log_group_name}-" : null
+  retention_in_days = var.cloudwatch_log_group_config.retention_in_days
+  kms_key_id        = var.cloudwatch_log_group_config.kms_key_id
 
   tags = merge(
     {

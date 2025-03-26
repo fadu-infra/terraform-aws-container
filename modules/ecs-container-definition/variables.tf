@@ -10,10 +10,10 @@ variable "operating_system_family" {
 ################################################################################
 
 variable "command" {
-  description = "The command that's passed to the container"
+  description = "(Optional) The command that's passed to the container"
   type        = list(string)
-  default     = []
-  nullable    = false
+  default     = null
+  nullable    = true
 }
 
 variable "cpu" {
@@ -450,42 +450,30 @@ variable "service" {
   default     = ""
 }
 
-variable "enable_cloudwatch_logging" {
-  description = "(Optional) Determines whether CloudWatch logging is configured for this container definition. Set to `false` to use other logging drivers"
-  type        = bool
-  default     = true
-}
-
-variable "create_cloudwatch_log_group" {
-  description = "(Optional) Determines whether a log group is created by this module. If not, AWS will automatically create one if logging is enabled"
-  type        = bool
-  default     = true
-}
-
-variable "cloudwatch_log_group_name" {
-  description = "(Optional) Custom name of CloudWatch log group for a service associated with the container definition"
-  type        = string
-  default     = ""
-  nullable    = true
-}
-
-variable "cloudwatch_log_group_use_name_prefix" {
-  description = "(Optional) Determines whether the log group name should be used as a prefix"
-  type        = bool
-  default     = false
-}
-
-variable "cloudwatch_log_group_retention_in_days" {
-  description = "(Optional) Number of days to retain log events. Default is 30 days"
-  type        = number
-  default     = 30
-}
-
-variable "cloudwatch_log_group_kms_key_id" {
-  description = "(Optional) If a KMS Key ARN is set, this key will be used to encrypt the corresponding log group. Please be sure that the KMS Key has an appropriate key policy (https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/encrypt-log-data-kms.html)"
-  type        = string
-  default     = null
-  nullable    = true
+variable "cloudwatch_log_group_config" {
+  description = <<-EOT
+    (Optional) Configuration for the CloudWatch log group associated with the container definition. This includes:
+      (Optional) `enable_logging`: Determines whether CloudWatch logging is configured for this container definition. Set to `false` to use other logging drivers.
+      (Optional) `create_log_group`: Determines whether a log group is created by this module. If not, AWS will automatically create one if logging is enabled.
+      (Optional) `log_group_name`: Custom name of CloudWatch log group for a service associated with the container definition.
+      (Optional) `use_name_prefix`: Determines whether the log group name should be used as a prefix.
+      (Optional) `retention_in_days`: Number of days to retain log events. Default is 30 days.
+      (Optional) `kms_key_id`: If a KMS Key ARN is set, this key will be used to encrypt the corresponding log group. Please be sure that the KMS Key has an appropriate key policy (https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/encrypt-log-data-kms.html).
+  EOT
+  type = object({
+    enable_logging    = bool
+    create_log_group  = bool
+    log_group_name    = optional(string)
+    use_name_prefix   = bool
+    retention_in_days = number
+    kms_key_id        = optional(string)
+  })
+  default = {
+    enable_logging    = true
+    create_log_group  = true
+    use_name_prefix   = false
+    retention_in_days = 30
+  }
 }
 
 variable "tags" {
