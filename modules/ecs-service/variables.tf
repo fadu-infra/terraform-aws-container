@@ -26,9 +26,9 @@ variable "tags" {
 variable "alarms" {
   description = <<-EOT
     (Optional) Information about the CloudWatch alarms. The alarms configuration block supports the following:
-    - `alarm_names` (Required): One or more CloudWatch alarm names.
-    - `enable` (Required): Whether to use the CloudWatch alarm option in the service deployment process.
-    - `rollback` (Required): Whether to configure Amazon ECS to roll back the service if a service deployment fails. If rollback is used, when a service deployment fails, the service is rolled back to the last deployment that completed successfully.
+      (Required) `alarm_names` - One or more CloudWatch alarm names.
+      (Required) `enable` - Whether to use the CloudWatch alarm option in the service deployment process.
+      (Required) `rollback` - Whether to configure Amazon ECS to roll back the service if a service deployment fails. If rollback is used, when a service deployment fails, the service is rolled back to the last deployment that completed successfully.
   EOT
   type = map(object({
     alarm_names = list(string)
@@ -41,9 +41,9 @@ variable "alarms" {
 variable "capacity_provider_strategy" {
   description = <<-EOT
     (Optional) A map of capacity provider strategies for the ECS service. Each entry in the map should have the following keys:
-    - `capacity_provider`: (Required) The short name of the capacity provider.
-    - `base`: (Optional) The minimum number of tasks to run on the specified capacity provider. Defaults to null.
-    - `weight`: (Required) The relative percentage of the total number of launched tasks that should use the specified capacity provider. Defaults to null.
+      (Required) `capacity_provider` - The short name of the capacity provider.
+      (Optional) `base` - The minimum number of tasks to run on the specified capacity provider. Defaults to null.
+      (Required) `weight` - The relative percentage of the total number of launched tasks that should use the specified capacity provider. Defaults to null.
 
     This variable allows you to specify how tasks are distributed across different capacity providers, which can be useful for balancing cost and performance.
   EOT
@@ -72,9 +72,9 @@ variable "cluster_arn" {
 variable "deployment_setting" {
   description = <<-EOT
     (Optional) Deployment settings including:
-    - `circuit_breaker`: (Optional) Configuration block for deployment circuit breaker
-    - `maximum_percent`: (Optional) Upper limit (as a percentage of the service's `desired_count`) of the number of running tasks that can be running in a service during a deployment
-    - `minimum_healthy_percent`: (Optional) Lower limit (as a percentage of the service's `desired_count`) of the number of running tasks that must remain running and healthy in a service during a deployment
+      (Optional) `circuit_breaker` - Configuration block for deployment circuit breaker
+      (Optional) `maximum_percent` - Upper limit (as a percentage of the service's `desired_count`) of the number of running tasks that can be running in a service during a deployment
+      (Optional) `minimum_healthy_percent` - Lower limit (as a percentage of the service's `desired_count`) of the number of running tasks that must remain running and healthy in a service during a deployment
   EOT
 
   type = object({
@@ -147,10 +147,10 @@ variable "name" {
 
 variable "network_configuration" {
   description = <<-EOT
-  (Optional) Network configuration for the ECS service, including:
-  - `assign_public_ip`: (Optional) Assign a public IP address to the ENI (Fargate launch type only).
-  - `security_group_ids`: (Optional) List of security groups to associate with the task or service.
-  - `subnet_ids`: (Required) List of subnets to associate with the task or service.
+    (Optional) Network configuration for the ECS service, including:
+      (Optional) `assign_public_ip` - Assign a public IP address to the ENI (Fargate launch type only).
+      (Optional) `security_group_ids` - List of security groups to associate with the task or service.
+      (Required) `subnet_ids` - List of subnets to associate with the task or service.
   EOT
 
   type = object({
@@ -169,8 +169,8 @@ variable "network_configuration" {
 variable "ordered_placement_strategy" {
   description = <<-EOT
     (Optional) Service level strategy rules that are taken into consideration during task placement. List from top to bottom in order of precedence.
-    - `type`: (Required) Type of placement strategy. Must be one of: `binpack`, `random`, or `spread`.
-    - `field`: (Optional) For the `spread` placement strategy, valid values are `instanceId` (or `host`, which has the same effect), or any platform or custom attribute that is applied to a container instance. For the `binpack` type, valid values are `memory` and `cpu`. For the `random` type, this attribute is not needed. For more information, see Placement Strategy.
+      (Required) `type` - Type of placement strategy. Must be one of: `binpack`, `random`, or `spread`.
+      (Optional) `field` - For the `spread` placement strategy, valid values are `instanceId` (or `host`, which has the same effect), or any platform or custom attribute that is applied to a container instance. For the `binpack` type, valid values are `memory` and `cpu`. For the `random` type, this attribute is not needed. For more information, see Placement Strategy.
   EOT
   type = map(object({
     type  = string
@@ -236,9 +236,9 @@ variable "service_connect_configuration" {
 variable "service_discovery_registries" {
   description = <<-EOT
     (Optional) Service discovery registries for the service. Supports the following:
-    - `registry_arn`: (Required) ARN of the Service Registry. The currently supported service registry is Amazon Route 53 Auto Naming Service (aws_service_discovery_service).
-    - `port`: (Optional) Port value used if your Service Discovery service specified an SRV record.
-    - `container_port`: (Optional) Port value, already specified in the task definition, to be used for your service discovery service.
+      (Required) `registry_arn` - ARN of the Service Registry. The currently supported service registry is Amazon Route 53 Auto Naming Service (aws_service_discovery_service).
+      (Optional) `port` - Port value used if your Service Discovery service specified an SRV record.
+      (Optional) `container_port` - Port value, already specified in the task definition, to be used for your service discovery service.
     - `container_name`: (Optional) Container name value, already specified in the task definition, to be used for your service discovery service.
   EOT
   type        = any
@@ -248,9 +248,9 @@ variable "service_discovery_registries" {
 variable "timeouts" {
   description = <<-EOT
     (Optional) Timeout configurations for the service operations. Supports the following:
-    - `create`: (Default 20m) Timeout for creating the service.
-    - `update`: (Default 20m) Timeout for updating the service.
-    - `delete`: (Default 20m) Timeout for deleting the service.
+      (Default 20m) `create` - Timeout for creating the service.
+      (Default 20m) `update` - Timeout for updating the service.
+      (Default 20m) `delete` - Timeout for deleting the service.
   EOT
   type = object({
     create = optional(string, "20m")
@@ -437,8 +437,8 @@ variable "pid_mode" {
 variable "task_definition_placement_constraints" {
   description = <<-EOT
     (Optional) Configuration block for rules that are taken into consideration during task placement (up to max of 10). This is set at the task definition. Supports the following:
-    - `expression`: (Optional) Cluster Query Language expression to apply to the constraint. For more information, see Cluster Query Language in the Amazon EC2 Container Service Developer Guide.
-    - `type`: (Required) Type of constraint. Use `memberOf` to restrict selection to a group of valid candidates. Note that `distinctInstance` is not supported in task definitions.
+      (Optional) `expression` - Cluster Query Language expression to apply to the constraint. For more information, see Cluster Query Language in the Amazon EC2 Container Service Developer Guide.
+      (Required) `type` - Type of constraint. Use `memberOf` to restrict selection to a group of valid candidates. Note that `distinctInstance` is not supported in task definitions.
   EOT
   type = list(object({
     expression = optional(string)
@@ -469,8 +469,8 @@ variable "requires_compatibilities" {
 variable "runtime_platform" {
   description = <<-EOT
     (Optional) Configuration block for `runtime_platform` that containers in your task may use.
-    - `operating_system_family`: (Optional) If the `requires_compatibilities` is `FARGATE`, this field is required; must be set to a valid option from the operating system family in the runtime platform setting.
-    - `cpu_architecture`: (Optional) Must be set to either `X86_64` or `ARM64`.
+      (Optional) `operating_system_family` - If the `requires_compatibilities` is `FARGATE`, this field is required; must be set to a valid option from the operating system family in the runtime platform setting.
+      (Optional) `cpu_architecture` - Must be set to either `X86_64` or `ARM64`.
   EOT
   type = object({
     operating_system_family = optional(string, "LINUX")
@@ -492,12 +492,12 @@ variable "skip_destroy" {
 variable "volume" {
   description = <<-EOT
     (Optional) Configuration block for volumes that containers in your task may use. Supports the following configurations:
-    - `docker_volume_configuration`: (Optional) Configuration block to configure a Docker volume.
-    - `efs_volume_configuration`: (Optional) Configuration block for an EFS volume.
-    - `fsx_windows_file_server_volume_configuration`: (Optional) Configuration block for an FSX Windows File Server volume.
-    - `host_path`: (Optional) Path on the host container instance that is presented to the container.
-    - `configure_at_launch`: (Optional) Whether the volume should be configured at launch time.
-    - `name`: (Required) Name of the volume.
+      (Optional) `docker_volume_configuration` - Configuration block to configure a Docker volume.
+      (Optional) `efs_volume_configuration` - Configuration block for an EFS volume.
+      (Optional) `fsx_windows_file_server_volume_configuration` - Configuration block for an FSX Windows File Server volume.
+      (Optional) `host_path` - Path on the host container instance that is presented to the container.
+      (Optional) `configure_at_launch` - Whether the volume should be configured at launch time.
+      (Required) `name` - Name of the volume.
   EOT
   type = map(object({
     docker_volume_configuration = optional(object({
