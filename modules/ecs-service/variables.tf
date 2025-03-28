@@ -27,15 +27,15 @@ variable "alarms" {
   description = <<-EOT
     (Optional) Information about the CloudWatch alarms. The alarms configuration block supports the following:
       (Required) `alarm_names` - One or more CloudWatch alarm names.
-      (Required) `enable` - Whether to use the CloudWatch alarm option in the service deployment process.
-      (Required) `rollback` - Whether to configure Amazon ECS to roll back the service if a service deployment fails. If rollback is used, when a service deployment fails, the service is rolled back to the last deployment that completed successfully.
+      (Optional) `enable` - Whether to use the CloudWatch alarm option in the service deployment process. Defaults to true.
+      (Optional) `rollback` - Whether to configure Amazon ECS to roll back the service if a service deployment fails. Defaults to true.
   EOT
-  type = map(object({
+  type = list(object({
     alarm_names = list(string)
-    enable      = bool
-    rollback    = bool
+    enable      = optional(bool, true)
+    rollback    = optional(bool, true)
   }))
-  default = {}
+  default = []
 }
 
 variable "capacity_provider_strategy" {
@@ -43,7 +43,7 @@ variable "capacity_provider_strategy" {
     (Optional) A map of capacity provider strategies for the ECS service. Each entry in the map should have the following keys:
       (Required) `capacity_provider` - The short name of the capacity provider.
       (Optional) `base` - The minimum number of tasks to run on the specified capacity provider. Defaults to null.
-      (Required) `weight` - The relative percentage of the total number of launched tasks that should use the specified capacity provider. Defaults to null.
+      (Required) `weight` - The relative percentage of the total number of launched tasks that should use the specified capacity provider.
 
     This variable allows you to specify how tasks are distributed across different capacity providers, which can be useful for balancing cost and performance.
   EOT
@@ -51,7 +51,7 @@ variable "capacity_provider_strategy" {
   type = map(object({
     capacity_provider = string
     base              = optional(number)
-    weight            = optional(number)
+    weight            = number
   }))
 
   default = {}
