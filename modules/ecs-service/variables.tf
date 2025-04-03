@@ -71,13 +71,19 @@ variable "deployment_setting" {
   EOT
 
   type = object({
-    circuit_breaker         = optional(any, {})
+    circuit_breaker = optional(object({
+      enable   = bool
+      rollback = bool
+    }))
     maximum_percent         = optional(number, 200)
     minimum_healthy_percent = optional(number, 66)
   })
   nullable = false
   default = {
-    circuit_breaker         = {}
+    circuit_breaker = {
+      enable   = false
+      rollback = false
+    }
     maximum_percent         = 200
     minimum_healthy_percent = 66
   }
@@ -126,9 +132,20 @@ variable "launch_type" {
 }
 
 variable "load_balancer" {
-  description = "(Optional) Configuration block for load balancers"
-  type        = any
-  default     = {}
+  description = <<-EOT
+    (Optional) Configuration block for load balancers. The configuration supports the following:
+      (Required) `container_name` - The name of the container to associate with the load balancer.
+      (Required) `container_port` - The port on the container to associate with the load balancer.
+      (Optional) `elb_name` - The name of the Elastic Load Balancer.
+      (Optional) `target_group_arn` - The ARN of the target group.
+  EOT
+  type = map(object({
+    container_name   = string
+    container_port   = number
+    elb_name         = optional(string)
+    target_group_arn = optional(string)
+  }))
+  default = {}
 }
 
 variable "name" {
@@ -187,9 +204,16 @@ variable "ordered_placement_strategy" {
 }
 
 variable "placement_constraints" {
-  description = "(Optional) Configuration block for rules that are taken into consideration during task placement (up to max of 10). This is set at the service, see `task_definition_placement_constraints` for setting at the task definition"
-  type        = any
-  default     = {}
+  description = <<-EOT
+    (Optional) Configuration block for rules that are taken into consideration during task placement (up to max of 10). This is set at the service level. Supports the following:
+      (Optional) `expression` - Cluster Query Language expression to apply to the constraint.
+      (Required) `type` - Type of constraint. Use `memberOf` to restrict selection to a group of valid candidates.
+  EOT
+  type = list(object({
+    expression = optional(string)
+    type       = string
+  }))
+  default = []
 }
 
 variable "platform_version" {
@@ -221,9 +245,48 @@ variable "scheduling_strategy" {
 }
 
 variable "service_connect_configuration" {
-  description = "(Optional) The ECS Service Connect configuration for this service to discover and connect to services, and be discovered by, and connected from, other services within a namespace"
-  type        = any
-  default     = {}
+  description = <<-EOT
+    (Optional) The ECS Service Connect configuration for this service to discover and connect to services, and be discovered by, and connected from, other services within a namespace.
+      (Optional) `enabled` - Whether the service connect is enabled. Defaults to true.
+      (Optional) `log_configuration` - Configuration block for logging
+        (Optional) `log_driver` - The log driver to use for the container.
+        (Optional) `options` - Key-value pairs to configure the log driver.
+        (Optional) `secret_option` - Configuration block for secret options
+          (Required) `name` - The name of the secret option.
+          (Required) `value_from` - The ARN of the secret.
+      (Optional) `namespace` - The namespace for the service connect.
+      (Optional) `service` - Configuration block for the service
+        (Optional) `client_alias` - Configuration block for client alias
+          (Optional) `dns_name` - The DNS name for the client alias.
+          (Required) `port` - The port for the client alias.
+        (Optional) `discovery_name` - The discovery name for the service.
+        (Optional) `ingress_port_override` - The ingress port override for the service.
+        (Required) `port_name` - The port name for the service.
+  EOT
+
+  type = object({
+    enabled = optional(bool, true)
+    log_configuration = optional(object({
+      log_driver = optional(string)
+      options    = optional(map(string))
+      secret_option = optional(list(object({
+        name       = string
+        value_from = string
+      })))
+    }))
+    namespace = optional(string)
+    service = optional(object({
+      client_alias = optional(object({
+        dns_name = optional(string)
+        port     = number
+      }))
+      discovery_name        = optional(string)
+      ingress_port_override = optional(number)
+      port_name             = string
+    }))
+  })
+
+  default = {}
 }
 
 variable "service_discovery_registries" {
@@ -234,8 +297,13 @@ variable "service_discovery_registries" {
       (Optional) `container_port` - Port value, already specified in the task definition, to be used for your service discovery service.
     - `container_name`: (Optional) Container name value, already specified in the task definition, to be used for your service discovery service.
   EOT
-  type        = any
-  default     = {}
+  type = map(object({
+    container_name = string
+    container_port = number
+    port           = number
+    registry_arn   = string
+  }))
+  default = {}
 }
 
 variable "timeouts" {
@@ -329,9 +397,47 @@ variable "iam_role_tags" {
 }
 
 variable "iam_role_statements" {
-  description = "(Optional) A map of IAM policy [statements](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document#statement) for custom permission usage"
-  type        = any
-  default     = {}
+  description = <<-EOT
+    (Optional) A map of IAM policy [statements](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document#statement) for custom permission usage.
+      (Optional) `sid` - A unique identifier for the statement.
+      (Required) `actions` - A list of actions that the statement allows or denies.
+      (Optional) `not_actions` - A list of actions that are explicitly not allowed.
+      (Required) `effect` - The effect of the statement, either `Allow` or `Deny`.
+      (Required) `resources` - A list of resources to which the statement applies.d
+      (Optional) `not_resources` - A list of resources that are explicitly not included.
+      (Optional) `principals` - A list of principals to which the statement applies.
+        (Optional) `type` - The type of principal.
+        (Required) `identifiers` - The list of identifiers for the principal.
+      (Optional) `not_principals` - A list of principals that are explicitly not included.
+        (Optional) `type` - The type of principal.
+        (Required) `identifiers` - The list of identifiers for the principal.
+      (Optional) `conditions` - A list of conditions that must be met for the statement to apply.
+        (Optional) `test` - The condition type.
+        (Required) `values` - The list of values for the condition.
+        (Optional) `variable` - The key name of the condition.
+  EOT
+  type = map(object({
+    sid           = optional(string)
+    actions       = list(string)
+    not_actions   = optional(list(string))
+    effect        = string
+    resources     = list(string)
+    not_resources = optional(list(string))
+    principals = optional(list(object({
+      type        = string
+      identifiers = list(string)
+    })))
+    not_principals = optional(list(object({
+      type        = string
+      identifiers = list(string)
+    })))
+    conditions = optional(list(object({
+      test     = string
+      values   = list(string)
+      variable = string
+    })))
+  }))
+  default = {}
 }
 
 ################################################################################
@@ -351,15 +457,176 @@ variable "task_definition_arn" {
 }
 
 variable "container_definitions" {
-  description = "(Optional) A map of valid [container definitions](http://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_ContainerDefinition.html). Please note that you should only provide values that are part of the container definition document"
-  type        = any
-  default     = {}
+  description = <<-EOT
+    (Optional) A map of valid [container definitions](http://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_ContainerDefinition.html). Please note that you should only provide values that are part of the container definition document. The configuration supports the following:
+      (Required) `name` - The name of the container.
+      (Required) `image` - The image to use for the container.
+      (Optional) `cpu` - The number of CPU units to reserve for the container.
+      (Optional) `memory` - The amount of memory (in MiB) to reserve for the container.
+      (Optional) `essential` - Whether the container is essential. Defaults to true.
+      (Optional) `port_mappings` - A list of port mappings for the container. Each mapping supports:
+        (Required) `container_port` - The port number on the container.
+        (Optional) `host_port` - The port number on the host.
+        (Optional) `protocol` - The protocol used for the port mapping. Defaults to "tcp".
+      (Optional) `environment` - A list of environment variables for the container. Each variable supports:
+        (Required) `name` - The name of the environment variable.
+        (Required) `value` - The value of the environment variable.
+      (Optional) `command` - The command to run inside the container.
+      (Optional) `dependencies` - The dependencies for the container.
+      (Optional) `disable_networking` - Whether to disable networking for the container.
+      (Optional) `dns_search_domains` - A list of DNS search domains.
+      (Optional) `dns_servers` - A list of DNS servers.
+      (Optional) `docker_labels` - A map of Docker labels.
+      (Optional) `docker_security_options` - A list of Docker security options.
+      (Optional) `enable_execute_command` - Whether to enable execute command.
+      (Optional) `entrypoint` - The entry point for the container.
+      (Optional) `environment_files` - A list of environment files.
+      (Optional) `extra_hosts` - A list of extra hosts.
+      (Optional) `firelens_configuration` - FireLens configuration.
+      (Optional) `health_check` - Health check configuration.
+      (Optional) `hostname` - The hostname for the container.
+      (Optional) `interactive` - Whether the container is interactive.
+      (Optional) `links` - A list of links for the container.
+      (Optional) `linux_parameters` - Linux parameters.
+      (Optional) `log_configuration` - Log configuration.
+      (Optional) `memory_reservation` - The amount of memory to reserve for the container.
+      (Optional) `mount_points` - A list of mount points.
+      (Optional) `privileged` - Whether the container is privileged.
+      (Optional) `pseudo_terminal` - Whether to allocate a pseudo-TTY.
+      (Optional) `readonly_root_filesystem` - Whether the root filesystem is read-only.
+      (Optional) `repository_credentials` - Repository credentials.
+      (Optional) `resource_requirements` - Resource requirements.
+      (Optional) `secrets` - A list of secrets.
+      (Optional) `start_timeout` - The start timeout for the container.
+      (Optional) `stop_timeout` - The stop timeout for the container.
+      (Optional) `system_controls` - System controls.
+      (Optional) `ulimits` - Ulimits.
+      (Optional) `user` - The user to run the container as.
+      (Optional) `volumes_from` - A list of volumes to mount from another container.
+      (Optional) `working_directory` - The working directory for the container.
+      (Optional) `enable_cloudwatch_logging` - Whether to enable CloudWatch logging.
+      (Optional) `create_cloudwatch_log_group` - Whether to create a CloudWatch log group.
+      (Optional) `cloudwatch_log_group_name` - The name of the CloudWatch log group.
+      (Optional) `cloudwatch_log_group_use_name_prefix` - Whether to use a name prefix for the CloudWatch log group.
+      (Optional) `cloudwatch_log_group_retention_in_days` - The retention period for the CloudWatch log group.
+      (Optional) `cloudwatch_log_group_kms_key_id` - The KMS key ID for the CloudWatch log group.
+  EOT
+  type = map(object({
+    name      = string
+    image     = string
+    cpu       = optional(number)
+    memory    = optional(number)
+    essential = optional(bool, true)
+    port_mappings = optional(list(object({
+      container_port = number
+      host_port      = optional(number)
+      protocol       = optional(string, "tcp")
+    })), [])
+    environment = optional(list(object({
+      name  = string
+      value = string
+    })), [])
+    command                                = optional(list(string), [])
+    dependencies                           = optional(list(string), [])
+    disable_networking                     = optional(bool, null)
+    dns_search_domains                     = optional(list(string), [])
+    dns_servers                            = optional(list(string), [])
+    docker_labels                          = optional(map(string), {})
+    docker_security_options                = optional(list(string), [])
+    enable_execute_command                 = optional(bool, null)
+    entrypoint                             = optional(list(string), [])
+    environment_files                      = optional(list(string), [])
+    extra_hosts                            = optional(list(string), [])
+    firelens_configuration                 = optional(map(string), {})
+    health_check                           = optional(map(string), {})
+    hostname                               = optional(string, null)
+    interactive                            = optional(bool, false)
+    links                                  = optional(list(string), [])
+    linux_parameters                       = optional(map(string), {})
+    log_configuration                      = optional(map(string), {})
+    memory_reservation                     = optional(number, null)
+    mount_points                           = optional(list(string), [])
+    privileged                             = optional(bool, false)
+    pseudo_terminal                        = optional(bool, false)
+    readonly_root_filesystem               = optional(bool, true)
+    repository_credentials                 = optional(map(string), {})
+    resource_requirements                  = optional(list(string), [])
+    secrets                                = optional(list(string), [])
+    start_timeout                          = optional(number, 30)
+    stop_timeout                           = optional(number, 120)
+    system_controls                        = optional(list(string), [])
+    ulimits                                = optional(list(string), [])
+    user                                   = optional(string, "0")
+    volumes_from                           = optional(list(string), [])
+    working_directory                      = optional(string, null)
+    enable_cloudwatch_logging              = optional(bool, true)
+    create_cloudwatch_log_group            = optional(bool, true)
+    cloudwatch_log_group_name              = optional(string, null)
+    cloudwatch_log_group_use_name_prefix   = optional(bool, false)
+    cloudwatch_log_group_retention_in_days = optional(number, 14)
+    cloudwatch_log_group_kms_key_id        = optional(string, null)
+  }))
+  default = {}
 }
 
 variable "container_definition_defaults" {
-  description = "(Optional) A map of default values for [container definitions](http://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_ContainerDefinition.html) created by `container_definitions`"
-  type        = any
-  default     = {}
+  description = "(Optional) A map of default values for container definitions. The structure is the same as `container_definitions`. Refer to the `container_definitions` variable for details."
+  type = map(object({
+    name      = string
+    image     = string
+    cpu       = optional(number)
+    memory    = optional(number)
+    essential = optional(bool, true)
+    port_mappings = optional(list(object({
+      container_port = number
+      host_port      = optional(number)
+      protocol       = optional(string, "tcp")
+    })), [])
+    environment = optional(list(object({
+      name  = string
+      value = string
+    })), [])
+    command                                = optional(list(string), [])
+    dependencies                           = optional(list(string), [])
+    disable_networking                     = optional(bool, null)
+    dns_search_domains                     = optional(list(string), [])
+    dns_servers                            = optional(list(string), [])
+    docker_labels                          = optional(map(string), {})
+    docker_security_options                = optional(list(string), [])
+    enable_execute_command                 = optional(bool, null)
+    entrypoint                             = optional(list(string), [])
+    environment_files                      = optional(list(string), [])
+    extra_hosts                            = optional(list(string), [])
+    firelens_configuration                 = optional(map(string), {})
+    health_check                           = optional(map(string), {})
+    hostname                               = optional(string, null)
+    interactive                            = optional(bool, false)
+    links                                  = optional(list(string), [])
+    linux_parameters                       = optional(map(string), {})
+    log_configuration                      = optional(map(string), {})
+    memory_reservation                     = optional(number, null)
+    mount_points                           = optional(list(string), [])
+    privileged                             = optional(bool, false)
+    pseudo_terminal                        = optional(bool, false)
+    readonly_root_filesystem               = optional(bool, true)
+    repository_credentials                 = optional(map(string), {})
+    resource_requirements                  = optional(list(string), [])
+    secrets                                = optional(list(string), [])
+    start_timeout                          = optional(number, 30)
+    stop_timeout                           = optional(number, 120)
+    system_controls                        = optional(list(string), [])
+    ulimits                                = optional(list(string), [])
+    user                                   = optional(string, "0")
+    volumes_from                           = optional(list(string), [])
+    working_directory                      = optional(string, null)
+    enable_cloudwatch_logging              = optional(bool, true)
+    create_cloudwatch_log_group            = optional(bool, true)
+    cloudwatch_log_group_name              = optional(string, null)
+    cloudwatch_log_group_use_name_prefix   = optional(bool, false)
+    cloudwatch_log_group_retention_in_days = optional(number, 14)
+    cloudwatch_log_group_kms_key_id        = optional(string, null)
+  }))
+  default = {}
 }
 
 variable "cpu" {
@@ -369,9 +636,17 @@ variable "cpu" {
 }
 
 variable "ephemeral_storage" {
-  description = "(Optional) The amount of ephemeral storage to allocate for the task. This parameter is used to expand the total amount of ephemeral storage available, beyond the default amount, for tasks hosted on AWS Fargate"
-  type        = any
-  default     = {}
+  description = <<-EOT
+    (Optional) Configuration block for ephemeral storage. Supports the following:
+    (Required) `size_in_gib` - The amount of ephemeral storage to allocate for the task in GiB.
+  EOT
+
+  type = object({
+    size_in_gib = number
+  })
+  default = {
+    size_in_gib = 20
+  }
 }
 
 variable "family" {
@@ -618,9 +893,32 @@ variable "task_exec_secret_arns" {
 }
 
 variable "task_exec_iam_statements" {
-  description = "(Optional) A map of IAM policy [statements](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document#statement) for custom permission usage"
-  type        = any
-  default     = {}
+  description = <<-EOT
+    (Optional) A map of IAM policy [statements](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document#statement) for custom permission usage"
+    Note: Same `iam_role_statements` variable configuration applies here.
+  EOT
+  type = map(object({
+    sid           = optional(string)
+    actions       = list(string)
+    not_actions   = optional(list(string))
+    effect        = string
+    resources     = list(string)
+    not_resources = optional(list(string))
+    principals = optional(list(object({
+      type        = string
+      identifiers = list(string)
+    })))
+    not_principals = optional(list(object({
+      type        = string
+      identifiers = list(string)
+    })))
+    conditions = optional(list(object({
+      test     = string
+      values   = list(string)
+      variable = string
+    })))
+  }))
+  default = {}
 }
 
 variable "task_exec_iam_policy_path" {
@@ -688,7 +986,30 @@ variable "tasks_iam_role_policies" {
 }
 
 variable "tasks_iam_role_statements" {
-  description = "(Optional) A map of IAM policy [statements](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document#statement) for custom permission usage"
-  type        = any
-  default     = {}
+  description = <<-EOT
+    (Optional) A map of IAM policy statements for custom permission usage. Each statement supports the following:
+    Note: Same `iam_role_statements` variable configuration applies here.
+  EOT
+  type = map(object({
+    sid           = optional(string)
+    actions       = list(string)
+    not_actions   = optional(list(string))
+    effect        = string
+    resources     = list(string)
+    not_resources = optional(list(string))
+    principals = optional(list(object({
+      type        = string
+      identifiers = list(string)
+    })))
+    not_principals = optional(list(object({
+      type        = string
+      identifiers = list(string)
+    })))
+    conditions = optional(list(object({
+      test     = string
+      values   = list(string)
+      variable = string
+    })))
+  }))
+  default = {}
 }
