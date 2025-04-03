@@ -48,7 +48,7 @@ resource "aws_ecs_service" "this" {
 
   # Capacity Provider Strategy
   dynamic "capacity_provider_strategy" {
-    for_each = { for k, v in var.capacity_provider_strategy : k => v }
+    for_each = var.capacity_provider_strategy
 
     content {
       base              = try(capacity_provider_strategy.value.base, null)
@@ -58,13 +58,9 @@ resource "aws_ecs_service" "this" {
   }
 
   # Deployment Circuit Breaker
-  dynamic "deployment_circuit_breaker" {
-    for_each = length(var.deployment_setting.circuit_breaker) > 0 ? [var.deployment_setting.circuit_breaker] : []
-
-    content {
-      enable   = deployment_circuit_breaker.value.enable
-      rollback = deployment_circuit_breaker.value.rollback
-    }
+  deployment_circuit_breaker {
+    enable   = var.deployment_setting.circuit_breaker.enable
+    rollback = var.deployment_setting.circuit_breaker.rollback
   }
 
   # Deployment Settings
@@ -117,7 +113,7 @@ resource "aws_ecs_service" "this" {
 
   # Load Balancer
   dynamic "load_balancer" {
-    for_each = { for k, v in var.load_balancer : k => v }
+    for_each = var.load_balancers
 
     content {
       container_name   = load_balancer.value.container_name

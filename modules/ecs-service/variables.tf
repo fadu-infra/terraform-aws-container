@@ -66,6 +66,7 @@ variable "deployment_setting" {
   description = <<-EOT
     (Optional) Deployment settings including:
       (Optional) `circuit_breaker` - Configuration block for deployment circuit breaker
+        (Optional) `enable` - Whether to enable the deployment circuit breaker. Defaults to false.
       (Optional) `maximum_percent` - Upper limit (as a percentage of the service's `desired_count`) of the number of running tasks that can be running in a service during a deployment
       (Optional) `minimum_healthy_percent` - Lower limit (as a percentage of the service's `desired_count`) of the number of running tasks that must remain running and healthy in a service during a deployment
   EOT
@@ -131,7 +132,7 @@ variable "launch_type" {
   default     = "FARGATE"
 }
 
-variable "load_balancer" {
+variable "load_balancers" {
   description = <<-EOT
     (Optional) Configuration block for load balancers. The configuration supports the following:
       (Required) `container_name` - The name of the container to associate with the load balancer.
@@ -206,14 +207,19 @@ variable "ordered_placement_strategy" {
 variable "placement_constraints" {
   description = <<-EOT
     (Optional) Configuration block for rules that are taken into consideration during task placement (up to max of 10). This is set at the service level. Supports the following:
-      (Optional) `expression` - Cluster Query Language expression to apply to the constraint.
-      (Required) `type` - Type of constraint. Use `memberOf` to restrict selection to a group of valid candidates.
+      (Optional) `expression` - Cluster Query Language expression to apply to the constraint. This is not required when the `type` is `distinctInstance`.
+      (Required) `type` - Type of constraint. The only valid values at this time are `memberOf` and `distinctInstance`.
   EOT
   type = list(object({
     expression = optional(string)
     type       = string
   }))
   default = []
+
+  validation {
+    condition     = alltrue([for constraint in var.placement_constraints : contains(["memberOf", "distinctInstance"], constraint.type)])
+    error_message = "Each 'type' must be either 'memberOf' or 'distinctInstance'."
+  }
 }
 
 variable "platform_version" {
