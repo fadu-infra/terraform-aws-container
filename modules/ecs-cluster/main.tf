@@ -24,8 +24,6 @@ locals {
 }
 
 resource "aws_ecs_cluster" "this" {
-  count = var.create ? 1 : 0
-
   name = var.name
 
   dynamic "configuration" {
@@ -86,7 +84,7 @@ resource "aws_ecs_cluster" "this" {
 ################################################################################
 
 resource "aws_cloudwatch_log_group" "this" {
-  count = var.create && var.cloudwatch_log_group.create ? 1 : 0
+  count = var.cloudwatch_log_group.create ? 1 : 0
 
   name              = coalesce(var.cloudwatch_log_group.name, "/aws/ecs/${var.name}")
   retention_in_days = var.cloudwatch_log_group.retention_in_days
@@ -111,9 +109,9 @@ locals {
 }
 
 resource "aws_ecs_cluster_capacity_providers" "this" {
-  count = var.create && length(local.selected_capacity_providers) > 0 ? 1 : 0
+  count = length(local.selected_capacity_providers) > 0 ? 1 : 0
 
-  cluster_name       = aws_ecs_cluster.this[0].name
+  cluster_name       = aws_ecs_cluster.this.name
   capacity_providers = distinct([for provider in local.selected_capacity_providers : provider.name])
 
   # https://docs.aws.amazon.com/AmazonECS/latest/developerguide/cluster-capacity-providers.html#capacity-providers-considerations
@@ -138,7 +136,7 @@ resource "aws_ecs_cluster_capacity_providers" "this" {
 ################################################################################
 
 resource "aws_ecs_capacity_provider" "this" {
-  count = var.create && length(var.autoscaling_capacity_provider) > 0 ? 1 : 0
+  count = length(var.autoscaling_capacity_provider) > 0 ? 1 : 0
 
   name = var.autoscaling_capacity_provider.name
 

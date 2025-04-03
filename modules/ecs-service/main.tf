@@ -27,12 +27,10 @@ locals {
   # https://docs.aws.amazon.com/AmazonECS/latest/developerguide/deployment-type-external.html
   is_daemon  = var.scheduling_strategy == "DAEMON"
   is_fargate = var.launch_type == "FARGATE"
-
-  create_service = var.create && var.create_service
 }
 
 resource "aws_ecs_service" "this" {
-  count = local.create_service ? 1 : 0
+  count = var.create_service ? 1 : 0
 
   cluster = var.cluster_arn
   name    = var.name
@@ -304,7 +302,7 @@ module "container_definition" {
 ################################################################################
 
 locals {
-  create_task_definition = var.create && var.create_task_definition
+  create_task_definition = var.create_task_definition
 
   # This allows us to query both the existing as well as Terraform's state
   # and get the max version of either source, useful for when external resources

@@ -6,7 +6,7 @@
 locals {
   task_exec_iam_role_name = coalesce(var.task_exec_iam_role_name, var.name)
 
-  create_task_exec_iam_role = var.create && var.create_task_exec_iam_role
+  create_task_exec_iam_role = var.create_task_exec_iam_role
   create_task_exec_policy   = local.create_task_exec_iam_role && var.create_task_exec_policy
 }
 

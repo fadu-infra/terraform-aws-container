@@ -7,7 +7,7 @@ locals {
 
   # Role is not required if task definition uses `awsvpc` network mode or if a load balancer is not used
   needs_iam_role  = var.network_mode != "awsvpc" && length(var.load_balancer) > 0
-  create_iam_role = var.create && var.create_iam_role && local.needs_iam_role
+  create_iam_role = var.create_iam_role && local.needs_iam_role
   iam_role_arn    = local.needs_iam_role ? try(aws_iam_role.service[0].arn, var.iam_role_arn) : null
 }
 

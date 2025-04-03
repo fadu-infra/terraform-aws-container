@@ -1,10 +1,3 @@
-variable "create" {
-  description = "(Optional) Determines whether resources will be created (affects all resources)"
-  type        = bool
-  default     = true
-  nullable    = false
-}
-
 variable "tags" {
   description = "(Optional) A map of tags to add to all resources"
   type        = map(string)
@@ -27,13 +20,13 @@ variable "cluster_configuration" {
   (Optional) Configuration block for execute command configuration for the cluster
     (Optional) `execute_command_configuration` - The details of the execute command configuration
       (Optional) `kms_key_id` - KMS key ID to encrypt the data between local client and container
+      (Optional) `logging` - The log setting to use for redirecting logs. ('NONE', 'DEFAULT', and 'OVERRIDE'. Default is 'DEFAULT')
       (Optional) `log_configuration` - The log configuration for the results of the execute command actions
         (Optional) `cloud_watch_encryption_enabled` - Whether encryption for CloudWatch logs is enabled
-          (Optional) `cloud_watch_log_group_name` - The name of the CloudWatch log group to send logs to
-          (Optional) `s3_bucket_name` - The name of the S3 bucket to send logs to
-          (Optional) `s3_bucket_encryption_enabled` - Whether encryption for S3 bucket logs is enabled
-          (Optional) `s3_key_prefix` - The S3 bucket prefix for logs
-      (Optional) `logging` - The log setting to use for redirecting logs. ('NONE', 'DEFAULT', and 'OVERRIDE'. Default is 'DEFAULT')
+        (Optional) `cloud_watch_log_group_name` - The name of the CloudWatch log group to send logs to
+        (Optional) `s3_bucket_name` - The name of the S3 bucket to send logs to
+        (Optional) `s3_bucket_encryption_enabled` - Whether encryption for S3 bucket logs is enabled
+        (Optional) `s3_key_prefix` - The S3 bucket prefix for logs
   EOT
   type = list(object({
     execute_command_configuration = optional(object({

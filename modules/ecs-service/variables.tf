@@ -1,10 +1,3 @@
-variable "create" {
-  description = "(Optional) Determines whether resources will be created (affects all resources)"
-  type        = bool
-  default     = true
-  nullable    = false
-}
-
 variable "create_service" {
   description = "(Optional) Determines whether service resource will be created (set to `false` in case you want to create task definition only)"
   type        = bool
