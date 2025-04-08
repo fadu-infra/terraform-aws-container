@@ -62,9 +62,8 @@ resource "aws_ecs_cluster" "this" {
     }
   }
 
-  # Container Insights
   dynamic "setting" {
-    for_each = var.cluster_settings # 변수명을 수정하는 것이 어떠냐?
+    for_each = var.container_insights_settings
 
     content {
       name  = setting.value.name

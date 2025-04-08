@@ -56,7 +56,7 @@ variable "cluster_configuration" {
   }
 }
 
-variable "cluster_settings" {
+variable "container_insights_settings" {
   description = <<-EOT
   (Optional) List of configuration block(s) with cluster settings. For example, this can be used to enable CloudWatch Container Insights for a cluster
     (Required) `name` - The name of the setting to change. Available settings are containerInsights
@@ -76,7 +76,7 @@ variable "cluster_settings" {
 
   validation {
     condition = alltrue([
-      for setting in var.cluster_settings :
+      for setting in var.container_insights_settings :
       setting.name == "containerInsights" &&
       contains(["enabled", "disabled", "enhanced"], setting.value)
     ])
