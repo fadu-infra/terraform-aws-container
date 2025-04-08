@@ -21,7 +21,8 @@ variable "alarms" {
     enable      = optional(bool, true)
     rollback    = optional(bool, true)
   }))
-  default = []
+  default  = []
+  nullable = false
 }
 
 variable "capacity_provider_strategy" {
@@ -40,7 +41,8 @@ variable "capacity_provider_strategy" {
     weight            = number
   }))
 
-  default = {}
+  default  = {}
+  nullable = false
 
   validation {
     condition     = alltrue([for cp in var.capacity_provider_strategy : cp.weight != null && cp.weight >= 0 && cp.weight <= 100])
@@ -87,24 +89,28 @@ variable "desired_count" {
   description = "(Optional) Number of instances of the task definition to place and keep running"
   type        = number
   default     = 1
+  nullable    = false
 }
 
 variable "enable_ecs_managed_tags" {
   description = "(Optional) Specifies whether to enable Amazon ECS managed tags for the tasks within the service"
   type        = bool
   default     = true
+  nullable    = false
 }
 
 variable "enable_execute_command" {
   description = "(Optional) Specifies whether to enable Amazon ECS Exec for the tasks within the service"
   type        = bool
   default     = false
+  nullable    = false
 }
 
 variable "force_new_deployment" {
   description = "(Optional) Enable to force a new task deployment of the service. This can be used to update tasks to use a newer Docker image with same image/tag combination, roll Fargate tasks onto a newer platform version, or immediately deploy `ordered_placement_strategy` and `placement_constraints` updates"
   type        = bool
   default     = true
+  nullable    = false
 }
 
 variable "health_check_grace_period_seconds" {
@@ -123,6 +129,7 @@ variable "launch_type" {
   description = "(Optional) Launch type on which to run your service. The valid values are `EC2`, `FARGATE`, and `EXTERNAL`. Defaults to `FARGATE`"
   type        = string
   default     = "FARGATE"
+  nullable    = false
 }
 
 variable "load_balancers" {
@@ -139,13 +146,13 @@ variable "load_balancers" {
     elb_name         = optional(string)
     target_group_arn = optional(string)
   }))
-  default = {}
+  default  = {}
+  nullable = false
 }
 
 variable "name" {
   description = "(Required) Name of the service (up to 255 letters, numbers, hyphens, and underscores)"
   type        = string
-  default     = ""
   nullable    = false
 }
 
@@ -180,7 +187,8 @@ variable "ordered_placement_strategy" {
     type  = string
     field = string
   }))
-  default = {}
+  default  = {}
+  nullable = false
 
   validation {
     condition = alltrue([
@@ -207,7 +215,8 @@ variable "placement_constraints" {
     expression = optional(string)
     type       = string
   }))
-  default = []
+  default  = []
+  nullable = false
 
   validation {
     condition     = alltrue([for constraint in var.placement_constraints : contains(["memberOf", "distinctInstance"], constraint.type)])
@@ -236,6 +245,7 @@ variable "scheduling_strategy" {
   EOT
   type        = string
   default     = "REPLICA"
+  nullable    = false
 
   validation {
     condition     = contains(["REPLICA", "DAEMON"], var.scheduling_strategy)
@@ -285,7 +295,8 @@ variable "service_connect_configuration" {
     }))
   })
 
-  default = {}
+  default  = {}
+  nullable = false
 }
 
 variable "service_discovery_registries" {
@@ -302,7 +313,8 @@ variable "service_discovery_registries" {
     port           = number
     registry_arn   = string
   }))
-  default = {}
+  default  = {}
+  nullable = false
 }
 
 variable "timeouts" {
@@ -325,6 +337,7 @@ variable "triggers" {
   description = "(Optional) Map of arbitrary keys and values that, when changed, will trigger an in-place update (redeployment). Useful with `timestamp()`"
   type        = any
   default     = {}
+  nullable    = false
 }
 
 variable "wait_for_steady_state" {
@@ -338,6 +351,7 @@ variable "service_tags" {
   description = "(Optional) A map of additional tags to add to the service"
   type        = map(string)
   default     = {}
+  nullable    = false
 }
 
 ################################################################################
@@ -352,6 +366,7 @@ variable "network_mode" {
   EOT
   type        = string
   default     = "awsvpc"
+  nullable    = false
 
   validation {
     condition     = var.network_mode == null || contains(["none", "bridge", "awsvpc", "host"], var.network_mode)
@@ -363,6 +378,7 @@ variable "task_definition_arn" {
   description = "(Required) The ARN of the ECS task definition to use for the service."
   type        = string
   default     = null
+  nullable    = true
 }
 
 ################################################################################
@@ -373,6 +389,7 @@ variable "create_iam_role" {
   description = "(Optional) Determines whether the ECS service IAM role should be created"
   type        = bool
   default     = true
+  nullable    = false
 }
 
 variable "iam_role_arn" {
@@ -382,42 +399,49 @@ variable "iam_role_arn" {
   EOT
   type        = string
   default     = null
+  nullable    = true
 }
 
 variable "iam_role_name" {
   description = "(Optional) Name to use on IAM role created"
   type        = string
-  default     = null
+  default     = ""
+  nullable    = false
 }
 
 variable "iam_role_use_name_prefix" {
   description = "(Optional) Determines whether the IAM role name (`iam_role_name`) is used as a prefix"
   type        = bool
   default     = true
+  nullable    = false
 }
 
 variable "iam_role_path" {
   description = "(Optional) IAM role path"
   type        = string
   default     = null
+  nullable    = true
 }
 
 variable "iam_role_description" {
   description = "(Optional) Description of the role"
   type        = string
   default     = null
+  nullable    = true
 }
 
 variable "iam_role_permissions_boundary" {
   description = "(Optional) ARN of the policy that is used to set the permissions boundary for the IAM role"
   type        = string
   default     = null
+  nullable    = true
 }
 
 variable "iam_role_tags" {
   description = "A map of additional tags to add to the IAM role created"
   type        = map(string)
   default     = {}
+  nullable    = false
 }
 
 variable "iam_role_statements" {
@@ -461,5 +485,6 @@ variable "iam_role_statements" {
       variable = string
     })))
   }))
-  default = {}
+  default  = {}
+  nullable = false
 }

@@ -3,12 +3,12 @@
 ################################################################################
 
 locals {
-  iam_role_name = try(coalesce(var.iam_role_name, var.name), "")
+  iam_role_name = coalesce(var.iam_role_name, var.name)
 
   # Role is not required if task definition uses `awsvpc` network mode or if a load balancer is not used
   needs_iam_role  = var.network_mode != "awsvpc" && length(var.load_balancers) > 0
   create_iam_role = var.create_iam_role && local.needs_iam_role
-  iam_role_arn    = local.needs_iam_role ? try(aws_iam_role.service[0].arn, var.iam_role_arn) : null
+  iam_role_arn    = local.needs_iam_role ? coalesce(aws_iam_role.service[0].arn, var.iam_role_arn) : null
 }
 
 data "aws_iam_policy_document" "service_assume" {
