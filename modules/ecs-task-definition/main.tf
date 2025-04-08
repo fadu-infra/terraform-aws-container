@@ -14,6 +14,8 @@ locals {
     "module.terraform.io/version" = local.metadata.version
   }
 
+  enable_cloudwatch_log_group = var.cloudwatch_log_group_config.create_log_group && var.cloudwatch_log_group_config.enable_logging
+
   account_id = data.aws_caller_identity.current.account_id
   partition  = data.aws_partition.current.partition
   region     = data.aws_region.current.name
@@ -32,7 +34,7 @@ locals {
     logDriver = "awslogs"
     options = {
       awslogs-region        = data.aws_region.current.name
-      awslogs-group         = try(aws_cloudwatch_log_group.this[0].name, "")
+      awslogs-group         = local.enable_cloudwatch_log_group ? aws_cloudwatch_log_group.this[0].name : ""
       awslogs-stream-prefix = "ecs"
     }
     } : {
@@ -100,7 +102,7 @@ locals {
 }
 
 resource "aws_cloudwatch_log_group" "this" {
-  count = var.cloudwatch_log_group_config.create_log_group && var.cloudwatch_log_group_config.enable_logging ? 1 : 0
+  count = local.enable_cloudwatch_log_group ? 1 : 0
 
   name              = var.cloudwatch_log_group_config.use_name_prefix ? null : local.log_group_name
   name_prefix       = var.cloudwatch_log_group_config.use_name_prefix ? "${local.log_group_name}-" : null
@@ -153,7 +155,7 @@ resource "aws_ecs_task_definition" "this" {
     for_each = var.task_definition_placement_constraints
 
     content {
-      expression = try(placement_constraints.value.expression, null)
+      expression = placement_constraints.value.expression
       type       = placement_constraints.value.type
     }
   }
@@ -176,8 +178,8 @@ resource "aws_ecs_task_definition" "this" {
     for_each = length(var.runtime_platform) > 0 ? [var.runtime_platform] : []
 
     content {
-      cpu_architecture        = try(runtime_platform.value.cpu_architecture, null)
-      operating_system_family = try(runtime_platform.value.operating_system_family, null)
+      cpu_architecture        = runtime_platform.value.cpu_architecture
+      operating_system_family = runtime_platform.value.operating_system_family
     }
   }
 
@@ -189,43 +191,43 @@ resource "aws_ecs_task_definition" "this" {
 
     content {
       dynamic "docker_volume_configuration" {
-        for_each = try([volume.value.docker_volume_configuration], [])
+        for_each = [volume.value.docker_volume_configuration]
 
         content {
-          autoprovision = try(docker_volume_configuration.value.autoprovision, null)
-          driver        = try(docker_volume_configuration.value.driver, null)
-          driver_opts   = try(docker_volume_configuration.value.driver_opts, null)
-          labels        = try(docker_volume_configuration.value.labels, null)
-          scope         = try(docker_volume_configuration.value.scope, null)
+          autoprovision = docker_volume_configuration.value.autoprovision
+          driver        = docker_volume_configuration.value.driver
+          driver_opts   = docker_volume_configuration.value.driver_opts
+          labels        = docker_volume_configuration.value.labels
+          scope         = docker_volume_configuration.value.scope
         }
       }
 
       dynamic "efs_volume_configuration" {
-        for_each = try([volume.value.efs_volume_configuration], [])
+        for_each = [volume.value.efs_volume_configuration]
 
         content {
           dynamic "authorization_config" {
-            for_each = try([efs_volume_configuration.value.authorization_config], [])
+            for_each = [efs_volume_configuration.value.authorization_config]
 
             content {
-              access_point_id = try(authorization_config.value.access_point_id, null)
-              iam             = try(authorization_config.value.iam, null)
+              access_point_id = authorization_config.value.access_point_id
+              iam             = authorization_config.value.iam
             }
           }
 
           file_system_id          = efs_volume_configuration.value.file_system_id
-          root_directory          = try(efs_volume_configuration.value.root_directory, null)
-          transit_encryption      = try(efs_volume_configuration.value.transit_encryption, null)
-          transit_encryption_port = try(efs_volume_configuration.value.transit_encryption_port, null)
+          root_directory          = efs_volume_configuration.value.root_directory
+          transit_encryption      = efs_volume_configuration.value.transit_encryption
+          transit_encryption_port = efs_volume_configuration.value.transit_encryption_port
         }
       }
 
       dynamic "fsx_windows_file_server_volume_configuration" {
-        for_each = try([volume.value.fsx_windows_file_server_volume_configuration], [])
+        for_each = [volume.value.fsx_windows_file_server_volume_configuration]
 
         content {
           dynamic "authorization_config" {
-            for_each = try([fsx_windows_file_server_volume_configuration.value.authorization_config], [])
+            for_each = [fsx_windows_file_server_volume_configuration.value.authorization_config]
 
             content {
               credentials_parameter = authorization_config.value.credentials_parameter
@@ -238,8 +240,8 @@ resource "aws_ecs_task_definition" "this" {
         }
       }
 
-      host_path = try(volume.value.host_path, null)
-      name      = try(volume.value.name, volume.key)
+      host_path = volume.value.host_path
+      name      = coalesce(volume.value.name, volume.key)
     }
   }
 

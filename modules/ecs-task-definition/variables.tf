@@ -566,7 +566,7 @@ variable "task_definition_placement_constraints" {
       (Required) `type` - Type of constraint. Use `memberOf` to restrict selection to a group of valid candidates. Note that `distinctInstance` is not supported in task definitions.
   EOT
   type = list(object({
-    expression = optional(string)
+    expression = optional(string, null)
     type       = string
   }))
   default = []
@@ -631,7 +631,7 @@ variable "volume" {
       driver        = optional(string)
       labels        = optional(map(string))
       scope         = optional(string)
-    }))
+    }), null)
     efs_volume_configuration = optional(object({
       file_system_id          = string
       root_directory          = optional(string)
@@ -641,7 +641,7 @@ variable "volume" {
         access_point_id = optional(string)
         iam             = optional(string)
       }))
-    }))
+    }), null)
     fsx_windows_file_server_volume_configuration = optional(object({
       file_system_id = string
       root_directory = string
@@ -649,8 +649,8 @@ variable "volume" {
         credentials_parameter = string
         domain                = string
       })
-    }))
-    host_path           = optional(string)
+    }), null)
+    host_path           = optional(string, null)
     configure_at_launch = optional(bool)
     name                = string
   }))
