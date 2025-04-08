@@ -1,10 +1,3 @@
-variable "create_service" {
-  description = "(Optional) Determines whether service resource will be created (set to `false` in case you want to create task definition only)"
-  type        = bool
-  default     = true
-  nullable    = false
-}
-
 variable "tags" {
   description = "(Optional) A map of tags to add to all resources"
   type        = map(string)
@@ -348,6 +341,31 @@ variable "service_tags" {
 }
 
 ################################################################################
+# Task Definition
+################################################################################
+
+variable "network_mode" {
+  description = <<-EOT
+    (Optional) Docker networking mode to use for the containers in the task definition.
+    This specifies how the network interfaces are configured for the containers.
+    Valid values are `none`, `bridge`, `awsvpc`, and `host`.
+  EOT
+  type        = string
+  default     = "awsvpc"
+
+  validation {
+    condition     = var.network_mode == null || contains(["none", "bridge", "awsvpc", "host"], var.network_mode)
+    error_message = "The 'network_mode' must be one of 'none', 'bridge', 'awsvpc', or 'host'."
+  }
+}
+
+variable "task_definition_arn" {
+  description = "(Required) The ARN of the ECS task definition to use for the service."
+  type        = string
+  default     = null
+}
+
+################################################################################
 # Service - IAM Role
 ################################################################################
 
@@ -444,372 +462,6 @@ variable "iam_role_statements" {
     })))
   }))
   default = {}
-}
-
-################################################################################
-# Task Definition
-################################################################################
-
-variable "create_task_definition" {
-  description = "(Optional) Determines whether to create a task definition or use existing/provided"
-  type        = bool
-  default     = true
-}
-
-variable "task_definition_arn" {
-  description = "(Optional) Existing task definition ARN. Required when `create_task_definition` is `false`"
-  type        = string
-  default     = null
-}
-
-variable "container_definitions" {
-  description = <<-EOT
-    (Optional) A map of valid [container definitions](http://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_ContainerDefinition.html). Please note that you should only provide values that are part of the container definition document. The configuration supports the following:
-      (Required) `name` - The name of the container.
-      (Required) `image` - The image to use for the container.
-      (Optional) `cpu` - The number of CPU units to reserve for the container.
-      (Optional) `memory` - The amount of memory (in MiB) to reserve for the container.
-      (Optional) `essential` - Whether the container is essential. Defaults to true.
-      (Optional) `port_mappings` - A list of port mappings for the container. Each mapping supports:
-        (Required) `container_port` - The port number on the container.
-        (Optional) `host_port` - The port number on the host.
-        (Optional) `protocol` - The protocol used for the port mapping. Defaults to "tcp".
-      (Optional) `environment` - A list of environment variables for the container. Each variable supports:
-        (Required) `name` - The name of the environment variable.
-        (Required) `value` - The value of the environment variable.
-      (Optional) `command` - The command to run inside the container.
-      (Optional) `dependencies` - The dependencies for the container.
-      (Optional) `disable_networking` - Whether to disable networking for the container.
-      (Optional) `dns_search_domains` - A list of DNS search domains.
-      (Optional) `dns_servers` - A list of DNS servers.
-      (Optional) `docker_labels` - A map of Docker labels.
-      (Optional) `docker_security_options` - A list of Docker security options.
-      (Optional) `enable_execute_command` - Whether to enable execute command.
-      (Optional) `entrypoint` - The entry point for the container.
-      (Optional) `environment_files` - A list of environment files.
-      (Optional) `extra_hosts` - A list of extra hosts.
-      (Optional) `firelens_configuration` - FireLens configuration.
-      (Optional) `health_check` - Health check configuration.
-      (Optional) `hostname` - The hostname for the container.
-      (Optional) `interactive` - Whether the container is interactive.
-      (Optional) `links` - A list of links for the container.
-      (Optional) `linux_parameters` - Linux parameters.
-      (Optional) `log_configuration` - Log configuration.
-      (Optional) `memory_reservation` - The amount of memory to reserve for the container.
-      (Optional) `mount_points` - A list of mount points.
-      (Optional) `privileged` - Whether the container is privileged.
-      (Optional) `pseudo_terminal` - Whether to allocate a pseudo-TTY.
-      (Optional) `readonly_root_filesystem` - Whether the root filesystem is read-only.
-      (Optional) `repository_credentials` - Repository credentials.
-      (Optional) `resource_requirements` - Resource requirements.
-      (Optional) `secrets` - A list of secrets.
-      (Optional) `start_timeout` - The start timeout for the container.
-      (Optional) `stop_timeout` - The stop timeout for the container.
-      (Optional) `system_controls` - System controls.
-      (Optional) `ulimits` - Ulimits.
-      (Optional) `user` - The user to run the container as.
-      (Optional) `volumes_from` - A list of volumes to mount from another container.
-      (Optional) `working_directory` - The working directory for the container.
-      (Optional) `enable_cloudwatch_logging` - Whether to enable CloudWatch logging.
-      (Optional) `create_cloudwatch_log_group` - Whether to create a CloudWatch log group.
-      (Optional) `cloudwatch_log_group_name` - The name of the CloudWatch log group.
-      (Optional) `cloudwatch_log_group_use_name_prefix` - Whether to use a name prefix for the CloudWatch log group.
-      (Optional) `cloudwatch_log_group_retention_in_days` - The retention period for the CloudWatch log group.
-      (Optional) `cloudwatch_log_group_kms_key_id` - The KMS key ID for the CloudWatch log group.
-  EOT
-  type = map(object({
-    name      = string
-    image     = string
-    cpu       = optional(number)
-    memory    = optional(number)
-    essential = optional(bool, true)
-    port_mappings = optional(list(object({
-      container_port = number
-      host_port      = optional(number)
-      protocol       = optional(string, "tcp")
-    })), [])
-    environment = optional(list(object({
-      name  = string
-      value = string
-    })), [])
-    command                                = optional(list(string), [])
-    dependencies                           = optional(list(string), [])
-    disable_networking                     = optional(bool, null)
-    dns_search_domains                     = optional(list(string), [])
-    dns_servers                            = optional(list(string), [])
-    docker_labels                          = optional(map(string), {})
-    docker_security_options                = optional(list(string), [])
-    enable_execute_command                 = optional(bool, null)
-    entrypoint                             = optional(list(string), [])
-    environment_files                      = optional(list(string), [])
-    extra_hosts                            = optional(list(string), [])
-    firelens_configuration                 = optional(map(string), {})
-    health_check                           = optional(map(string), {})
-    hostname                               = optional(string, null)
-    interactive                            = optional(bool, false)
-    links                                  = optional(list(string), [])
-    linux_parameters                       = optional(map(string), {})
-    log_configuration                      = optional(map(string), {})
-    memory_reservation                     = optional(number, null)
-    mount_points                           = optional(list(string), [])
-    privileged                             = optional(bool, false)
-    pseudo_terminal                        = optional(bool, false)
-    readonly_root_filesystem               = optional(bool, true)
-    repository_credentials                 = optional(map(string), {})
-    resource_requirements                  = optional(list(string), [])
-    secrets                                = optional(list(string), [])
-    start_timeout                          = optional(number, 30)
-    stop_timeout                           = optional(number, 120)
-    system_controls                        = optional(list(string), [])
-    ulimits                                = optional(list(string), [])
-    user                                   = optional(string, "0")
-    volumes_from                           = optional(list(string), [])
-    working_directory                      = optional(string, null)
-    enable_cloudwatch_logging              = optional(bool, true)
-    create_cloudwatch_log_group            = optional(bool, true)
-    cloudwatch_log_group_name              = optional(string, null)
-    cloudwatch_log_group_use_name_prefix   = optional(bool, false)
-    cloudwatch_log_group_retention_in_days = optional(number, 14)
-    cloudwatch_log_group_kms_key_id        = optional(string, null)
-  }))
-  default = {}
-}
-
-variable "container_definition_defaults" {
-  description = "(Optional) A map of default values for container definitions. The structure is the same as `container_definitions`. Refer to the `container_definitions` variable for details."
-  type = map(object({
-    name      = string
-    image     = string
-    cpu       = optional(number)
-    memory    = optional(number)
-    essential = optional(bool, true)
-    port_mappings = optional(list(object({
-      container_port = number
-      host_port      = optional(number)
-      protocol       = optional(string, "tcp")
-    })), [])
-    environment = optional(list(object({
-      name  = string
-      value = string
-    })), [])
-    command                                = optional(list(string), [])
-    dependencies                           = optional(list(string), [])
-    disable_networking                     = optional(bool, null)
-    dns_search_domains                     = optional(list(string), [])
-    dns_servers                            = optional(list(string), [])
-    docker_labels                          = optional(map(string), {})
-    docker_security_options                = optional(list(string), [])
-    enable_execute_command                 = optional(bool, null)
-    entrypoint                             = optional(list(string), [])
-    environment_files                      = optional(list(string), [])
-    extra_hosts                            = optional(list(string), [])
-    firelens_configuration                 = optional(map(string), {})
-    health_check                           = optional(map(string), {})
-    hostname                               = optional(string, null)
-    interactive                            = optional(bool, false)
-    links                                  = optional(list(string), [])
-    linux_parameters                       = optional(map(string), {})
-    log_configuration                      = optional(map(string), {})
-    memory_reservation                     = optional(number, null)
-    mount_points                           = optional(list(string), [])
-    privileged                             = optional(bool, false)
-    pseudo_terminal                        = optional(bool, false)
-    readonly_root_filesystem               = optional(bool, true)
-    repository_credentials                 = optional(map(string), {})
-    resource_requirements                  = optional(list(string), [])
-    secrets                                = optional(list(string), [])
-    start_timeout                          = optional(number, 30)
-    stop_timeout                           = optional(number, 120)
-    system_controls                        = optional(list(string), [])
-    ulimits                                = optional(list(string), [])
-    user                                   = optional(string, "0")
-    volumes_from                           = optional(list(string), [])
-    working_directory                      = optional(string, null)
-    enable_cloudwatch_logging              = optional(bool, true)
-    create_cloudwatch_log_group            = optional(bool, true)
-    cloudwatch_log_group_name              = optional(string, null)
-    cloudwatch_log_group_use_name_prefix   = optional(bool, false)
-    cloudwatch_log_group_retention_in_days = optional(number, 14)
-    cloudwatch_log_group_kms_key_id        = optional(string, null)
-  }))
-  default = {}
-}
-
-variable "cpu" {
-  description = "(Optional) Number of cpu units used by the task. If the `requires_compatibilities` is `FARGATE` this field is required"
-  type        = number
-  default     = 1024
-}
-
-variable "ephemeral_storage" {
-  description = <<-EOT
-    (Optional) Configuration block for ephemeral storage. Supports the following:
-    (Required) `size_in_gib` - The amount of ephemeral storage to allocate for the task in GiB.
-  EOT
-
-  type = object({
-    size_in_gib = number
-  })
-  default = {
-    size_in_gib = 20
-  }
-}
-
-variable "family" {
-  description = "(Required) A unique name for your task definition"
-  type        = string
-  default     = null
-}
-
-/*
-variable "inference_accelerator" {
-  description = "Configuration block(s) with Inference Accelerators settings"
-  type        = any
-  default     = {}
-}
-*/
-
-variable "ipc_mode" {
-  description = "(Optional) IPC resource namespace to be used for the containers in the task. The valid values are `host`, `task`, and `none`"
-  type        = string
-  default     = null
-
-  validation {
-    condition     = var.ipc_mode == null || contains(["host", "task", "none"], var.ipc_mode)
-    error_message = "The 'ipc_mode' must be one of 'host', 'task', or 'none'."
-  }
-}
-
-variable "memory" {
-  description = "(Optional) Amount (in MiB) of memory used by the task. If the `requires_compatibilities` is `FARGATE` this field is required"
-  type        = number
-  default     = 2048
-}
-
-variable "network_mode" {
-  description = "(Optional) Docker networking mode to use for the containers in the task. Valid values are `none`, `bridge`, `awsvpc`, and `host`"
-  type        = string
-  default     = "awsvpc"
-
-  validation {
-    condition     = var.network_mode == null || contains(["none", "bridge", "awsvpc", "host"], var.network_mode)
-    error_message = "The 'network_mode' must be one of 'none', 'bridge', 'awsvpc', or 'host'."
-  }
-}
-
-variable "pid_mode" {
-  description = "(Optional) Process namespace to use for the containers in the task. The valid values are `host` and `task`"
-  type        = string
-  default     = null
-
-  validation {
-    condition     = var.pid_mode == null || contains(["host", "task"], var.pid_mode)
-    error_message = "The 'pid_mode' must be one of 'host' or 'task'."
-  }
-}
-
-variable "task_definition_placement_constraints" {
-  description = <<-EOT
-    (Optional) Configuration block for rules that are taken into consideration during task placement (up to max of 10). This is set at the task definition. Supports the following:
-      (Optional) `expression` - Cluster Query Language expression to apply to the constraint. For more information, see Cluster Query Language in the Amazon EC2 Container Service Developer Guide.
-      (Required) `type` - Type of constraint. Use `memberOf` to restrict selection to a group of valid candidates. Note that `distinctInstance` is not supported in task definitions.
-  EOT
-  type = list(object({
-    expression = optional(string)
-    type       = string
-  }))
-  default = []
-}
-
-/*
-variable "proxy_configuration" {
-  description = "Configuration block for the App Mesh proxy"
-  type        = any
-  default     = {}
-}
-*/
-
-variable "requires_compatibilities" {
-  description = "(Optional) Set of launch types required by the task. The valid values are `EC2` and `FARGATE`"
-  type        = list(string)
-  default     = ["FARGATE"]
-
-  validation {
-    condition     = alltrue([for compatibility in var.requires_compatibilities : contains(["EC2", "FARGATE"], compatibility)])
-    error_message = "Each value in 'requires_compatibilities' must be either 'EC2' or 'FARGATE'."
-  }
-}
-
-variable "runtime_platform" {
-  description = <<-EOT
-    (Optional) Configuration block for `runtime_platform` that containers in your task may use.
-      (Optional) `operating_system_family` - If the `requires_compatibilities` is `FARGATE`, this field is required; must be set to a valid option from the operating system family in the runtime platform setting.
-      (Optional) `cpu_architecture` - Must be set to either `X86_64` or `ARM64`.
-  EOT
-  type = object({
-    operating_system_family = optional(string, "LINUX")
-    cpu_architecture        = optional(string, "X86_64")
-  })
-  nullable = false
-  default = {
-    operating_system_family = "LINUX"
-    cpu_architecture        = "X86_64"
-  }
-}
-
-variable "skip_destroy" {
-  description = "(Optional) If true, the task is not deleted when the service is deleted"
-  type        = bool
-  default     = null
-}
-
-variable "volume" {
-  description = <<-EOT
-    (Optional) Configuration block for volumes that containers in your task may use. Supports the following configurations:
-      (Optional) `docker_volume_configuration` - Configuration block to configure a Docker volume.
-      (Optional) `efs_volume_configuration` - Configuration block for an EFS volume.
-      (Optional) `fsx_windows_file_server_volume_configuration` - Configuration block for an FSX Windows File Server volume.
-      (Optional) `host_path` - Path on the host container instance that is presented to the container.
-      (Optional) `configure_at_launch` - Whether the volume should be configured at launch time.
-      (Required) `name` - Name of the volume.
-  EOT
-  type = map(object({
-    docker_volume_configuration = optional(object({
-      autoprovision = optional(bool)
-      driver_opts   = optional(map(string))
-      driver        = optional(string)
-      labels        = optional(map(string))
-      scope         = optional(string)
-    }))
-    efs_volume_configuration = optional(object({
-      file_system_id          = string
-      root_directory          = optional(string)
-      transit_encryption      = optional(string)
-      transit_encryption_port = optional(number)
-      authorization_config = optional(object({
-        access_point_id = optional(string)
-        iam             = optional(string)
-      }))
-    }))
-    fsx_windows_file_server_volume_configuration = optional(object({
-      file_system_id = string
-      root_directory = string
-      authorization_config = object({
-        credentials_parameter = string
-        domain                = string
-      })
-    }))
-    host_path           = optional(string)
-    configure_at_launch = optional(bool)
-    name                = string
-  }))
-  default = {}
-}
-
-variable "task_tags" {
-  description = "(Optional) A map of additional tags to add to the task definition/set created"
-  type        = map(string)
-  default     = {}
 }
 
 ################################################################################

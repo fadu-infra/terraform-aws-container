@@ -14,6 +14,7 @@ locals {
     "module.terraform.io/version" = local.metadata.version
   }
 
+  # 변수를 잘 쓰면 이 로컬 변수가 필요 없을 수도?
   execute_command_configuration = {
     kms_key_id = null
     logging    = "OVERRIDE"
@@ -61,8 +62,9 @@ resource "aws_ecs_cluster" "this" {
     }
   }
 
+  # Container Insights
   dynamic "setting" {
-    for_each = var.cluster_settings
+    for_each = var.cluster_settings # 변수명을 수정하는 것이 어떠냐?
 
     content {
       name  = setting.value.name

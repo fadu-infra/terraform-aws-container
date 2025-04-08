@@ -137,7 +137,7 @@ resource "aws_iam_role_policy_attachment" "service" {
 
 locals {
   task_exec_iam_role_name   = try(coalesce(var.task_exec_iam_role_name, var.name), "")
-  create_task_exec_iam_role = local.create_task_definition && var.create_task_exec_iam_role
+  create_task_exec_iam_role = var.create_task_exec_iam_role
   create_task_exec_policy   = local.create_task_exec_iam_role && var.create_task_exec_policy
 }
 
@@ -301,7 +301,7 @@ resource "aws_iam_role_policy_attachment" "task_exec" {
 
 locals {
   tasks_iam_role_name   = try(coalesce(var.tasks_iam_role_name, var.name), "")
-  create_tasks_iam_role = local.create_task_definition && var.create_tasks_iam_role
+  create_tasks_iam_role = var.create_tasks_iam_role
 }
 
 data "aws_iam_policy_document" "tasks_assume" {

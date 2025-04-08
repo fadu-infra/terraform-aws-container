@@ -49,7 +49,7 @@ locals {
 
   definition = {
     command                = var.command
-    cpu                    = var.cpu
+    cpu                    = var.container_cpu
     dependsOn              = length(var.dependencies) > 0 ? var.dependencies : null # depends_on is a reserved word
     disableNetworking      = local.is_not_windows ? var.disable_networking : null
     dnsSearchDomains       = local.is_not_windows && length(var.dns_search_domains) > 0 ? var.dns_search_domains : null
@@ -69,7 +69,7 @@ locals {
     links                  = local.is_not_windows && length(var.links) > 0 ? var.links : null
     linuxParameters        = local.is_not_windows && length(local.linux_parameters) > 0 ? local.linux_parameters : null
     logConfiguration       = length(local.log_configuration) > 0 ? local.log_configuration : null
-    memory                 = var.memory
+    memory                 = var.container_memory
     memoryReservation      = var.memory_reservation
     mountPoints            = var.mount_points
     name                   = var.name
@@ -108,4 +108,145 @@ resource "aws_cloudwatch_log_group" "this" {
     var.tags,
     local.module_tags
   )
+}
+
+resource "aws_ecs_task_definition" "this" {
+  # Convert map of maps to array of maps before JSON encoding
+  container_definitions = jsonencode([local.container_definition])
+  cpu                   = var.task_cpu # launch type이 fargate일 때만 필요함
+  # https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/ecs_task_definition#cpu-1
+
+  dynamic "ephemeral_storage" {
+    for_each = length(var.ephemeral_storage) > 0 ? [var.ephemeral_storage] : []
+
+    content {
+      size_in_gib = ephemeral_storage.value.size_in_gib
+    }
+  }
+
+  execution_role_arn = var.task_exec_iam_role_arn
+  family             = coalesce(var.family, var.name)
+
+  /*
+  dynamic "inference_accelerator" {
+    for_each = var.inference_accelerator
+
+    content {
+      device_name = inference_accelerator.value.device_name
+      device_type = inference_accelerator.value.device_type
+    }
+  }
+  */
+
+  ipc_mode     = var.ipc_mode
+  memory       = var.task_memory
+  network_mode = var.network_mode
+  pid_mode     = var.pid_mode
+
+  dynamic "placement_constraints" {
+    for_each = var.task_definition_placement_constraints
+
+    content {
+      expression = try(placement_constraints.value.expression, null)
+      type       = placement_constraints.value.type
+    }
+  }
+
+  /*
+  dynamic "proxy_configuration" {
+    for_each = length(var.proxy_configuration) > 0 ? [var.proxy_configuration] : []
+
+    content {
+      container_name = proxy_configuration.value.container_name
+      properties     = try(proxy_configuration.value.properties, null)
+      type           = try(proxy_configuration.value.type, null)
+    }
+  }
+  */
+
+  requires_compatibilities = var.requires_compatibilities
+
+  dynamic "runtime_platform" {
+    for_each = length(var.runtime_platform) > 0 ? [var.runtime_platform] : []
+
+    content {
+      cpu_architecture        = try(runtime_platform.value.cpu_architecture, null)
+      operating_system_family = try(runtime_platform.value.operating_system_family, null)
+    }
+  }
+
+  skip_destroy  = var.skip_destroy
+  task_role_arn = var.tasks_iam_role_arn
+
+  dynamic "volume" {
+    for_each = var.volume
+
+    content {
+      dynamic "docker_volume_configuration" {
+        for_each = try([volume.value.docker_volume_configuration], [])
+
+        content {
+          autoprovision = try(docker_volume_configuration.value.autoprovision, null)
+          driver        = try(docker_volume_configuration.value.driver, null)
+          driver_opts   = try(docker_volume_configuration.value.driver_opts, null)
+          labels        = try(docker_volume_configuration.value.labels, null)
+          scope         = try(docker_volume_configuration.value.scope, null)
+        }
+      }
+
+      dynamic "efs_volume_configuration" {
+        for_each = try([volume.value.efs_volume_configuration], [])
+
+        content {
+          dynamic "authorization_config" {
+            for_each = try([efs_volume_configuration.value.authorization_config], [])
+
+            content {
+              access_point_id = try(authorization_config.value.access_point_id, null)
+              iam             = try(authorization_config.value.iam, null)
+            }
+          }
+
+          file_system_id          = efs_volume_configuration.value.file_system_id
+          root_directory          = try(efs_volume_configuration.value.root_directory, null)
+          transit_encryption      = try(efs_volume_configuration.value.transit_encryption, null)
+          transit_encryption_port = try(efs_volume_configuration.value.transit_encryption_port, null)
+        }
+      }
+
+      dynamic "fsx_windows_file_server_volume_configuration" {
+        for_each = try([volume.value.fsx_windows_file_server_volume_configuration], [])
+
+        content {
+          dynamic "authorization_config" {
+            for_each = try([fsx_windows_file_server_volume_configuration.value.authorization_config], [])
+
+            content {
+              credentials_parameter = authorization_config.value.credentials_parameter
+              domain                = authorization_config.value.domain
+            }
+          }
+
+          file_system_id = fsx_windows_file_server_volume_configuration.value.file_system_id
+          root_directory = fsx_windows_file_server_volume_configuration.value.root_directory
+        }
+      }
+
+      host_path = try(volume.value.host_path, null)
+      name      = try(volume.value.name, volume.key)
+    }
+  }
+
+  tags = merge(
+    {
+      "Name" = local.metadata.name
+    },
+    var.task_tags,
+    local.module_tags,
+    var.tags
+  )
+
+  lifecycle {
+    create_before_destroy = true
+  }
 }

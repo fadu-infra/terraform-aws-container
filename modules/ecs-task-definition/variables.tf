@@ -16,8 +16,8 @@ variable "command" {
   nullable    = true
 }
 
-variable "cpu" {
-  description = "(Optional) The number of cpu units to reserve for the container. This is optional for tasks using Fargate launch type and the total amount of `cpu` of all containers in a task will need to be lower than the task-level cpu value"
+variable "container_cpu" {
+  description = "(Optional) The number of cpu units to reserve for the container."
   type        = number
   default     = null
   nullable    = true
@@ -233,15 +233,15 @@ variable "log_configuration" {
   default = {}
 }
 
-variable "memory" {
-  description = "(Optional) The amount (in MiB) of memory to present to the container. If your container attempts to exceed the memory specified here, the container is killed. The total amount of memory reserved for all containers within a task must be lower than the task `memory` value, if one is specified"
+variable "container_memory" {
+  description = "(Optional) The amount (in MiB) of memory to present to the container."
   type        = number
   default     = null
   nullable    = true
 
   validation {
-    condition     = var.memory == null || var.memory >= 6
-    error_message = "The memory must be at least 6 MiB."
+    condition     = var.container_memory == null || var.container_memory >= 6
+    error_message = "The container_memory must be at least 6 MiB."
   }
 }
 
@@ -257,8 +257,8 @@ variable "memory_reservation" {
   }
 
   validation {
-    condition     = var.memory == null || var.memory_reservation == null || var.memory > var.memory_reservation
-    error_message = "If both memory and memory_reservation are specified, memory must be greater than memory_reservation."
+    condition     = var.container_memory == null || var.memory_reservation == null || var.container_memory > var.memory_reservation
+    error_message = "If both container_memory and memory_reservation are specified, container_memory must be greater than memory_reservation."
   }
 }
 
@@ -480,4 +480,197 @@ variable "tags" {
   description = "(Optional) A map of tags to add to all resources"
   type        = map(string)
   default     = {}
+}
+
+variable "task_tags" {
+  description = "(Optional) A map of additional tags to add to the task definition/set created"
+  type        = map(string)
+  default     = {}
+}
+
+################################################################################
+# Task Definition
+################################################################################
+
+variable "task_cpu" {
+  description = "(Optional) The number of cpu units to reserve for the task."
+  type        = number
+  default     = null
+  nullable    = true
+}
+
+variable "task_memory" {
+  description = "(Optional) The amount (in MiB) of memory to present to the task."
+  type        = number
+  default     = null
+  nullable    = true
+}
+
+variable "ephemeral_storage" {
+  description = <<-EOT
+    (Optional) Configuration block for ephemeral storage. Supports the following:
+    (Required) `size_in_gib` - The amount of ephemeral storage to allocate for the task in GiB.
+  EOT
+
+  type = object({
+    size_in_gib = number
+  })
+  default = {
+    size_in_gib = 20
+  }
+}
+
+variable "family" {
+  description = "(Required) A unique name for your task definition"
+  type        = string
+  default     = null
+}
+
+variable "ipc_mode" {
+  description = "(Optional) IPC resource namespace to be used for the containers in the task. The valid values are `host`, `task`, and `none`"
+  type        = string
+  default     = null
+
+  validation {
+    condition     = var.ipc_mode == null || contains(["host", "task", "none"], var.ipc_mode)
+    error_message = "The 'ipc_mode' must be one of 'host', 'task', or 'none'."
+  }
+}
+
+variable "network_mode" {
+  description = "(Optional) Docker networking mode to use for the containers in the task. Valid values are `none`, `bridge`, `awsvpc`, and `host`"
+  type        = string
+  default     = "awsvpc"
+
+  validation {
+    condition     = var.network_mode == null || contains(["none", "bridge", "awsvpc", "host"], var.network_mode)
+    error_message = "The 'network_mode' must be one of 'none', 'bridge', 'awsvpc', or 'host'."
+  }
+}
+
+variable "pid_mode" {
+  description = "(Optional) Process namespace to use for the containers in the task. The valid values are `host` and `task`"
+  type        = string
+  default     = null
+
+  validation {
+    condition     = var.pid_mode == null || contains(["host", "task"], var.pid_mode)
+    error_message = "The 'pid_mode' must be one of 'host' or 'task'."
+  }
+}
+
+variable "task_definition_placement_constraints" {
+  description = <<-EOT
+    (Optional) Configuration block for rules that are taken into consideration during task placement (up to max of 10). This is set at the task definition. Supports the following:
+      (Optional) `expression` - Cluster Query Language expression to apply to the constraint. For more information, see Cluster Query Language in the Amazon EC2 Container Service Developer Guide.
+      (Required) `type` - Type of constraint. Use `memberOf` to restrict selection to a group of valid candidates. Note that `distinctInstance` is not supported in task definitions.
+  EOT
+  type = list(object({
+    expression = optional(string)
+    type       = string
+  }))
+  default = []
+}
+
+/*
+variable "proxy_configuration" {
+  description = "Configuration block for the App Mesh proxy"
+  type        = any
+  default     = {}
+}
+*/
+
+variable "requires_compatibilities" {
+  description = "(Optional) Set of launch types required by the task. The valid values are `EC2` and `FARGATE`"
+  type        = list(string)
+  default     = ["FARGATE"]
+
+  validation {
+    condition     = alltrue([for compatibility in var.requires_compatibilities : contains(["EC2", "FARGATE"], compatibility)])
+    error_message = "Each value in 'requires_compatibilities' must be either 'EC2' or 'FARGATE'."
+  }
+}
+
+variable "runtime_platform" {
+  description = <<-EOT
+    (Optional) Configuration block for `runtime_platform` that containers in your task may use.
+      (Optional) `operating_system_family` - If the `requires_compatibilities` is `FARGATE`, this field is required; must be set to a valid option from the operating system family in the runtime platform setting.
+      (Optional) `cpu_architecture` - Must be set to either `X86_64` or `ARM64`.
+  EOT
+  type = object({
+    operating_system_family = optional(string, "LINUX")
+    cpu_architecture        = optional(string, "X86_64")
+  })
+  nullable = false
+  default = {
+    operating_system_family = "LINUX"
+    cpu_architecture        = "X86_64"
+  }
+}
+
+variable "skip_destroy" {
+  description = "(Optional) If true, the task is not deleted when the service is deleted"
+  type        = bool
+  default     = null
+}
+
+variable "volume" {
+  description = <<-EOT
+    (Optional) Configuration block for volumes that containers in your task may use. Supports the following configurations:
+      (Optional) `docker_volume_configuration` - Configuration block to configure a Docker volume.
+      (Optional) `efs_volume_configuration` - Configuration block for an EFS volume.
+      (Optional) `fsx_windows_file_server_volume_configuration` - Configuration block for an FSX Windows File Server volume.
+      (Optional) `host_path` - Path on the host container instance that is presented to the container.
+      (Optional) `configure_at_launch` - Whether the volume should be configured at launch time.
+      (Required) `name` - Name of the volume.
+  EOT
+  type = map(object({
+    docker_volume_configuration = optional(object({
+      autoprovision = optional(bool)
+      driver_opts   = optional(map(string))
+      driver        = optional(string)
+      labels        = optional(map(string))
+      scope         = optional(string)
+    }))
+    efs_volume_configuration = optional(object({
+      file_system_id          = string
+      root_directory          = optional(string)
+      transit_encryption      = optional(string)
+      transit_encryption_port = optional(number)
+      authorization_config = optional(object({
+        access_point_id = optional(string)
+        iam             = optional(string)
+      }))
+    }))
+    fsx_windows_file_server_volume_configuration = optional(object({
+      file_system_id = string
+      root_directory = string
+      authorization_config = object({
+        credentials_parameter = string
+        domain                = string
+      })
+    }))
+    host_path           = optional(string)
+    configure_at_launch = optional(bool)
+    name                = string
+  }))
+  default = {}
+}
+
+################################################################################
+# Tasks - IAM role
+################################################################################
+variable "tasks_iam_role_arn" {
+  description = "(Optional) Existing IAM role ARN"
+  type        = string
+  default     = null
+}
+
+################################################################################
+# Task Execution - IAM Role
+################################################################################
+variable "task_exec_iam_role_arn" {
+  description = "(Optional) Existing IAM role ARN"
+  type        = string
+  default     = null
 }

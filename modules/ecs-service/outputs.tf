@@ -4,12 +4,12 @@
 
 output "id" {
   description = "ARN that identifies the service"
-  value       = try(aws_ecs_service.this[0].id, null)
+  value       = try(aws_ecs_service.this.id, null)
 }
 
 output "name" {
   description = "Name of the service"
-  value       = try(aws_ecs_service.this[0].name, null)
+  value       = try(aws_ecs_service.this.name, null)
 }
 
 ################################################################################
@@ -29,39 +29,6 @@ output "iam_role_arn" {
 output "iam_role_unique_id" {
   description = "Stable and unique string identifying the service IAM role"
   value       = try(aws_iam_role.service[0].unique_id, null)
-}
-
-################################################################################
-# Container Definition
-################################################################################
-
-output "container_definitions" {
-  description = "Container definitions"
-  value       = module.container_definition
-}
-
-################################################################################
-# Task Definition
-################################################################################
-
-output "task_definition_arn" {
-  description = "Full ARN of the Task Definition (including both `family` and `revision`)"
-  value       = try(aws_ecs_task_definition.this[0].arn, var.task_definition_arn)
-}
-
-output "task_definition_revision" {
-  description = "Revision of the task in a particular family"
-  value       = try(aws_ecs_task_definition.this[0].revision, null)
-}
-
-output "task_definition_family" {
-  description = "The unique name of the task definition"
-  value       = try(aws_ecs_task_definition.this[0].family, null)
-}
-
-output "task_definition_family_revision" {
-  description = "The family and revision (family:revision) of the task definition"
-  value       = "${try(aws_ecs_task_definition.this[0].family, "")}:${local.max_task_def_revision}"
 }
 
 ################################################################################
