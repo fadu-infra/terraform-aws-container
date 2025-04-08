@@ -68,15 +68,15 @@ data "aws_iam_policy_document" "service" {
     for_each = var.iam_role_statements
 
     content {
-      sid           = try(statement.value.sid, null)
-      actions       = try(statement.value.actions, null)
-      not_actions   = try(statement.value.not_actions, null)
-      effect        = try(statement.value.effect, null)
-      resources     = try(statement.value.resources, null)
-      not_resources = try(statement.value.not_resources, null)
+      sid           = statement.value.sid
+      actions       = statement.value.actions
+      not_actions   = statement.value.not_actions
+      effect        = statement.value.effect
+      resources     = statement.value.resources
+      not_resources = statement.value.not_resources
 
       dynamic "principals" {
-        for_each = try(statement.value.principals, [])
+        for_each = statement.value.principals
 
         content {
           type        = principals.value.type
@@ -85,7 +85,7 @@ data "aws_iam_policy_document" "service" {
       }
 
       dynamic "not_principals" {
-        for_each = try(statement.value.not_principals, [])
+        for_each = statement.value.not_principals
 
         content {
           type        = not_principals.value.type
@@ -94,7 +94,7 @@ data "aws_iam_policy_document" "service" {
       }
 
       dynamic "condition" {
-        for_each = try(statement.value.conditions, [])
+        for_each = statement.value.conditions
 
         content {
           test     = condition.value.test

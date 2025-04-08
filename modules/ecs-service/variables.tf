@@ -37,7 +37,7 @@ variable "capacity_provider_strategy" {
 
   type = map(object({
     capacity_provider = string
-    base              = optional(number)
+    base              = optional(number, null)
     weight            = number
   }))
 
@@ -185,7 +185,7 @@ variable "ordered_placement_strategy" {
   EOT
   type = map(object({
     type  = string
-    field = string
+    field = optional(string, null)
   }))
   default  = {}
   nullable = false
@@ -465,25 +465,25 @@ variable "iam_role_statements" {
         (Optional) `variable` - The key name of the condition.
   EOT
   type = map(object({
-    sid           = optional(string)
+    sid           = optional(string, null)
     actions       = list(string)
-    not_actions   = optional(list(string))
+    not_actions   = optional(list(string), null)
     effect        = string
     resources     = list(string)
-    not_resources = optional(list(string))
+    not_resources = optional(list(string), null)
     principals = optional(list(object({
       type        = string
       identifiers = list(string)
-    })))
+    })), [])
     not_principals = optional(list(object({
       type        = string
       identifiers = list(string)
-    })))
+    })), null)
     conditions = optional(list(object({
       test     = string
       values   = list(string)
       variable = string
-    })))
+    })), null)
   }))
   default  = {}
   nullable = false

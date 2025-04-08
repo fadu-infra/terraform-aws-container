@@ -50,9 +50,9 @@ resource "aws_ecs_service" "this" {
     for_each = var.capacity_provider_strategy
 
     content {
-      base              = try(capacity_provider_strategy.value.base, null)
+      base              = capacity_provider_strategy.value.base
       capacity_provider = capacity_provider_strategy.value.capacity_provider
-      weight            = try(capacity_provider_strategy.value.weight, null)
+      weight            = capacity_provider_strategy.value.weight
     }
   }
 
@@ -89,7 +89,7 @@ resource "aws_ecs_service" "this" {
     for_each = var.ordered_placement_strategy
 
     content {
-      field = try(ordered_placement_strategy.value.field, null)
+      field = ordered_placement_strategy.value.field
       type  = ordered_placement_strategy.value.type
     }
   }

@@ -676,8 +676,8 @@ variable "create_task_exec_iam_role" {
 variable "task_exec_iam_role_name" {
   description = "(Optional) Name to use on IAM role created"
   type        = string
-  default     = null
-  nullable    = true
+  default     = "default-task-exec-iam-role"
+  nullable    = false
 }
 
 variable "task_exec_iam_role_use_name_prefix" {
@@ -749,12 +749,12 @@ variable "task_exec_iam_statements" {
     Note: Same `iam_role_statements` variable configuration applies here.
   EOT
   type = map(object({
-    sid           = optional(string)
+    sid           = optional(string, null)
     actions       = list(string)
-    not_actions   = optional(list(string))
+    not_actions   = optional(list(string), null)
     effect        = string
     resources     = list(string)
-    not_resources = optional(list(string))
+    not_resources = optional(list(string), null)
     principals = optional(list(object({
       type        = string
       identifiers = list(string)
@@ -797,7 +797,8 @@ variable "create_tasks_iam_role" {
 variable "tasks_iam_role_name" {
   description = "(Optional) Name to use on IAM role created"
   type        = string
-  default     = null
+  default     = "default-tasks-iam-role"
+  nullable    = false
 }
 
 variable "tasks_iam_role_use_name_prefix" {
@@ -842,12 +843,12 @@ variable "tasks_iam_role_statements" {
     Note: Same `iam_role_statements` variable configuration applies here.
   EOT
   type = map(object({
-    sid           = optional(string)
+    sid           = optional(string, null)
     actions       = list(string)
-    not_actions   = optional(list(string))
+    not_actions   = optional(list(string), null)
     effect        = string
     resources     = list(string)
-    not_resources = optional(list(string))
+    not_resources = optional(list(string), null)
     principals = optional(list(object({
       type        = string
       identifiers = list(string)
