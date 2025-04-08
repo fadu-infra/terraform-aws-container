@@ -1,4 +1,6 @@
 data "aws_region" "current" {}
+data "aws_partition" "current" {}
+data "aws_caller_identity" "current" {}
 
 locals {
   metadata = {
@@ -11,6 +13,10 @@ locals {
     "module.terraform.io/name"    = "${local.metadata.package}/${local.metadata.module}"
     "module.terraform.io/version" = local.metadata.version
   }
+
+  account_id = data.aws_caller_identity.current.account_id
+  partition  = data.aws_partition.current.partition
+  region     = data.aws_region.current.name
 
   is_not_windows = contains(["LINUX"], var.operating_system_family)
 
@@ -124,7 +130,7 @@ resource "aws_ecs_task_definition" "this" {
     }
   }
 
-  execution_role_arn = var.task_exec_iam_role_arn
+  execution_role_arn = var.create_task_exec_iam_role ? aws_iam_role.task_exec[0].arn : var.task_exec_iam_role_arn
   family             = coalesce(var.family, var.name)
 
   /*
@@ -176,7 +182,7 @@ resource "aws_ecs_task_definition" "this" {
   }
 
   skip_destroy  = var.skip_destroy
-  task_role_arn = var.tasks_iam_role_arn
+  task_role_arn = var.create_tasks_iam_role ? aws_iam_role.tasks[0].arn : var.tasks_iam_role_arn
 
   dynamic "volume" {
     for_each = var.volume
