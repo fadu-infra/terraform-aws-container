@@ -13,15 +13,6 @@ locals {
     "module.terraform.io/name"    = "${local.metadata.package}/${local.metadata.module}"
     "module.terraform.io/version" = local.metadata.version
   }
-
-  # 변수를 잘 쓰면 이 로컬 변수가 필요 없을 수도?
-  execute_command_configuration = {
-    kms_key_id = null
-    logging    = "OVERRIDE"
-    log_configuration = {
-      cloud_watch_log_group_name = try(aws_cloudwatch_log_group.this[0].name, null)
-    }
-  }
 }
 
 resource "aws_ecs_cluster" "this" {
@@ -32,7 +23,7 @@ resource "aws_ecs_cluster" "this" {
 
     content {
       dynamic "execute_command_configuration" {
-        for_each = var.cloudwatch_log_group.create ? [merge(local.execute_command_configuration, configuration.value.execute_command_configuration)] : [configuration.value.execute_command_configuration]
+        for_each = var.cloudwatch_log_group.create ? [merge(var.default_execute_command_configuration, configuration.value.execute_command_configuration)] : [configuration.value.execute_command_configuration]
 
         content {
           kms_key_id = execute_command_configuration.value.kms_key_id
@@ -43,7 +34,7 @@ resource "aws_ecs_cluster" "this" {
 
             content {
               cloud_watch_encryption_enabled = log_configuration.value.cloud_watch_encryption_enabled
-              cloud_watch_log_group_name     = log_configuration.value.cloud_watch_log_group_name
+              cloud_watch_log_group_name     = coalesce(log_configuration.value.cloud_watch_log_group_name, aws_cloudwatch_log_group.this[0].name)
               s3_bucket_name                 = log_configuration.value.s3_bucket_name
               s3_bucket_encryption_enabled   = log_configuration.value.s3_bucket_encryption_enabled
               s3_key_prefix                  = log_configuration.value.s3_key_prefix

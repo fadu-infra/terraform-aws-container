@@ -15,6 +15,31 @@ variable "name" {
   nullable    = false
 }
 
+variable "default_execute_command_configuration" {
+  description = <<-EOT
+  (Optional) Default configuration for execute command configuration for the cluster
+    (Optional) `kms_key_id` - KMS key ID to encrypt the data between local client and container
+    (Optional) `logging` - The log setting to use for redirecting logs. ('NONE', 'DEFAULT', and 'OVERRIDE'. Default is 'DEFAULT')
+    (Optional) `log_configuration` - The log configuration for the results of the execute command actions
+      (Optional) `cloud_watch_log_group_name` - The name of the CloudWatch log group to send logs to
+  EOT
+  type = object({
+    kms_key_id = optional(string, null)
+    logging    = optional(string, "DEFAULT")
+    log_configuration = optional(object({
+      cloud_watch_log_group_name = optional(string, null)
+    }))
+  })
+  default = {
+    kms_key_id = null
+    logging    = "OVERRIDE"
+    log_configuration = {
+      cloud_watch_log_group_name = null
+    }
+  }
+  nullable = false
+}
+
 variable "cluster_configuration" {
   description = <<-EOT
   (Optional) Configuration block for execute command configuration for the cluster
