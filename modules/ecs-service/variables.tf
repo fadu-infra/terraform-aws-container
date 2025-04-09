@@ -137,8 +137,8 @@ variable "load_balancers" {
     (Optional) Configuration block for load balancers. The configuration supports the following:
       (Required) `container_name` - The name of the container to associate with the load balancer.
       (Required) `container_port` - The port on the container to associate with the load balancer.
-      (Optional) `elb_name` - The name of the Elastic Load Balancer.
-      (Optional) `target_group_arn` - The ARN of the target group.
+      (Optional) `elb_name` - The name of the Elastic Load Balancer. Required for ELB Classic to associate with the service.
+      (Optional) `target_group_arn` - (Required for ALB/NLB) ARN of the Load Balancer target group to associate with the service.
   EOT
   type = map(object({
     container_name   = string
