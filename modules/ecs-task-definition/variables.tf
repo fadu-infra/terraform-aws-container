@@ -509,14 +509,14 @@ variable "task_memory" {
 variable "ephemeral_storage" {
   description = <<-EOT
     (Optional) Configuration block for ephemeral storage. Supports the following:
-    (Required) `size_in_gib` - The amount of ephemeral storage to allocate for the task in GiB.
+    (Required) `size_in_gib` - The amount of ephemeral storage to allocate for the task in GiB (21 - 200).
   EOT
 
   type = object({
     size_in_gib = number
   })
   default = {
-    size_in_gib = 20
+    size_in_gib = 21
   }
 }
 
