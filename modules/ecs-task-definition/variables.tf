@@ -240,7 +240,7 @@ variable "container_memory" {
   nullable    = true
 
   validation {
-    condition     = var.container_memory == null || var.container_memory >= 6
+    condition     = var.container_memory == null || try(var.container_memory >= 6, false)
     error_message = "The container_memory must be at least 6 MiB."
   }
 }
@@ -252,12 +252,12 @@ variable "memory_reservation" {
   nullable    = true
 
   validation {
-    condition     = var.memory_reservation == null || var.memory_reservation >= 6
+    condition     = var.memory_reservation == null || try(var.memory_reservation >= 6, false)
     error_message = "The memory_reservation must be at least 6 MiB."
   }
 
   validation {
-    condition     = var.container_memory == null || var.memory_reservation == null || var.container_memory > var.memory_reservation
+    condition     = var.container_memory == null || var.memory_reservation == null || try(var.container_memory > var.memory_reservation, false)
     error_message = "If both container_memory and memory_reservation are specified, container_memory must be greater than memory_reservation."
   }
 }
@@ -532,7 +532,7 @@ variable "ipc_mode" {
   default     = null
 
   validation {
-    condition     = var.ipc_mode == null || contains(["host", "task", "none"], var.ipc_mode)
+    condition     = var.ipc_mode == null || try(contains(["host", "task", "none"], var.ipc_mode), false)
     error_message = "The 'ipc_mode' must be one of 'host', 'task', or 'none'."
   }
 }
@@ -543,7 +543,7 @@ variable "network_mode" {
   default     = "awsvpc"
 
   validation {
-    condition     = var.network_mode == null || contains(["none", "bridge", "awsvpc", "host"], var.network_mode)
+    condition     = var.network_mode == null || try(contains(["none", "bridge", "awsvpc", "host"], var.network_mode), false)
     error_message = "The 'network_mode' must be one of 'none', 'bridge', 'awsvpc', or 'host'."
   }
 }
@@ -554,7 +554,7 @@ variable "pid_mode" {
   default     = null
 
   validation {
-    condition     = var.pid_mode == null || contains(["host", "task"], var.pid_mode)
+    condition     = var.pid_mode == null || try(contains(["host", "task"], var.pid_mode), false)
     error_message = "The 'pid_mode' must be one of 'host' or 'task'."
   }
 }

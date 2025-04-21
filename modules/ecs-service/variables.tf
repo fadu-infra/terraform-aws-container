@@ -120,7 +120,7 @@ variable "health_check_grace_period_seconds" {
   nullable    = false
 
   validation {
-    condition     = var.health_check_grace_period_seconds == null || var.health_check_grace_period_seconds <= 2147483647
+    condition     = var.health_check_grace_period_seconds == null || try(var.health_check_grace_period_seconds <= 2147483647, false)
     error_message = "The 'health_check_grace_period_seconds' must not exceed 2147483647."
   }
 }
@@ -369,7 +369,7 @@ variable "network_mode" {
   nullable    = false
 
   validation {
-    condition     = var.network_mode == null || contains(["none", "bridge", "awsvpc", "host"], var.network_mode)
+    condition     = var.network_mode == null || try(contains(["none", "bridge", "awsvpc", "host"], var.network_mode), false)
     error_message = "The 'network_mode' must be one of 'none', 'bridge', 'awsvpc', or 'host'."
   }
 }

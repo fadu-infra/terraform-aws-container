@@ -73,8 +73,8 @@ variable "cluster_configuration" {
     condition = alltrue([
       for config in var.cluster_configuration :
       config.execute_command_configuration == null || (
-        config.execute_command_configuration.logging == null ||
-        contains(["NONE", "DEFAULT", "OVERRIDE"], config.execute_command_configuration.logging)
+        try(config.execute_command_configuration.logging == null, true) ||
+        try(contains(["NONE", "DEFAULT", "OVERRIDE"], config.execute_command_configuration.logging), true)
       )
     ])
     error_message = "The logging parameter must be one of: NONE, DEFAULT, or OVERRIDE."
@@ -442,7 +442,7 @@ variable "asg_settings" {
   }
 
   validation {
-    condition     = alltrue([for disk in var.asg_settings.ebs_disks : disk.volume_size == null || (disk.volume_size >= 1 && disk.volume_size <= 16384)])
+    condition     = alltrue([for disk in var.asg_settings.ebs_disks : disk.volume_size == null || try(disk.volume_size >= 1 && disk.volume_size <= 16384, false)])
     error_message = "EBS volume size must be between 1 GB and 16384 GB."
   }
 
