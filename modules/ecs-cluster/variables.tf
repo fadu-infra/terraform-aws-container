@@ -182,7 +182,7 @@ variable "autoscaling_capacity_provider" {
       (Optional) `instance_warmup_period` - Period of time, in seconds, to wait before considering a newly launched instance ready. default: 300
       (Optional) `maximum_scaling_step_size` - Maximum step adjustment size (1-10000)
       (Optional) `minimum_scaling_step_size` - Minimum step adjustment size (1-10000)
-      (Optional) `status` - Status of managed scaling ('ENABLED' or 'ENABLED')
+      (Optional) `status` - Status of managed scaling ('ENABLED' or 'DISABLED')
       (Optional) `target_capacity` - Target capacity percentage (1-100)
     Note: When managed termination protection is enabled, managed scaling must also be configured.
   EOT
