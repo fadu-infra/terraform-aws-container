@@ -128,17 +128,18 @@ resource "aws_ecs_cluster_capacity_providers" "this" {
 ################################################################################
 
 resource "aws_ecs_capacity_provider" "this" {
-  count = length(var.autoscaling_capacity_provider) > 0 ? 1 : 0
+  for_each = var.autoscaling_capacity_provider
 
-  name = var.autoscaling_capacity_provider.name
+  name = each.value.name
 
   auto_scaling_group_provider {
-    auto_scaling_group_arn = aws_autoscaling_group.this[0].arn
+    auto_scaling_group_arn = aws_autoscaling_group.this[each.key].arn
     # When you use managed termination protection, you must also use managed scaling otherwise managed termination protection won't work
-    managed_termination_protection = var.autoscaling_capacity_provider.managed_termination_protection
+    managed_termination_protection = each.value.managed_termination_protection
+    managed_draining               = each.value.managed_draining
 
     dynamic "managed_scaling" {
-      for_each = [var.autoscaling_capacity_provider.managed_scaling]
+      for_each = [each.value.managed_scaling]
 
       content {
         instance_warmup_period    = managed_scaling.value.instance_warmup_period

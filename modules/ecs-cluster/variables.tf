@@ -175,7 +175,7 @@ variable "autoscaling_capacity_provider" {
     (Optional) `name` - Name of the capacity provider
     (Optional) `managed_termination_protection` - Managed termination protection setting. Only valid when managed_scaling is configured ('ENABLED' or 'DISABLED')
     (Optional) `managed_draining` - Enables or disables a graceful shutdown of instances without disturbing workloads. ('ENABLED' or 'DISABLED') The default value is ENABLED when a capacity provider is created.
-    (Required) `default_capacity_provider_strategy` - Object containing default capacity provider strategy settings:
+    (Optional) `default_capacity_provider_strategy` - Object containing default capacity provider strategy settings:
       (Optional) `base` - The number of tasks, at a minimum, to run on the specified capacity provider
       (Optional) `weight` - The relative percentage of the total number of launched tasks that should use the specified capacity provider
     (Optional) `managed_scaling` - Object containing managed scaling settings:
@@ -186,7 +186,7 @@ variable "autoscaling_capacity_provider" {
       (Optional) `target_capacity` - Target capacity percentage (1-100)
     Note: When managed termination protection is enabled, managed scaling must also be configured.
   EOT
-  type = object({
+  type = map(object({
     name                           = optional(string, "default-capacity-provider")
     managed_termination_protection = optional(string, "DISABLED")
     managed_draining               = optional(string)
@@ -201,39 +201,41 @@ variable "autoscaling_capacity_provider" {
       status                    = optional(string, null)
       target_capacity           = optional(number, null)
     }), {})
-  })
+  }))
   default  = {}
   nullable = false
 
   validation {
     condition = alltrue([
-      !can(var.autoscaling_capacity_provider.managed_termination_protection) ||
-      contains(["ENABLED", "DISABLED"], var.autoscaling_capacity_provider.managed_termination_protection),
+      for provider in values(var.autoscaling_capacity_provider) : alltrue([
+        !can(provider.managed_termination_protection) ||
+        contains(["ENABLED", "DISABLED"], provider.managed_termination_protection),
 
-      !can(var.autoscaling_capacity_provider.managed_draining) ||
-      contains(["ENABLED", "DISABLED"], var.autoscaling_capacity_provider.managed_draining),
+        !can(provider.managed_draining) ||
+        contains(["ENABLED", "DISABLED"], provider.managed_draining),
 
-      !can(var.autoscaling_capacity_provider.managed_scaling) || alltrue([
-        !can(var.autoscaling_capacity_provider.managed_scaling.status) ||
-        contains(["ENABLED", "DISABLED"], var.autoscaling_capacity_provider.managed_scaling.status),
+        !can(provider.managed_scaling) || alltrue([
+          !can(provider.managed_scaling.status) ||
+          contains(["ENABLED", "DISABLED"], provider.managed_scaling.status),
 
-        !can(var.autoscaling_capacity_provider.managed_scaling.target_capacity) ||
-        (
-          var.autoscaling_capacity_provider.managed_scaling.target_capacity >= 1 &&
-          var.autoscaling_capacity_provider.managed_scaling.target_capacity <= 100
-        ),
+          !can(provider.managed_scaling.target_capacity) ||
+          (
+            provider.managed_scaling.target_capacity >= 1 &&
+            provider.managed_scaling.target_capacity <= 100
+          ),
 
-        !can(var.autoscaling_capacity_provider.managed_scaling.maximum_scaling_step_size) ||
-        (
-          var.autoscaling_capacity_provider.managed_scaling.maximum_scaling_step_size >= 1 &&
-          var.autoscaling_capacity_provider.managed_scaling.maximum_scaling_step_size <= 10000
-        ),
+          !can(provider.managed_scaling.maximum_scaling_step_size) ||
+          (
+            provider.managed_scaling.maximum_scaling_step_size >= 1 &&
+            provider.managed_scaling.maximum_scaling_step_size <= 10000
+          ),
 
-        !can(var.autoscaling_capacity_provider.managed_scaling.minimum_scaling_step_size) ||
-        (
-          var.autoscaling_capacity_provider.managed_scaling.minimum_scaling_step_size >= 1 &&
-          var.autoscaling_capacity_provider.managed_scaling.minimum_scaling_step_size <= 10000
-        )
+          !can(provider.managed_scaling.minimum_scaling_step_size) ||
+          (
+            provider.managed_scaling.minimum_scaling_step_size >= 1 &&
+            provider.managed_scaling.minimum_scaling_step_size <= 10000
+          )
+        ])
       ])
     ])
     error_message = "Invalid configuration. Check: managed_termination_protection and managed_draining must be 'ENABLED' or 'DISABLED', managed_scaling.status must be 'ENABLED' or 'DISABLED', target_capacity must be between 1 and 100, scaling step sizes must be between 1 and 10000"
