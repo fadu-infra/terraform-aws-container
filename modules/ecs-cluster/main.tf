@@ -133,8 +133,7 @@ resource "aws_ecs_capacity_provider" "this" {
   name = each.value.name
 
   auto_scaling_group_provider {
-    auto_scaling_group_arn = aws_autoscaling_group.this[each.key].arn
-    # When you use managed termination protection, you must also use managed scaling otherwise managed termination protection won't work
+    auto_scaling_group_arn         = aws_autoscaling_group.this[0].arn
     managed_termination_protection = each.value.managed_termination_protection
     managed_draining               = each.value.managed_draining
 
