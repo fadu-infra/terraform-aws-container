@@ -24,10 +24,10 @@ variable "default_execute_command_configuration" {
       (Optional) `cloud_watch_log_group_name` - The name of the CloudWatch log group to send logs to
   EOT
   type = object({
-    kms_key_id = optional(string, null)
+    kms_key_id = optional(string)
     logging    = optional(string, "DEFAULT")
     log_configuration = optional(object({
-      cloud_watch_log_group_name = optional(string, null)
+      cloud_watch_log_group_name = optional(string)
     }))
   })
   default = {
@@ -55,14 +55,14 @@ variable "cluster_configuration" {
   EOT
   type = list(object({
     execute_command_configuration = optional(object({
-      kms_key_id = optional(string, null)
+      kms_key_id = optional(string)
       logging    = optional(string, "DEFAULT")
       log_configuration = optional(object({
-        cloud_watch_encryption_enabled = optional(bool, null)
-        cloud_watch_log_group_name     = optional(string, null)
-        s3_bucket_name                 = optional(string, null)
-        s3_bucket_encryption_enabled   = optional(bool, null)
-        s3_key_prefix                  = optional(string, null)
+        cloud_watch_encryption_enabled = optional(bool)
+        cloud_watch_log_group_name     = optional(string)
+        s3_bucket_name                 = optional(string)
+        s3_bucket_encryption_enabled   = optional(bool)
+        s3_key_prefix                  = optional(string)
       }))
     }))
   }))
@@ -153,8 +153,8 @@ variable "fargate_capacity_providers" {
   type = map(object({
     name = string
     default_capacity_provider_strategy = object({
-      base   = optional(number, null)
-      weight = optional(number, null)
+      base   = optional(number)
+      weight = optional(number)
     })
   }))
   default  = {}
@@ -191,15 +191,15 @@ variable "autoscaling_capacity_provider" {
     managed_termination_protection = optional(string, "DISABLED")
     managed_draining               = optional(string)
     default_capacity_provider_strategy = optional(object({
-      base   = optional(number, null)
-      weight = optional(number, null)
+      base   = optional(number)
+      weight = optional(number)
     }))
     managed_scaling = optional(object({
-      instance_warmup_period    = optional(number, null)
-      maximum_scaling_step_size = optional(number, null)
-      minimum_scaling_step_size = optional(number, null)
-      status                    = optional(string, null)
-      target_capacity           = optional(number, null)
+      instance_warmup_period    = optional(number)
+      maximum_scaling_step_size = optional(number)
+      minimum_scaling_step_size = optional(number)
+      status                    = optional(string)
+      target_capacity           = optional(number)
     }), {})
   }))
   default  = {}
@@ -345,12 +345,12 @@ variable "task_exec_iam_statements" {
       (Required) `variable` - The variable to test against the condition.
   EOT
   type = list(object({
-    sid           = optional(string, null)
-    actions       = optional(list(string), null)
-    not_actions   = optional(list(string), null)
-    effect        = optional(string, null)
-    resources     = optional(list(string), null)
-    not_resources = optional(list(string), null)
+    sid           = optional(string)
+    actions       = optional(list(string))
+    not_actions   = optional(list(string))
+    effect        = optional(string)
+    resources     = optional(list(string))
+    not_resources = optional(list(string))
     principals = optional(list(object({
       type        = string
       identifiers = list(string)

@@ -631,7 +631,7 @@ variable "volume" {
       driver        = optional(string)
       labels        = optional(map(string))
       scope         = optional(string)
-    }), null)
+    }))
     efs_volume_configuration = optional(object({
       file_system_id          = string
       root_directory          = optional(string)
@@ -641,7 +641,7 @@ variable "volume" {
         access_point_id = optional(string)
         iam             = optional(string)
       }))
-    }), null)
+    }))
     fsx_windows_file_server_volume_configuration = optional(object({
       file_system_id = string
       root_directory = string
@@ -749,12 +749,12 @@ variable "task_exec_iam_statements" {
     Note: Same `iam_role_statements` variable configuration applies here.
   EOT
   type = map(object({
-    sid           = optional(string, null)
-    actions       = list(string)
-    not_actions   = optional(list(string), null)
-    effect        = string
-    resources     = list(string)
-    not_resources = optional(list(string), null)
+    sid           = optional(string)
+    actions       = optional(list(string))
+    not_actions   = optional(list(string))
+    effect        = optional(string)
+    resources     = optional(list(string))
+    not_resources = optional(list(string))
     principals = optional(list(object({
       type        = string
       identifiers = list(string)
@@ -843,12 +843,12 @@ variable "tasks_iam_role_statements" {
     Note: Same `iam_role_statements` variable configuration applies here.
   EOT
   type = map(object({
-    sid           = optional(string, null)
-    actions       = list(string)
-    not_actions   = optional(list(string), null)
-    effect        = string
-    resources     = list(string)
-    not_resources = optional(list(string), null)
+    sid           = optional(string)
+    actions       = optional(list(string))
+    not_actions   = optional(list(string))
+    effect        = optional(string)
+    resources     = optional(list(string))
+    not_resources = optional(list(string))
     principals = optional(list(object({
       type        = string
       identifiers = list(string)
