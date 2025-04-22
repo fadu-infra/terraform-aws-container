@@ -79,8 +79,8 @@ resource "aws_ecs_service" "this" {
 
     content {
       assign_public_ip = network_configuration.value.assign_public_ip
-      security_groups  = network_configuration.value.security_groups
-      subnets          = network_configuration.value.subnets
+      security_groups  = network_configuration.value.security_group_ids
+      subnets          = network_configuration.value.subnet_ids
     }
   }
 
