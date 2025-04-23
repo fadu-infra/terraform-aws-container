@@ -172,7 +172,7 @@ variable "fargate_capacity_providers" {
 variable "autoscaling_capacity_provider" {
   description = <<-EOT
    (Optional) Autoscaling capacity provider definition with the following settings:
-    (Optional) `name` - Name of the capacity provider
+    (Required) `name` - Name of the capacity provider
     (Optional) `managed_termination_protection` - Managed termination protection setting. Only valid when managed_scaling is configured ('ENABLED' or 'DISABLED')
     (Optional) `managed_draining` - Enables or disables a graceful shutdown of instances without disturbing workloads. ('ENABLED' or 'DISABLED') The default value is ENABLED when a capacity provider is created.
     (Optional) `default_capacity_provider_strategy` - Object containing default capacity provider strategy settings:
@@ -187,7 +187,7 @@ variable "autoscaling_capacity_provider" {
     Note: When managed termination protection is enabled, managed scaling must also be configured.
   EOT
   type = map(object({
-    name                           = optional(string, "default-capacity-provider")
+    name                           = string
     managed_termination_protection = optional(string, "DISABLED")
     managed_draining               = optional(string)
     default_capacity_provider_strategy = optional(object({
