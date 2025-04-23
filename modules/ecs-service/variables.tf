@@ -274,7 +274,7 @@ variable "service_connect_configuration" {
   EOT
 
   type = object({
-    enabled = optional(bool, true)
+    enabled = optional(bool)
     log_configuration = optional(object({
       log_driver = optional(string)
       options    = optional(map(string))
