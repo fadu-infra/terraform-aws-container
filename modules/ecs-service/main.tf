@@ -124,7 +124,7 @@ resource "aws_ecs_service" "this" {
 
   # Service Connect Configuration
   dynamic "service_connect_configuration" {
-    for_each = var.service_connect_configuration == {} ? [] : [var.service_connect_configuration]
+    for_each = length(keys(var.service_connect_configuration)) == 0 ? [] : [var.service_connect_configuration]
 
     content {
       enabled = try(service_connect_configuration.value.enabled, false)
