@@ -155,7 +155,7 @@ resource "aws_ecs_service" "this" {
         content {
 
           dynamic "client_alias" {
-            for_each = try([service.value.client_alias], [])
+            for_each = service.value.client_alias != null ? [service.value.client_alias] : []
 
             content {
               dns_name = try(client_alias.value.dns_name, null)
