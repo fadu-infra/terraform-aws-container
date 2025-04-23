@@ -127,7 +127,7 @@ resource "aws_ecs_service" "this" {
     for_each = var.service_connect_configuration == {} ? [] : [var.service_connect_configuration]
 
     content {
-      enabled = try(service_connect_configuration.value.enabled, true)
+      enabled = try(service_connect_configuration.value.enabled, false)
 
       dynamic "log_configuration" {
         for_each = try([service_connect_configuration.value.log_configuration], [])
@@ -150,12 +150,11 @@ resource "aws_ecs_service" "this" {
       namespace = lookup(service_connect_configuration.value, "namespace", null)
 
       dynamic "service" {
-        for_each = try([service_connect_configuration.value.service], [])
+        for_each = try(service_connect_configuration.value.service, null) != null ? [service_connect_configuration.value.service] : []
 
         content {
-
           dynamic "client_alias" {
-            for_each = service.value.client_alias != null ? [service.value.client_alias] : []
+            for_each = try(service.value.client_alias, null) != null ? [service.value.client_alias] : []
 
             content {
               dns_name = try(client_alias.value.dns_name, null)
