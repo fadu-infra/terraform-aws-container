@@ -24,7 +24,6 @@ locals {
 ################################################################################
 
 locals {
-  # https://docs.aws.amazon.com/AmazonECS/latest/developerguide/deployment-type-external.html
   is_daemon  = var.scheduling_strategy == "DAEMON"
   is_fargate = var.launch_type == "FARGATE"
 }
@@ -34,7 +33,6 @@ resource "aws_ecs_service" "this" {
   name            = var.name
   task_definition = var.task_definition_arn
 
-  # CloudWatch Alarms
   dynamic "alarms" {
     for_each = var.alarms
 
@@ -45,7 +43,6 @@ resource "aws_ecs_service" "this" {
     }
   }
 
-  # Capacity Provider Strategy
   dynamic "capacity_provider_strategy" {
     for_each = var.capacity_provider_strategy
 
@@ -56,13 +53,11 @@ resource "aws_ecs_service" "this" {
     }
   }
 
-  # Deployment Circuit Breaker
   deployment_circuit_breaker {
     enable   = var.deployment_setting.circuit_breaker.enable
     rollback = var.deployment_setting.circuit_breaker.rollback
   }
 
-  # Deployment Settings
   deployment_maximum_percent         = local.is_daemon ? null : var.deployment_setting.maximum_percent
   deployment_minimum_healthy_percent = local.is_daemon ? null : var.deployment_setting.minimum_healthy_percent
   desired_count                      = local.is_daemon ? null : var.desired_count
@@ -73,7 +68,6 @@ resource "aws_ecs_service" "this" {
   iam_role                           = local.iam_role_arn
   launch_type                        = length(var.capacity_provider_strategy) > 0 ? null : var.launch_type
 
-  # Network Configuration
   dynamic "network_configuration" {
     for_each = var.network_mode == "awsvpc" ? [var.network_configuration] : []
 
@@ -84,7 +78,6 @@ resource "aws_ecs_service" "this" {
     }
   }
 
-  # Ordered Placement Strategy
   dynamic "ordered_placement_strategy" {
     for_each = var.ordered_placement_strategy
 
@@ -94,7 +87,6 @@ resource "aws_ecs_service" "this" {
     }
   }
 
-  # Placement Constraints
   dynamic "placement_constraints" {
     for_each = var.placement_constraints
 
@@ -104,13 +96,10 @@ resource "aws_ecs_service" "this" {
     }
   }
 
-  # Platform Version
   platform_version = local.is_fargate ? var.platform_version : null
 
-  # Scheduling Strategy
   scheduling_strategy = local.is_fargate ? "REPLICA" : var.scheduling_strategy
 
-  # Load Balancer
   dynamic "load_balancer" {
     for_each = var.load_balancers
 
@@ -122,7 +111,6 @@ resource "aws_ecs_service" "this" {
     }
   }
 
-  # Service Connect Configuration
   dynamic "service_connect_configuration" {
     for_each = length(var.service_connect_configuration) > 0 ? [var.service_connect_configuration] : []
 
@@ -170,7 +158,6 @@ resource "aws_ecs_service" "this" {
     }
   }
 
-  # Service Registries
   dynamic "service_registries" {
     for_each = length(var.service_discovery_registries) > 0 ? [{ for k, v in var.service_discovery_registries : k => v if !local.is_daemon }] : []
 
@@ -182,10 +169,8 @@ resource "aws_ecs_service" "this" {
     }
   }
 
-  # Triggers
   triggers = var.triggers
 
-  # Wait for Steady State
   wait_for_steady_state = var.wait_for_steady_state
 
   propagate_tags = var.propagate_tags
@@ -210,7 +195,7 @@ resource "aws_ecs_service" "this" {
 
   lifecycle {
     ignore_changes = [
-      desired_count, # Always ignored
+      desired_count,
     ]
   }
 }

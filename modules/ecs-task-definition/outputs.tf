@@ -40,13 +40,6 @@ output "task_definition_family" {
   value       = try(aws_ecs_task_definition.this.family, null)
 }
 
-/*
-output "task_definition_family_revision" {
-  description = "The family and revision (family:revision) of the task definition"
-  value       = "${try(aws_ecs_task_definition.this.family, "")}:${local.max_task_def_revision}"
-}
-*/
-
 output "network_mode" {
   description = "The network mode of the ECS task definition."
   value       = aws_ecs_task_definition.this.network_mode

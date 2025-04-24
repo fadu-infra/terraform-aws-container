@@ -97,7 +97,6 @@ locals {
     workingDirectory       = var.working_directory
   }
 
-  # Strip out all null values, ECS API will provide defaults in place of null/empty values
   container_definition = { for k, v in local.definition : k => v if v != null }
 }
 
@@ -119,10 +118,8 @@ resource "aws_cloudwatch_log_group" "this" {
 }
 
 resource "aws_ecs_task_definition" "this" {
-  # Convert map of maps to array of maps before JSON encoding
   container_definitions = jsonencode([local.container_definition])
-  cpu                   = var.task_cpu # launch type이 fargate일 때만 필요함
-  # https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/ecs_task_definition#cpu-1
+  cpu                   = var.task_cpu
 
   dynamic "ephemeral_storage" {
     for_each = length(var.ephemeral_storage) > 0 ? [var.ephemeral_storage] : []
