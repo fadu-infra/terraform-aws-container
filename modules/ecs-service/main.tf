@@ -91,7 +91,7 @@ resource "aws_ecs_service" "this" {
     for_each = var.placement_constraints
 
     content {
-      expression = try(placement_constraints.value.expression, null)
+      expression = placement_constraints.value.expression
       type       = placement_constraints.value.type
     }
   }
@@ -106,8 +106,8 @@ resource "aws_ecs_service" "this" {
     content {
       container_name   = load_balancer.value.container_name
       container_port   = load_balancer.value.container_port
-      elb_name         = try(load_balancer.value.elb_name, null)
-      target_group_arn = try(load_balancer.value.target_group_arn, null)
+      elb_name         = load_balancer.value.elb_name
+      target_group_arn = load_balancer.value.target_group_arn
     }
   }
 
@@ -159,12 +159,12 @@ resource "aws_ecs_service" "this" {
   }
 
   dynamic "service_registries" {
-    for_each = length(var.service_discovery_registries) > 0 ? [{ for k, v in var.service_discovery_registries : k => v if !local.is_daemon }] : []
+    for_each = length(var.service_discovery_registries) > 0 ? [for v in var.service_discovery_registries : v if !local.is_daemon] : []
 
     content {
-      container_name = try(service_registries.value.container_name, null)
-      container_port = try(service_registries.value.container_port, null)
-      port           = try(service_registries.value.port, null)
+      container_name = service_registries.value.container_name
+      container_port = service_registries.value.container_port
+      port           = service_registries.value.port
       registry_arn   = service_registries.value.registry_arn
     }
   }
@@ -184,9 +184,9 @@ resource "aws_ecs_service" "this" {
   )
 
   timeouts {
-    create = try(var.timeouts.create, null)
-    update = try(var.timeouts.update, null)
-    delete = try(var.timeouts.delete, null)
+    create = var.timeouts.create
+    update = var.timeouts.update
+    delete = var.timeouts.delete
   }
 
   depends_on = [
