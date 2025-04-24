@@ -255,28 +255,28 @@ variable "scheduling_strategy" {
 
 variable "service_connect_configuration" {
   description = <<-EOT
-    (Optional) The ECS Service Connect configuration for this service to discover and connect to services, and be discovered by, and connected from, other services within a namespace.
-      (Optional) `enabled` - Whether the service connect is enabled. Defaults to true.
-      (Optional) `log_configuration` - Configuration block for logging
-        (Optional) `log_driver` - The log driver to use for the container.
+    (Optional) The ECS Service Connect configuration for this service.
+      (Required) `enabled` - Whether to enable service connect.
+      (Optional) `log_configuration` - Configuration block for logging.
+        (Required) `log_driver` - The log driver to use.
         (Optional) `options` - Key-value pairs to configure the log driver.
-        (Optional) `secret_option` - Configuration block for secret options
-          (Required) `name` - The name of the secret option.
-          (Required) `value_from` - The ARN of the secret.
-      (Optional) `namespace` - The namespace for the service connect.
-      (Optional) `service` - Configuration block for the service
-        (Optional) `client_alias` - Configuration block for client alias
-          (Optional) `dns_name` - The DNS name for the client alias.
-          (Required) `port` - The port for the client alias.
-        (Optional) `discovery_name` - The discovery name for the service.
-        (Optional) `ingress_port_override` - The ingress port override for the service.
-        (Required) `port_name` - The port name for the service.
+        (Optional) `secret_option` - List of secret options.
+          (Required) `name` - Name of the secret option.
+          (Required) `value_from` - Value from the secret option.
+      (Optional) `namespace` - The namespace for service connect.
+      (Optional) `service` - Service configuration block.
+        (Optional) `client_alias` - Client alias configuration.
+          (Optional) `dns_name` - DNS name for the client alias.
+          (Required) `port` - Port number for the client alias.
+        (Optional) `discovery_name` - Service discovery name.
+        (Optional) `ingress_port_override` - Override port for ingress.
+        (Required) `port_name` - Name of the port.
   EOT
 
   type = object({
-    enabled = optional(bool)
+    enabled = optional(bool, false)
     log_configuration = optional(object({
-      log_driver = optional(string)
+      log_driver = string
       options    = optional(map(string))
       secret_option = optional(list(object({
         name       = string
@@ -297,6 +297,59 @@ variable "service_connect_configuration" {
 
   default  = {}
   nullable = false
+
+  validation {
+    condition = (
+      length(keys(var.service_connect_configuration)) == 0 || (
+        try(
+          var.service_connect_configuration.enabled == null ||
+          contains([true, false], var.service_connect_configuration.enabled),
+          true
+        )
+      )
+    )
+    error_message = "The 'enabled' field must be either true or false."
+  }
+
+  validation {
+    condition = (
+      length(keys(var.service_connect_configuration)) == 0 ||
+      var.service_connect_configuration.service == null || (
+        try(
+          var.service_connect_configuration.service.port_name != null,
+          false
+        )
+      )
+    )
+    error_message = "When service is specified, port_name is required."
+  }
+
+  validation {
+    condition = (
+      length(keys(var.service_connect_configuration)) == 0 ||
+      try(var.service_connect_configuration.service, null) == null ||
+      try(var.service_connect_configuration.service.client_alias, null) == null || (
+        try(
+          var.service_connect_configuration.service.client_alias.port != null,
+          false
+        )
+      )
+    )
+    error_message = "When client_alias is specified, port is required."
+  }
+
+  validation {
+    condition = (
+      length(keys(var.service_connect_configuration)) == 0 ||
+      var.service_connect_configuration.log_configuration == null || (
+        try(
+          var.service_connect_configuration.log_configuration.log_driver != null,
+          false
+        )
+      )
+    )
+    error_message = "When log_configuration is specified, log_driver is required."
+  }
 }
 
 variable "service_discovery_registries" {
