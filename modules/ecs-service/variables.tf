@@ -408,6 +408,18 @@ variable "service_tags" {
 }
 
 ################################################################################
+# Scaling Policies
+################################################################################
+
+variable "cluster_name" {
+  description = "(Optional) The name of the ECS cluster"
+  type        = string
+  default     = null
+  nullable    = true
+}
+
+
+################################################################################
 # Task Definition
 ################################################################################
 
@@ -430,6 +442,87 @@ variable "network_mode" {
 variable "task_definition_arn" {
   description = "(Required) The ARN of the ECS task definition to use for the service."
   type        = string
+  default     = null
+  nullable    = true
+}
+
+
+################################################################################
+# Scaling Policies
+################################################################################
+
+variable "scaling_policies" {
+  description = <<EOF
+(Optional) A list of ECS service scaling policies. Only "TargetTrackingScaling" policy type is supported for ECS services.
+
+  (Required) `name` - The name of the scaling policy.
+  (Required) `policy_type` - Must be "TargetTrackingScaling".
+  (Optional) `estimated_instance_warmup` - The estimated time, in seconds, until a newly launched task can contribute to the CloudWatch metrics.
+  (Required) `target_tracking_configuration` - The configuration for target tracking scaling.
+    (Required) `target_value` - The target value for the metric.
+    (Optional) `disable_scale_in` - Whether to disable scale in.
+    (Optional) `predefined_metric_specification` - A predefined metric specification.
+      (Required) `predefined_metric_type` - The metric type. One of: "ECSServiceAverageCPUUtilization", "ECSServiceAverageMemoryUtilization", or "ALBRequestCountPerTarget".
+      (Optional) `resource_label` - Identifies the resource associated with the metric type (required for ALB metrics).
+    (Optional) `customized_metric_specification` - A customized metric specification.
+      (Optional) `metric_name` - The name of the custom metric.
+      (Optional) `namespace` - The namespace of the custom metric.
+      (Optional) `statistic` - The statistic of the custom metric.
+      (Optional) `unit` - The unit of the custom metric.
+      (Optional) `dimensions` - A list of metric dimensions.
+        (Required) `name` - The name of the dimension.
+        (Required) `value` - The value of the dimension.
+EOF
+
+  type = list(object({
+    name                      = string
+    policy_type               = string
+    estimated_instance_warmup = optional(number)
+
+    target_tracking_configuration = object({
+      target_value     = number
+      disable_scale_in = optional(bool, false)
+
+      predefined_metric_specification = optional(object({
+        predefined_metric_type = string
+        resource_label         = optional(string)
+      }))
+
+      customized_metric_specification = optional(object({
+        metric_name = optional(string)
+        namespace   = optional(string)
+        statistic   = optional(string)
+        unit        = optional(string)
+        dimensions = optional(list(object({
+          name  = string
+          value = string
+        })), [])
+      }))
+    })
+  }))
+
+  default  = []
+  nullable = false
+
+  validation {
+    condition = alltrue([
+      for policy in var.scaling_policies :
+      policy.policy_type == "TargetTrackingScaling"
+    ])
+    error_message = "For ECS services, the policy_type must be 'TargetTrackingScaling'."
+  }
+}
+
+variable "min_capacity" {
+  description = "(Optional) The minimum capacity of the ECS service"
+  type        = number
+  default     = null
+  nullable    = true
+}
+
+variable "max_capacity" {
+  description = "(Optional) The maximum capacity of the ECS service"
+  type        = number
   default     = null
   nullable    = true
 }
