@@ -453,6 +453,20 @@ variable "cluster_name" {
   nullable    = true
 }
 
+variable "min_capacity" {
+  description = "(Optional) The minimum capacity of the ECS service. Required if `service_autoscaling_enabled` is true."
+  type        = number
+  default     = null
+  nullable    = true
+}
+
+variable "max_capacity" {
+  description = "(Optional) The maximum capacity of the ECS service. Required if `service_autoscaling_enabled` is true."
+  type        = number
+  default     = null
+  nullable    = true
+}
+
 variable "scaling_policies" {
   description = <<EOF
 (Optional) A list of ECS service scaling policies. Only "TargetTrackingScaling" policy type is supported for ECS services.
@@ -515,18 +529,36 @@ EOF
   }
 }
 
-variable "min_capacity" {
-  description = "(Optional) The minimum capacity of the ECS service. Required if `service_autoscaling_enabled` is true."
-  type        = number
-  default     = null
-  nullable    = true
-}
-
-variable "max_capacity" {
-  description = "(Optional) The maximum capacity of the ECS service. Required if `service_autoscaling_enabled` is true."
-  type        = number
-  default     = null
-  nullable    = true
+variable "scaling_alarms" {
+  description = <<EOF
+  (Optional) Settings for CloudWatch alarms attached to scaling policies
+    (Required) `name` - The name of the alarm.
+    (Required) `comparison_operator` - The arithmetic operation to use when comparing the specified statistic and threshold.
+    (Required) `evaluation_periods` - The number of periods over which data is compared to the specified threshold.
+    (Optional) `metric_name` - The name for the alarm's associated metric.
+    (Optional) `namespace` - The namespace for the alarm's associated metric.
+    (Optional) `period` - The period in seconds over which the specified statistic is applied.
+    (Optional) `statistic` - The statistic to apply to the alarm's associated metric.
+    (Optional) `threshold` - The value against which the specified statistic is compared.
+    (Optional) `alarm_description` - The description for the alarm.
+    (Required) `scaling_policy_name` - The name of the scaling policy to attach to this alarm.
+    (Optional) `dimensions` - The dimensions for the alarm's associated metric.
+  EOF
+  type = list(object({
+    name                = string
+    comparison_operator = string
+    evaluation_periods  = number
+    metric_name         = optional(string)
+    namespace           = optional(string)
+    period              = optional(number)
+    statistic           = optional(string)
+    threshold           = optional(number)
+    alarm_description   = optional(string)
+    scaling_policy_name = string
+    dimensions          = optional(map(string))
+  }))
+  default  = []
+  nullable = false
 }
 
 ################################################################################

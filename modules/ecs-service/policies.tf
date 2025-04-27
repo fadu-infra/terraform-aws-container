@@ -25,6 +25,26 @@ resource "aws_appautoscaling_target" "this" {
   max_capacity       = var.max_capacity
 }
 
+resource "aws_cloudwatch_metric_alarm" "this" {
+  for_each = { for alarm in var.scaling_alarms : alarm.name => alarm }
+
+  alarm_name          = each.key
+  comparison_operator = each.value.comparison_operator
+  evaluation_periods  = each.value.evaluation_periods
+  metric_name         = each.value.metric_name
+  namespace           = each.value.namespace
+  period              = each.value.period
+  statistic           = each.value.statistic
+  threshold           = each.value.threshold
+  dimensions          = each.value.dimensions
+
+  alarm_description = each.value.alarm_description
+  alarm_actions = [
+    try(local.policy_arns[each.value.scaling_policy_name], null)
+  ]
+  tags = var.tags
+}
+
 resource "aws_appautoscaling_policy" "target_tracking" {
   for_each = var.service_autoscaling_enabled ? local.target_tracking_policies : {}
 
