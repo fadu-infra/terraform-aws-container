@@ -451,6 +451,13 @@ variable "task_definition_arn" {
 # Scaling Policies
 ################################################################################
 
+variable "service_autoscaling_enabled" {
+  description = "(Optional) Whether to enable service autoscaling"
+  type        = bool
+  default     = false
+  nullable    = false
+}
+
 variable "scaling_policies" {
   description = <<EOF
 (Optional) A list of ECS service scaling policies. Only "TargetTrackingScaling" policy type is supported for ECS services.

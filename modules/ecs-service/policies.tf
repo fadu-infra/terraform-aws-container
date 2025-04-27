@@ -16,6 +16,8 @@ locals {
 }
 
 resource "aws_appautoscaling_target" "this" {
+  count = var.service_autoscaling_enabled ? 1 : 0
+
   service_namespace  = "ecs"
   resource_id        = "service/${var.cluster_name}/${var.name}"
   scalable_dimension = "ecs:service:DesiredCount"
@@ -24,12 +26,12 @@ resource "aws_appautoscaling_target" "this" {
 }
 
 resource "aws_appautoscaling_policy" "target_tracking" {
-  for_each = local.target_tracking_policies
+  for_each = var.service_autoscaling_enabled ? local.target_tracking_policies : {}
 
   name               = each.key
   service_namespace  = "ecs"
-  resource_id        = aws_appautoscaling_target.this.resource_id
-  scalable_dimension = aws_appautoscaling_target.this.scalable_dimension
+  resource_id        = aws_appautoscaling_target.this[0].resource_id
+  scalable_dimension = aws_appautoscaling_target.this[0].scalable_dimension
   policy_type        = "TargetTrackingScaling"
 
   target_tracking_scaling_policy_configuration {
@@ -54,12 +56,12 @@ resource "aws_appautoscaling_policy" "target_tracking" {
 }
 
 resource "aws_appautoscaling_policy" "step_scaling" {
-  for_each = local.step_scaling_policies
+  for_each = var.service_autoscaling_enabled ? local.step_scaling_policies : {}
 
   name               = each.key
   service_namespace  = "ecs"
-  resource_id        = aws_appautoscaling_target.this.resource_id
-  scalable_dimension = aws_appautoscaling_target.this.scalable_dimension
+  resource_id        = aws_appautoscaling_target.this[0].resource_id
+  scalable_dimension = aws_appautoscaling_target.this[0].scalable_dimension
   policy_type        = "StepScaling"
 
   step_scaling_policy_configuration {
