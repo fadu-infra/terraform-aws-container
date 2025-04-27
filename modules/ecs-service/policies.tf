@@ -1,9 +1,4 @@
 locals {
-  simple_scaling_policies = {
-    for policy in var.scaling_policies : policy.name => policy
-    if policy.policy_type == "SimpleScaling"
-  }
-
   step_scaling_policies = {
     for policy in var.scaling_policies : policy.name => policy
     if policy.policy_type == "StepScaling"

@@ -456,7 +456,7 @@ variable "scaling_policies" {
 (Optional) A list of ECS service scaling policies. Only "TargetTrackingScaling" policy type is supported for ECS services.
 
   (Required) `name` - The name of the scaling policy.
-  (Required) `policy_type` - Must be "TargetTrackingScaling".
+  (Required) `policy_type` - "TargetTrackingScaling", "StepScaling" are supported.
   (Optional) `estimated_instance_warmup` - The estimated time, in seconds, until a newly launched task can contribute to the CloudWatch metrics.
   (Required) `target_tracking_configuration` - The configuration for target tracking scaling.
     (Required) `target_value` - The target value for the metric.
