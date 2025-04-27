@@ -436,7 +436,7 @@ variable "task_definition_arn" {
 
 
 ################################################################################
-# Scaling Policies
+# Service Auto Scaling - Scaling Policies
 ################################################################################
 
 variable "service_autoscaling_enabled" {
@@ -516,14 +516,14 @@ EOF
 }
 
 variable "min_capacity" {
-  description = "(Optional) The minimum capacity of the ECS service"
+  description = "(Optional) The minimum capacity of the ECS service. Required if `service_autoscaling_enabled` is true."
   type        = number
   default     = null
   nullable    = true
 }
 
 variable "max_capacity" {
-  description = "(Optional) The maximum capacity of the ECS service"
+  description = "(Optional) The maximum capacity of the ECS service. Required if `service_autoscaling_enabled` is true."
   type        = number
   default     = null
   nullable    = true
