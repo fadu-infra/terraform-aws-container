@@ -26,7 +26,7 @@ resource "aws_appautoscaling_target" "this" {
 }
 
 resource "aws_cloudwatch_metric_alarm" "this" {
-  for_each = { for alarm in var.scaling_alarms : alarm.name => alarm }
+  for_each = var.service_autoscaling_enabled ? { for alarm in var.scaling_alarms : alarm.name => alarm } : {}
 
   alarm_name          = each.key
   comparison_operator = each.value.comparison_operator
