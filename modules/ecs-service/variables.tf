@@ -408,18 +408,6 @@ variable "service_tags" {
 }
 
 ################################################################################
-# Scaling Policies
-################################################################################
-
-variable "cluster_name" {
-  description = "(Optional) The name of the ECS cluster"
-  type        = string
-  default     = null
-  nullable    = true
-}
-
-
-################################################################################
 # Task Definition
 ################################################################################
 
@@ -456,6 +444,13 @@ variable "service_autoscaling_enabled" {
   type        = bool
   default     = false
   nullable    = false
+}
+
+variable "cluster_name" {
+  description = "(Optional) The name of the ECS cluster. Required if `service_autoscaling_enabled` is true."
+  type        = string
+  default     = null
+  nullable    = true
 }
 
 variable "scaling_policies" {
