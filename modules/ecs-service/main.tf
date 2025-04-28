@@ -65,7 +65,7 @@ resource "aws_ecs_service" "this" {
   enable_execute_command             = var.enable_execute_command
   force_new_deployment               = var.force_new_deployment
   health_check_grace_period_seconds  = var.health_check_grace_period_seconds
-  iam_role                           = local.iam_role_arn
+  iam_role                           = aws_iam_role.ecs_service.arn
   launch_type                        = length(var.capacity_provider_strategy) > 0 ? null : var.launch_type
 
   dynamic "network_configuration" {
@@ -188,10 +188,6 @@ resource "aws_ecs_service" "this" {
     update = var.timeouts.update
     delete = var.timeouts.delete
   }
-
-  depends_on = [
-    aws_iam_role_policy_attachment.service
-  ]
 
   lifecycle {
     ignore_changes = [
