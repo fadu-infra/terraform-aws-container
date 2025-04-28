@@ -4,31 +4,27 @@
 
 output "arn" {
   description = "ARN that identifies the cluster"
-  value       = try(aws_ecs_cluster.this.arn, null)
+  value       = aws_ecs_cluster.this.arn
 }
 
 output "id" {
   description = "ID that identifies the cluster"
-  value       = try(aws_ecs_cluster.this.id, null)
+  value       = aws_ecs_cluster.this.id
 }
 
 output "name" {
   description = "Name that identifies the cluster"
-  value       = try(aws_ecs_cluster.this.name, null)
+  value       = aws_ecs_cluster.this.name
 }
 
-################################################################################
-# CloudWatch Log Group
-################################################################################
-
-output "cloudwatch_log_group_name" {
-  description = "Name of CloudWatch log group created"
-  value       = try(aws_cloudwatch_log_group.this[0].name, null)
+output "execute_command_log_group_name" {
+  description = "The CloudWatch log group name specified for Execute Command logging. Null if logging is not OVERRIDE or not configured."
+  value       = var.logging == "OVERRIDE" && var.log_configuration != null ? var.log_configuration.cloud_watch_log_group_name : null
 }
 
-output "cloudwatch_log_group_arn" {
-  description = "ARN of CloudWatch log group created"
-  value       = try(aws_cloudwatch_log_group.this[0].arn, null)
+output "service_connect_defaults_namespace_arn" {
+  description = "The ARN of the default namespace for Service Connect. Null if not configured."
+  value       = var.service_discovery_namespace_arn != null ? one(aws_ecs_cluster.this.service_connect_defaults[*].namespace) : null
 }
 
 ################################################################################
@@ -47,24 +43,4 @@ output "cluster_capacity_providers" {
 output "autoscaling_capacity_provider" {
   description = "Map of autoscaling capacity provider created and their attributes"
   value       = aws_ecs_capacity_provider.this
-}
-
-################################################################################
-# Task Execution - IAM Role
-# https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_execution_IAM_role.html
-################################################################################
-
-output "task_exec_iam_role_name" {
-  description = "Task execution IAM role name"
-  value       = try(aws_iam_role.task_exec[0].name, null)
-}
-
-output "task_exec_iam_role_arn" {
-  description = "Task execution IAM role ARN"
-  value       = try(aws_iam_role.task_exec[0].arn, null)
-}
-
-output "task_exec_iam_role_unique_id" {
-  description = "Stable and unique string identifying the task execution IAM role"
-  value       = try(aws_iam_role.task_exec[0].unique_id, null)
 }
