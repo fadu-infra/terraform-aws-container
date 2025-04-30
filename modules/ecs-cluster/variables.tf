@@ -93,21 +93,21 @@ variable "fargate_capacity_providers" {
 
 variable "autoscaling_capacity_provider" {
   description = <<-EOT
-   (Optional) Autoscaling capacity provider definition with the following settings:
+  (Optional) Autoscaling capacity provider definition with the following settings:
     (Required) `name` - Name of the capacity provider.
     (Required) `autoscaling_group_arn` - ARN of the Auto Scaling Group
     (Optional) `managed_draining` - Enables or disables a graceful shutdown of instances without disturbing workloads. ('ENABLED' or 'DISABLED') The default value is ENABLED when a capacity provider is created.
     (Optional) `managed_termination_protection` - Managed termination protection setting. Only valid when managed_scaling is configured ('ENABLED' or 'DISABLED')
     (Optional) `managed_scaling` - Object containing managed scaling settings:
-        (Optional) `instance_warmup_period` - Period of time, in seconds, to wait before considering a newly launched instance ready. default: 300
-        (Optional) `maximum_scaling_step_size` - Maximum step adjustment size (1-10000)
-        (Optional) `minimum_scaling_step_size` - Minimum step adjustment size (1-10000)
-        (Optional) `status` - Status of managed scaling ('ENABLED' or 'DISABLED')
-        (Optional) `target_capacity` - Target capacity percentage (1-100)
+      (Optional) `instance_warmup_period` - Period of time, in seconds, to wait before considering a newly launched instance ready. default: 300
+      (Optional) `maximum_scaling_step_size` - Maximum step adjustment size (1-10000)
+      (Optional) `minimum_scaling_step_size` - Minimum step adjustment size (1-10000)
+      (Optional) `status` - Status of managed scaling ('ENABLED' or 'DISABLED')
+      (Optional) `target_capacity` - Target capacity percentage (1-100)
     (Optional) `default_capacity_provider_strategy` - Object containing default capacity provider strategy settings:
       (Optional) `base` - The relative percentage of the total number of launched tasks that should use the specified capacity provider. The weight value is taken into consideration after the base count of tasks has been satisfied.
       (Optional) `weight` - The number of tasks, at a minimum, to run on the specified capacity provider. Only one capacity provider in a capacity provider strategy can have a base defined.
-    Note: When managed termination protection is enabled, managed scaling must also be configured.
+  Note: When managed termination protection is enabled, managed scaling must also be configured.
   EOT
   type = map(object({
     name                           = string

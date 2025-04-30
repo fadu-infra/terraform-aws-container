@@ -77,9 +77,9 @@ variable "entrypoint" {
 
 variable "environment" {
   description = <<-EOT
-    (Optional) The environment variables to pass to the container
-    - `name`: (Required) The name of the environment variable
-    - `value`: (Required) The value of the environment variable
+  (Optional) The environment variables to pass to the container
+    (Required) `name`: The name of the environment variable
+    (Required) `value`: The value of the environment variable
   EOT
   type = list(object({
     name  = string
@@ -90,9 +90,9 @@ variable "environment" {
 
 variable "environment_files" {
   description = <<-EOT
-    (Optional) A list of files containing the environment variables to pass to a container
-    - `value`: (Required) The value of the environment variable
-    - `type`: (Required) The type of the environment variable
+  (Optional) A list of files containing the environment variables to pass to a container
+    (Required) `value`: The value of the environment variable
+    (Required) `type`: The type of the environment variable
   EOT
   type = list(object({
     value = string
@@ -110,9 +110,9 @@ variable "essential" {
 
 variable "extra_hosts" {
   description = <<-EOT
-    (Optional) A list of hostnames and IP address mappings to append to the `/etc/hosts` file on the container
-    - `hostname`: (Required) The hostname to add
-    - `ipAddress`: (Required) The IP address to add
+  (Optional) A list of hostnames and IP address mappings to append to the `/etc/hosts` file on the container
+    (Required) `hostname`: The hostname to add
+    (Required) `ipAddress`: The IP address to add
   EOT
   type = list(object({
     hostname  = string
@@ -123,9 +123,9 @@ variable "extra_hosts" {
 
 variable "firelens_configuration" {
   description = <<-EOT
-    (Optional) The FireLens configuration for the container, used to specify and configure a log router for container logs. For more details, refer to the Amazon ECS Developer Guide on Custom Log Routing.
-      (Optional) `options`: A map of key-value pairs to configure the log router. These options allow customization of the log routing behavior.
-      (Optional) `type`: The log router to use. Valid values are `fluentd` or `fluentbit`.
+  (Optional) The FireLens configuration for the container, used to specify and configure a log router for container logs. For more details, refer to the Amazon ECS Developer Guide on Custom Log Routing.
+    (Optional) `options`: A map of key-value pairs to configure the log router. These options allow customization of the log routing behavior.
+    (Optional) `type`: The log router to use. Valid values are `fluentd` or `fluentbit`.
   EOT
   type = object({
     options = optional(map(string))
@@ -136,12 +136,12 @@ variable "firelens_configuration" {
 
 variable "health_check" {
   description = <<-EOT
-    (Optional) The container health check command and associated configuration parameters for the container. See [HealthCheck](https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_HealthCheck.html)
-      (Optional) `command`: The command that the container runs to determine if it is healthy.
-      (Optional) `interval`: The time period in seconds between each health check execution.
-      (Optional) `timeout`: The time period in seconds to wait for a health check to succeed.
-      (Optional) `retries`: The number of times to retry a failed health check before the container is considered unhealthy.
-      (Optional) `startPeriod`: The time period in seconds to wait for a health check to get a response from the command.
+  (Optional) The container health check command and associated configuration parameters for the container. See [HealthCheck](https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_HealthCheck.html)
+    (Optional) `command`: The command that the container runs to determine if it is healthy.
+    (Optional) `interval`: The time period in seconds between each health check execution.
+    (Optional) `timeout`: The time period in seconds to wait for a health check to succeed.
+    (Optional) `retries`: The number of times to retry a failed health check before the container is considered unhealthy.
+    (Optional) `startPeriod`: The time period in seconds to wait for a health check to get a response from the command.
   EOT
   type = object({
     command     = optional(list(string))
@@ -182,16 +182,15 @@ variable "links" {
 
 variable "linux_parameters" {
   description = <<-EOT
-    (Optional) Linux-specific modifications that are applied to the container, such as Linux kernel capabilities.
-      (Optional) `capabilities`: The Linux capabilities for the container that are added to or dropped from the default configuration provided by Docker.
-      (Optional) `devices`: Any host devices to expose to the container.
-      (Optional) `initProcessEnabled`: Run an init process inside the container that forwards signals and reaps processes.
-      (Optional) `maxSwap`: The total amount of swap memory (in MiB) a container can use.
-      (Optional) `sharedMemorySize`: The size (in MiB) of the /dev/shm volume.
-      (Optional) `swappiness`: Tune a container's memory swappiness behavior.
-      (Optional) `tmpfs`: The container path, mount options, and size (in MiB) of the tmpfs mount.
-
-    Note: Some parameters are not supported for tasks using the Fargate launch type.
+  (Optional) Linux-specific modifications that are applied to the container, such as Linux kernel capabilities.
+    (Optional) `capabilities`: The Linux capabilities for the container that are added to or dropped from the default configuration provided by Docker.
+    (Optional) `devices`: Any host devices to expose to the container.
+    (Optional) `initProcessEnabled`: Run an init process inside the container that forwards signals and reaps processes.
+    (Optional) `maxSwap`: The total amount of swap memory (in MiB) a container can use.
+    (Optional) `sharedMemorySize`: The size (in MiB) of the /dev/shm volume.
+    (Optional) `swappiness`: Tune a container's memory swappiness behavior.
+    (Optional) `tmpfs`: The container path, mount options, and size (in MiB) of the tmpfs mount.
+  Note: Some parameters are not supported for tasks using the Fargate launch type.
   EOT
   type = object({
     capabilities = optional(object({
@@ -217,10 +216,10 @@ variable "linux_parameters" {
 
 variable "log_configuration" {
   description = <<-EOT
-    (Optional) The log configuration for the container. For more information see [LogConfiguration](https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_LogConfiguration.html)
-      (Optional) `logDriver`: The log driver to use for the container.
-      (Optional) `options`: The configuration options to send to the log driver.
-      (Optional) `secretOptions`: The secrets to pass to the log configuration.
+  (Optional) The log configuration for the container. For more information see [LogConfiguration](https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_LogConfiguration.html)
+    (Optional) `logDriver`: The log driver to use for the container.
+    (Optional) `options`: The configuration options to send to the log driver.
+    (Optional) `secretOptions`: The secrets to pass to the log configuration.
   EOT
   type = object({
     logDriver = optional(string)
@@ -264,10 +263,10 @@ variable "memory_reservation" {
 
 variable "mount_points" {
   description = <<-EOT
-    (Optional) The mount points for data volumes in your container
-      (Optional) `containerPath`: The path on the container to mount the volume at.
-      (Optional) `readOnly`: If this value is `true`, the container has read-only access to the volume.
-      (Optional) `sourceVolume`: The name of the volume to mount.
+  (Optional) The mount points for data volumes in your container
+    (Optional) `containerPath`: The path on the container to mount the volume at.
+    (Optional) `readOnly`: If this value is `true`, the container has read-only access to the volume.
+    (Optional) `sourceVolume`: The name of the volume to mount.
   EOT
   type = list(object({
     containerPath = string
@@ -286,11 +285,11 @@ variable "name" {
 
 variable "port_mappings" {
   description = <<-EOT
-    (Optional) The list of port mappings for the container. Port mappings allow containers to access ports on the host container instance to send or receive traffic. For task definitions that use the awsvpc network mode, only specify the containerPort. The hostPort can be left blank or it must be the same value as the containerPort
-      (Optional) `containerPort`: The port number on the container that is used with the network protocol.
-      (Optional) `hostPort`: The port number on the host that is used with the network protocol.
-      (Optional) `protocol`: The protocol used for the port mapping.
-      (Optional) `appProtocol`: The application protocol to use for the port mapping.
+  (Optional) The list of port mappings for the container. Port mappings allow containers to access ports on the host container instance to send or receive traffic. For task definitions that use the awsvpc network mode, only specify the containerPort. The hostPort can be left blank or it must be the same value as the containerPort
+    (Optional) `containerPort`: The port number on the container that is used with the network protocol.
+    (Optional) `hostPort`: The port number on the host that is used with the network protocol.
+    (Optional) `protocol`: The protocol used for the port mapping.
+    (Optional) `appProtocol`: The application protocol to use for the port mapping.
   EOT
   type = list(object({
     containerPort      = number
@@ -329,9 +328,9 @@ variable "repository_credentials" {
 
 variable "resource_requirements" {
   description = <<-EOT
-    (Optional) The type and amount of a resource to assign to a container. The only supported resource is a GPU
-      (Optional) `type`: The type of resource to assign to the container
-      (Optional) `value`: The value of the resource
+  (Optional) The type and amount of a resource to assign to a container. The only supported resource is a GPU
+    (Optional) `type`: The type of resource to assign to the container
+    (Optional) `value`: The value of the resource
   EOT
   type = list(object({
     type  = string
@@ -342,9 +341,9 @@ variable "resource_requirements" {
 
 variable "secrets" {
   description = <<-EOT
-    (Optional) The secrets to pass to the container. For more information, see [Specifying Sensitive Data](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/specifying-sensitive-data.html) in the Amazon Elastic Container Service Developer Guide
-      (Optional) `name`: The name of the secret to pass to the container
-      (Optional) `valueFrom`: The value from the secret to pass to the container
+  (Optional) The secrets to pass to the container. For more information, see [Specifying Sensitive Data](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/specifying-sensitive-data.html) in the Amazon Elastic Container Service Developer Guide
+    (Optional) `name`: The name of the secret to pass to the container
+    (Optional) `valueFrom`: The value from the secret to pass to the container
   EOT
   type = list(object({
     name      = string
@@ -377,9 +376,9 @@ variable "stop_timeout" {
 
 variable "system_controls" {
   description = <<-EOT
-    (Optional) A list of namespaced kernel parameters to set in the container
-      (Optional) `namespace`: The namespace to set the kernel parameter in
-      (Optional) `value`: The value of the kernel parameter
+  (Optional) A list of namespaced kernel parameters to set in the container
+    (Optional) `namespace`: The namespace to set the kernel parameter in
+    (Optional) `value`: The value of the kernel parameter
   EOT
   type = list(object({
     namespace = string
@@ -390,10 +389,10 @@ variable "system_controls" {
 
 variable "ulimits" {
   description = <<-EOT
-    (Optional) A list of ulimits to set in the container. If a ulimit value is specified in a task definition, it overrides the default values set by Docker
-      (Optional) `hardLimit`: The hard limit for the ulimit
-      (Optional) `name`: The name of the ulimit
-      (Optional) `softLimit`: The soft limit for the ulimit
+  (Optional) A list of ulimits to set in the container. If a ulimit value is specified in a task definition, it overrides the default values set by Docker
+    (Optional) `hardLimit`: The hard limit for the ulimit
+    (Optional) `name`: The name of the ulimit
+    (Optional) `softLimit`: The soft limit for the ulimit
   EOT
   type = list(object({
     hardLimit = number
@@ -452,13 +451,13 @@ variable "service" {
 
 variable "cloudwatch_log_group_config" {
   description = <<-EOT
-    (Optional) Configuration for the CloudWatch log group associated with the container definition. This includes:
-      (Optional) `enable_logging`: Determines whether CloudWatch logging is configured for this container definition. Set to `false` to use other logging drivers.
-      (Optional) `create_log_group`: Determines whether a log group is created by this module. If not, AWS will automatically create one if logging is enabled.
-      (Optional) `log_group_name`: Custom name of CloudWatch log group for a service associated with the container definition.
-      (Optional) `use_name_prefix`: Determines whether the log group name should be used as a prefix.
-      (Optional) `retention_in_days`: Number of days to retain log events. Default is 30 days.
-      (Optional) `kms_key_id`: If a KMS Key ARN is set, this key will be used to encrypt the corresponding log group. Please be sure that the KMS Key has an appropriate key policy (https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/encrypt-log-data-kms.html).
+  (Optional) Configuration for the CloudWatch log group associated with the container definition. This includes:
+    (Optional) `enable_logging`: Determines whether CloudWatch logging is configured for this container definition. Set to `false` to use other logging drivers.
+    (Optional) `create_log_group`: Determines whether a log group is created by this module. If not, AWS will automatically create one if logging is enabled.
+    (Optional) `log_group_name`: Custom name of CloudWatch log group for a service associated with the container definition.
+    (Optional) `use_name_prefix`: Determines whether the log group name should be used as a prefix.
+    (Optional) `retention_in_days`: Number of days to retain log events. Default is 30 days.
+    (Optional) `kms_key_id`: If a KMS Key ARN is set, this key will be used to encrypt the corresponding log group. Please be sure that the KMS Key has an appropriate key policy (https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/encrypt-log-data-kms.html).
   EOT
   type = object({
     enable_logging    = bool
@@ -474,12 +473,6 @@ variable "cloudwatch_log_group_config" {
     use_name_prefix   = false
     retention_in_days = 30
   }
-}
-
-variable "tags" {
-  description = "(Optional) A map of tags to add to all resources"
-  type        = map(string)
-  default     = {}
 }
 
 variable "task_tags" {
@@ -508,7 +501,7 @@ variable "task_memory" {
 
 variable "ephemeral_storage" {
   description = <<-EOT
-    (Optional) Configuration block for ephemeral storage. Supports the following:
+  (Optional) Configuration block for ephemeral storage. Supports the following:
     (Required) `size_in_gib` - The amount of ephemeral storage to allocate for the task in GiB (21 - 200).
   EOT
 
@@ -561,9 +554,9 @@ variable "pid_mode" {
 
 variable "task_definition_placement_constraints" {
   description = <<-EOT
-    (Optional) Configuration block for rules that are taken into consideration during task placement (up to max of 10). This is set at the task definition. Supports the following:
-      (Optional) `expression` - Cluster Query Language expression to apply to the constraint. For more information, see Cluster Query Language in the Amazon EC2 Container Service Developer Guide.
-      (Required) `type` - Type of constraint. Use `memberOf` to restrict selection to a group of valid candidates. Note that `distinctInstance` is not supported in task definitions.
+  (Optional) Configuration block for rules that are taken into consideration during task placement (up to max of 10). This is set at the task definition. Supports the following:
+    (Optional) `expression` - Cluster Query Language expression to apply to the constraint. For more information, see Cluster Query Language in the Amazon EC2 Container Service Developer Guide.
+    (Required) `type` - Type of constraint. Use `memberOf` to restrict selection to a group of valid candidates. Note that `distinctInstance` is not supported in task definitions.
   EOT
   type = list(object({
     expression = optional(string, null)
@@ -593,9 +586,9 @@ variable "requires_compatibilities" {
 
 variable "runtime_platform" {
   description = <<-EOT
-    (Optional) Configuration block for `runtime_platform` that containers in your task may use.
-      (Optional) `operating_system_family` - If the `requires_compatibilities` is `FARGATE`, this field is required; must be set to a valid option from the operating system family in the runtime platform setting.
-      (Optional) `cpu_architecture` - Must be set to either `X86_64` or `ARM64`.
+  (Optional) Configuration block for `runtime_platform` that containers in your task may use.
+    (Optional) `operating_system_family` - If the `requires_compatibilities` is `FARGATE`, this field is required; must be set to a valid option from the operating system family in the runtime platform setting.
+    (Optional) `cpu_architecture` - Must be set to either `X86_64` or `ARM64`.
   EOT
   type = object({
     operating_system_family = optional(string, "LINUX")
@@ -616,13 +609,13 @@ variable "skip_destroy" {
 
 variable "volume" {
   description = <<-EOT
-    (Optional) Configuration block for volumes that containers in your task may use. Supports the following configurations:
-      (Optional) `docker_volume_configuration` - Configuration block to configure a Docker volume.
-      (Optional) `efs_volume_configuration` - Configuration block for an EFS volume.
-      (Optional) `fsx_windows_file_server_volume_configuration` - Configuration block for an FSX Windows File Server volume.
-      (Optional) `host_path` - Path on the host container instance that is presented to the container.
-      (Optional) `configure_at_launch` - Whether the volume should be configured at launch time.
-      (Required) `name` - Name of the volume.
+  (Optional) Configuration block for volumes that containers in your task may use. Supports the following configurations:
+    (Required) `name` - Name of the volume.
+    (Optional) `docker_volume_configuration` - Configuration block to configure a Docker volume.
+    (Optional) `efs_volume_configuration` - Configuration block for an EFS volume.
+    (Optional) `fsx_windows_file_server_volume_configuration` - Configuration block for an FSX Windows File Server volume.
+    (Optional) `host_path` - Path on the host container instance that is presented to the container.
+    (Optional) `configure_at_launch` - Whether the volume should be configured at launch time.
   EOT
   type = map(object({
     docker_volume_configuration = optional(object({
@@ -745,8 +738,8 @@ variable "task_exec_secret_arns" {
 
 variable "task_exec_iam_statements" {
   description = <<-EOT
-    (Optional) A map of IAM policy [statements](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document#statement) for custom permission usage"
-    Note: Same `iam_role_statements` variable configuration applies here.
+  (Optional) A map of IAM policy [statements](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/iam_policy_document#statement) for custom permission usage"
+  Note: Same `iam_role_statements` variable configuration applies here.
   EOT
   type = map(object({
     sid           = optional(string)
@@ -839,8 +832,8 @@ variable "tasks_iam_role_policies" {
 
 variable "tasks_iam_role_statements" {
   description = <<-EOT
-    (Optional) A map of IAM policy statements for custom permission usage. Each statement supports the following:
-    Note: Same `iam_role_statements` variable configuration applies here.
+  (Optional) A map of IAM policy statements for custom permission usage. Each statement supports the following:
+  Note: Same `iam_role_statements` variable configuration applies here.
   EOT
   type = map(object({
     sid           = optional(string)
@@ -864,4 +857,10 @@ variable "tasks_iam_role_statements" {
     })))
   }))
   default = {}
+}
+
+variable "tags" {
+  description = "(Optional) A map of tags to add to all resources"
+  type        = map(string)
+  default     = {}
 }
