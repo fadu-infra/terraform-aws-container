@@ -19,10 +19,70 @@ resource "aws_appautoscaling_target" "this" {
   count = var.service_autoscaling_enabled ? 1 : 0
 
   service_namespace  = "ecs"
-  resource_id        = "service/${var.cluster_name}/${var.name}"
+  resource_id        = "service/${data.aws_ecs_cluster.this.cluster_name}/${var.name}"
   scalable_dimension = "ecs:service:DesiredCount"
   min_capacity       = var.min_capacity
   max_capacity       = var.max_capacity
+
+  lifecycle {
+    precondition {
+      condition     = var.min_capacity != null || var.max_capacity != null
+      error_message = "min_capacity or max_capacity must be set when service_autoscaling_enabled is true"
+    }
+  }
+
+  tags = var.tags
+}
+
+resource "aws_appautoscaling_policy" "target_tracking" {
+  for_each = var.service_autoscaling_enabled ? local.target_tracking_policies : {}
+
+  name               = each.key
+  policy_type        = "TargetTrackingScaling"
+  service_namespace  = aws_appautoscaling_target.this[0].service_namespace
+  resource_id        = aws_appautoscaling_target.this[0].resource_id
+  scalable_dimension = aws_appautoscaling_target.this[0].scalable_dimension
+
+  target_tracking_scaling_policy_configuration {
+    target_value       = each.value.target_tracking_configuration.target_value
+    disable_scale_in   = each.value.target_tracking_configuration.disable_scale_in
+    scale_in_cooldown  = each.value.target_tracking_configuration.scale_in_cooldown
+    scale_out_cooldown = each.value.target_tracking_configuration.scale_out_cooldown
+
+    dynamic "predefined_metric_specification" {
+      for_each = each.value.target_tracking_configuration.predefined_metric_specification != null ? [each.value.target_tracking_configuration.predefined_metric_specification] : []
+      content {
+        predefined_metric_type = predefined_metric_specification.value.predefined_metric_type
+        resource_label         = predefined_metric_specification.value.resource_label
+      }
+    }
+  }
+}
+
+resource "aws_appautoscaling_policy" "step_scaling" {
+  for_each = var.service_autoscaling_enabled ? local.step_scaling_policies : {}
+
+  name               = each.key
+  policy_type        = "StepScaling"
+  service_namespace  = aws_appautoscaling_target.this[0].service_namespace
+  resource_id        = aws_appautoscaling_target.this[0].resource_id
+  scalable_dimension = aws_appautoscaling_target.this[0].scalable_dimension
+
+  step_scaling_policy_configuration {
+    adjustment_type          = each.value.step_scaling_configuration.adjustment_type
+    cooldown                 = each.value.step_scaling_configuration.cooldown
+    metric_aggregation_type  = each.value.step_scaling_configuration.metric_aggregation_type
+    min_adjustment_magnitude = each.value.step_scaling_configuration.min_adjustment_magnitude
+
+    dynamic "step_adjustment" {
+      for_each = each.value.step_scaling_configuration.step_adjustment
+      content {
+        scaling_adjustment          = step_adjustment.value.scaling_adjustment
+        metric_interval_lower_bound = step_adjustment.value.metric_interval_lower_bound
+        metric_interval_upper_bound = step_adjustment.value.metric_interval_upper_bound
+      }
+    }
+  }
 }
 
 resource "aws_cloudwatch_metric_alarm" "this" {
@@ -43,60 +103,4 @@ resource "aws_cloudwatch_metric_alarm" "this" {
     try(local.policy_arns[each.value.scaling_policy_name], null)
   ]
   tags = var.tags
-}
-
-resource "aws_appautoscaling_policy" "target_tracking" {
-  for_each = var.service_autoscaling_enabled ? local.target_tracking_policies : {}
-
-  name               = each.key
-  service_namespace  = "ecs"
-  resource_id        = aws_appautoscaling_target.this[0].resource_id
-  scalable_dimension = aws_appautoscaling_target.this[0].scalable_dimension
-  policy_type        = "TargetTrackingScaling"
-
-  target_tracking_scaling_policy_configuration {
-    target_value     = each.value.target_tracking_configuration.target_value
-    disable_scale_in = lookup(each.value.target_tracking_configuration, "disable_scale_in", false)
-
-    dynamic "predefined_metric_specification" {
-      for_each = each.value.target_tracking_configuration.predefined_metric_specification != null ? [each.value.target_tracking_configuration.predefined_metric_specification] : []
-      content {
-        predefined_metric_type = predefined_metric_specification.value.predefined_metric_type
-        resource_label         = lookup(predefined_metric_specification.value, "resource_label", null)
-      }
-    }
-
-    dynamic "customized_metric_specification" {
-      for_each = try(each.value.target_tracking_configuration.customized_metric_specification != null ? [each.value.target_tracking_configuration.customized_metric_specification] : [], [])
-      content {
-        # Add custom metric fields as needed
-      }
-    }
-  }
-}
-
-resource "aws_appautoscaling_policy" "step_scaling" {
-  for_each = var.service_autoscaling_enabled ? local.step_scaling_policies : {}
-
-  name               = each.key
-  service_namespace  = "ecs"
-  resource_id        = aws_appautoscaling_target.this[0].resource_id
-  scalable_dimension = aws_appautoscaling_target.this[0].scalable_dimension
-  policy_type        = "StepScaling"
-
-  step_scaling_policy_configuration {
-    adjustment_type          = each.value.adjustment_type
-    metric_aggregation_type  = each.value.metric_aggregation_type
-    cooldown                 = each.value.cooldown
-    min_adjustment_magnitude = each.value.min_adjustment_magnitude
-
-    dynamic "step_adjustment" {
-      for_each = each.value.step_adjustments
-      content {
-        scaling_adjustment          = step_adjustment.value.scaling_adjustment
-        metric_interval_lower_bound = lookup(step_adjustment.value, "metric_interval_lower_bound", null)
-        metric_interval_upper_bound = lookup(step_adjustment.value, "metric_interval_upper_bound", null)
-      }
-    }
-  }
 }

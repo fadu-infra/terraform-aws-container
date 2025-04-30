@@ -1,94 +1,65 @@
-variable "tags" {
-  description = "(Optional) A map of tags to add to all resources"
-  type        = map(string)
-  default     = {}
-  nullable    = false
-}
-
 ################################################################################
 # Service
 ################################################################################
 
-variable "alarms" {
-  description = <<-EOT
-    (Optional) Information about the CloudWatch alarms. The alarms configuration block supports the following:
-      (Required) `alarm_names` - One or more CloudWatch alarm names.
-      (Optional) `enable` - Whether to use the CloudWatch alarm option in the service deployment process. Defaults to true.
-      (Optional) `rollback` - Whether to configure Amazon ECS to roll back the service if a service deployment fails. Defaults to true.
-  EOT
-  type = list(object({
-    alarm_names = list(string)
-    enable      = optional(bool, true)
-    rollback    = optional(bool, true)
-  }))
-  default  = []
-  nullable = false
-}
-
-variable "capacity_provider_strategy" {
-  description = <<-EOT
-    (Optional) A map of capacity provider strategies for the ECS service. Each entry in the map should have the following keys:
-      (Required) `capacity_provider` - The short name of the capacity provider.
-      (Optional) `base` - The minimum number of tasks to run on the specified capacity provider. Defaults to null.
-      (Required) `weight` - The relative percentage of the total number of launched tasks that should use the specified capacity provider.
-
-    This variable allows you to specify how tasks are distributed across different capacity providers, which can be useful for balancing cost and performance.
-  EOT
-
-  type = map(object({
-    capacity_provider = string
-    base              = optional(number)
-    weight            = number
-  }))
-
-  default  = {}
-  nullable = false
+variable "name" {
+  description = "(Required) Name of the service (up to 255 letters, numbers, hyphens, and underscores)"
+  type        = string
+  nullable    = false
 
   validation {
-    condition     = alltrue([for cp in var.capacity_provider_strategy : cp.weight != null && cp.weight >= 0 && cp.weight <= 100])
-    error_message = "Each 'weight' must be a number between 0 and 100, inclusive, and cannot be null."
+    condition     = can(regex("^[a-zA-Z0-9_-]+$", var.name))
+    error_message = "The 'name' must contain only letters, numbers, hyphens, and underscores."
   }
 }
 
-variable "cluster_arn" {
-  description = "(Optional) ARN of the ECS cluster where the resources will be provisioned"
+variable "cluster_name" {
+  description = "(Required) Name of the ECS cluster where the resources will be provisioned"
   type        = string
-  default     = ""
   nullable    = false
 }
 
-variable "deployment_setting" {
-  description = <<-EOT
-    (Optional) Deployment settings including:
-      (Optional) `circuit_breaker` - Configuration block for deployment circuit breaker
-        (Optional) `enable` - Whether to enable the deployment circuit breaker. Defaults to false.
-      (Optional) `maximum_percent` - Upper limit (as a percentage of the service's `desired_count`) of the number of running tasks that can be running in a service during a deployment
-      (Optional) `minimum_healthy_percent` - Lower limit (as a percentage of the service's `desired_count`) of the number of running tasks that must remain running and healthy in a service during a deployment
-  EOT
+variable "task_definition_arn" {
+  description = "(Required) The ARN of the ECS task definition to use for the service."
+  type        = string
+  default     = null
+  nullable    = true
+}
 
-  type = object({
-    circuit_breaker = optional(object({
-      enable   = bool
-      rollback = bool
-    }))
-    maximum_percent         = optional(number, 200)
-    minimum_healthy_percent = optional(number, 66)
-  })
-  nullable = false
-  default = {
-    circuit_breaker = {
-      enable   = false
-      rollback = false
-    }
-    maximum_percent         = 200
-    minimum_healthy_percent = 66
+################################################################################
+# Deployment Configuration
+################################################################################
+
+variable "scheduling_strategy" {
+  description = "(Optional) Scheduling strategy to use for the service. The valid values are `REPLICA`."
+  type        = string
+  default     = "REPLICA"
+  nullable    = false
+
+  validation {
+    condition     = var.scheduling_strategy == "REPLICA"
+    error_message = "The 'scheduling_strategy' must be 'REPLICA'. We don't support 'DAEMON' scheduling strategy."
   }
 }
 
 variable "desired_count" {
   description = "(Optional) Number of instances of the task definition to place and keep running"
   type        = number
-  default     = 1
+  default     = 0
+  nullable    = false
+}
+
+variable "platform_version" {
+  description = "(Optional) Platform version on which to run your service. Only applicable for `launch_type` set to `FARGATE`. Defaults to `LATEST`"
+  type        = string
+  default     = "LATEST"
+  nullable    = true
+}
+
+variable "enable_availability_zone_rebalancing" {
+  description = "(Optional) Whether to enable availability zone rebalancing"
+  type        = bool
+  default     = false
   nullable    = false
 }
 
@@ -109,7 +80,7 @@ variable "enable_execute_command" {
 variable "force_new_deployment" {
   description = "(Optional) Enable to force a new task deployment of the service. This can be used to update tasks to use a newer Docker image with same image/tag combination, roll Fargate tasks onto a newer platform version, or immediately deploy `ordered_placement_strategy` and `placement_constraints` updates"
   type        = bool
-  default     = true
+  default     = false
   nullable    = false
 }
 
@@ -120,100 +91,183 @@ variable "health_check_grace_period_seconds" {
   nullable    = false
 
   validation {
-    condition     = var.health_check_grace_period_seconds == null || try(var.health_check_grace_period_seconds <= 2147483647, false)
+    condition     = try(var.health_check_grace_period_seconds <= 2147483647, false)
     error_message = "The 'health_check_grace_period_seconds' must not exceed 2147483647."
   }
 }
 
-variable "launch_type" {
-  description = "(Optional) Launch type on which to run your service. The valid values are `EC2`, `FARGATE`, and `EXTERNAL`. Defaults to `FARGATE`"
-  type        = string
-  default     = "FARGATE"
-  nullable    = false
+variable "alarms" {
+  description = <<-EOT
+  (Optional) Information about the CloudWatch alarms. The alarms configuration block supports the following:
+    (Required) `names` - One or more CloudWatch alarm names.
+    (Required) `enable` - Whether to use the CloudWatch alarm option in the service deployment process.
+    (Required) `rollback` - Whether to configure Amazon ECS to roll back the service if a service deployment fails.
+  EOT
+  type = object({
+    names    = list(string)
+    enable   = bool
+    rollback = bool
+  })
+  default  = null
+  nullable = true
 }
+
+variable "capacity_provider_strategies" {
+  description = <<-EOT
+  (Optional) A list of capacity provider strategies for the ECS service. Each entry in the list should have the following keys:
+    (Required) `name` - The short name of the capacity provider.
+    (Optional) `base` - The minimum number of tasks to run on the specified capacity provider.
+    (Required) `weight` - The relative percentage of the total number of launched tasks that should use the specified capacity provider.
+  EOT
+  type = list(object({
+    name   = string
+    base   = optional(number)
+    weight = number
+  }))
+
+  default  = []
+  nullable = false
+
+  validation {
+    condition     = alltrue([for strategy in var.capacity_provider_strategies : strategy.weight >= 0 && strategy.weight <= 100])
+    error_message = "Each 'weight' must be a number between 0 and 100, inclusive."
+  }
+}
+
+variable "deployment_options" {
+  description = <<-EOT
+  (Optional) Deployment settings including:
+    (Optional) `controller_type` - Type of deployment controller. Valid values are `ECS`, `CODE_DEPLOY`, and `EXTERNAL`.
+    (Optional) `maximum_healthy_percent` - Upper limit (as a percentage of the service's `desired_count`) of the number of running tasks that can be running in a service during a deployment
+    (Optional) `minimum_healthy_percent` - Lower limit (as a percentage of the service's `desired_count`) of the number of running tasks that must remain running and healthy in a service during a deployment
+  EOT
+  type = object({
+    controller_type         = optional(string, "ECS")
+    maximum_healthy_percent = optional(number, 200)
+    minimum_healthy_percent = optional(number, 100)
+  })
+  default  = {}
+  nullable = false
+
+  validation {
+    condition     = contains(["ECS", "CODE_DEPLOY", "EXTERNAL"], var.deployment_options.controller_type)
+    error_message = "The 'controller_type' must be one of 'ECS', 'CODE_DEPLOY', or 'EXTERNAL'."
+  }
+}
+
+variable "deployment_circuit_breaker" {
+  description = <<-EOT
+  (Optional) Deployment circuit breaker for the service.
+    (Required) `enable` - Whether to enable the deployment circuit breaker.
+    (Required) `rollback` - Whether to configure Amazon ECS to roll back the service if a service deployment fails.
+  EOT
+  type = object({
+    enable   = bool
+    rollback = bool
+  })
+  default  = null
+  nullable = true
+}
+
+################################################################################
+# Networking
+################################################################################
+
+variable "network_configuration" {
+  description = <<-EOT
+  (Optional) Network configuration for the ECS service, including:
+    (Required) `subnet_ids` - List of subnets to associate with the task or service.
+    (Optional) `security_group_ids` - List of security groups to associate with the task or service.
+    (Optional) `assign_public_ip` - Assign a public IP address to the ENI (Fargate launch type only).
+  EOT
+  type = object({
+    subnet_ids         = list(string)
+    security_group_ids = optional(list(string))
+    assign_public_ip   = optional(bool, false)
+  })
+  default  = null
+  nullable = true
+}
+
+################################################################################
+# Load Balancers
+################################################################################
 
 variable "load_balancers" {
   description = <<-EOT
-    (Optional) Configuration block for load balancers. The configuration supports the following:
-      (Required) `container_name` - The name of the container to associate with the load balancer.
-      (Required) `container_port` - The port on the container to associate with the load balancer.
-      (Optional) `elb_name` - The name of the Elastic Load Balancer. Required for ELB Classic to associate with the service.
-      (Optional) `target_group_arn` - (Required for ALB/NLB) ARN of the Load Balancer target group to associate with the service.
+  (Optional) Configuration block for load balancers. The configuration supports the following:
+    (Required) `container_name` - The name of the container to associate with the load balancer.
+    (Required) `container_port` - The port on the container to associate with the load balancer.
+    (Optional) `elb_name` - The name of the Elastic Load Balancer. Required for ELB Classic to associate with the service.
+    (Optional) `target_group_arn` - (Required for ALB/NLB) ARN of the Load Balancer target group to associate with the service.
   EOT
-  type = map(object({
+  type = list(object({
     container_name   = string
     container_port   = number
     elb_name         = optional(string)
     target_group_arn = optional(string)
   }))
-  default  = {}
+  default  = []
   nullable = false
 }
 
-variable "name" {
-  description = "(Required) Name of the service (up to 255 letters, numbers, hyphens, and underscores)"
-  type        = string
-  nullable    = false
-}
-
-variable "network_configuration" {
-  description = <<-EOT
-    (Optional) Network configuration for the ECS service, including:
-      (Optional) `assign_public_ip` - Assign a public IP address to the ENI (Fargate launch type only).
-      (Optional) `security_group_ids` - List of security groups to associate with the task or service.
-      (Required) `subnet_ids` - List of subnets to associate with the task or service.
-  EOT
-
-  type = object({
-    assign_public_ip   = optional(bool, false)
-    security_group_ids = optional(list(string), [])
-    subnet_ids         = optional(list(string), [])
-  })
-  nullable = false
-  default = {
-    assign_public_ip   = false
-    security_group_ids = []
-    subnet_ids         = []
-  }
-}
+################################################################################
+# Task Placement
+################################################################################
 
 variable "ordered_placement_strategy" {
   description = <<-EOT
-    (Optional) Service level strategy rules that are taken into consideration during task placement. List from top to bottom in order of precedence.
-      (Required) `type` - Type of placement strategy. Must be one of: `binpack`, `random`, or `spread`.
-      (Optional) `field` - For the `spread` placement strategy, valid values are `instanceId` (or `host`, which has the same effect), or any platform or custom attribute that is applied to a container instance. For the `binpack` type, valid values are `memory` and `cpu`. For the `random` type, this attribute is not needed. For more information, see Placement Strategy.
+  (Optional) Service level strategy rules that are taken into consideration during task placement. List from top to bottom in order of precedence. Max 5 strategies.
+    (Required) `type` - Type of placement strategy. Must be one of: `binpack`, `random`, or `spread`
+    (Optional) `field` - For the `spread` placement strategy, valid values are `instanceId` (or `host`, which has the same effect), or any platform or custom attribute that is applied to a container instance. For the `binpack` type, valid values are `memory` and `cpu`. For the `random` type, this attribute is not needed.
   EOT
-  type = map(object({
+  type = list(object({
     type  = string
     field = optional(string)
   }))
-  default  = {}
+  default = [
+    {
+      type  = "spread"
+      field = "attribute:ecs.availability-zone"
+    },
+    {
+      type  = "spread"
+      field = "instanceId"
+    }
+  ]
   nullable = false
 
   validation {
+    condition     = length(var.ordered_placement_strategy) <= 5
+    error_message = "A maximum of 5 ordered placement strategies can be specified."
+  }
+
+  validation {
     condition = alltrue([
-      for strategy in var.ordered_placement_strategy : (
-        contains(["binpack", "random", "spread"], strategy.type) &&
-        (
-          (strategy.type == "spread" && contains(["instanceId", "host"], strategy.field)) ||
-          (strategy.type == "binpack" && contains(["memory", "cpu"], strategy.field)) ||
-          (strategy.type == "random" && strategy.field == "")
-        )
-      )
+      for strategy in var.ordered_placement_strategy :
+      contains(["binpack", "random", "spread"], strategy.type
+    )])
+    error_message = "Placement strategy type must be one of: binpack, random, or spread."
+  }
+
+  validation {
+    condition = alltrue([
+      for strategy in var.ordered_placement_strategy :
+      strategy.type != "binpack" || contains(["memory", "cpu"], strategy.field)
     ])
-    error_message = "Each 'type' must be one of 'binpack', 'random', or 'spread'. For 'spread', 'field' must be 'instanceId', 'host', or a valid attribute. For 'binpack', 'field' must be 'memory' or 'cpu'. 'random' does not require a 'field'."
+    error_message = "For binpack placement strategy, field must be either 'memory' or 'cpu'."
   }
 }
 
 variable "placement_constraints" {
   description = <<-EOT
-    (Optional) Configuration block for rules that are taken into consideration during task placement (up to max of 10). This is set at the service level. Supports the following:
-      (Optional) `expression` - Cluster Query Language expression to apply to the constraint. This is not required when the `type` is `distinctInstance`.
-      (Required) `type` - Type of constraint. The only valid values at this time are `memberOf` and `distinctInstance`.
+  (Optional) Configuration block for rules that are taken into consideration during task placement (up to max of 10). This is set at the service level. Supports the following:
+    (Required) `type` - Type of constraint. The only valid values at this time are `memberOf` and `distinctInstance`.
+    (Optional) `expression` - Cluster Query Language expression to apply to the constraint. This is not required when the `type` is `distinctInstance`.
   EOT
   type = list(object({
-    expression = optional(string)
     type       = string
+    expression = optional(string)
   }))
   default  = []
   nullable = false
@@ -224,57 +278,32 @@ variable "placement_constraints" {
   }
 }
 
-variable "platform_version" {
-  description = "(Optional) Platform version on which to run your service. Only applicable for `launch_type` set to `FARGATE`. Defaults to `LATEST`"
-  type        = string
-  default     = null
-  nullable    = true
-}
-
-variable "propagate_tags" {
-  description = "(Optional) Specifies whether to propagate the tags from the task definition or the service to the tasks. The valid values are `SERVICE` and `TASK_DEFINITION`"
-  type        = string
-  default     = null
-  nullable    = true
-}
-
-variable "scheduling_strategy" {
-  description = <<-EOT
-    (Optional) Scheduling strategy to use for the service. The valid values are `REPLICA` and `DAEMON`. Defaults to `REPLICA`.
-    Note: Tasks using the Fargate launch type or the CODE_DEPLOY or EXTERNAL deployment controller types don't support the DAEMON scheduling strategy.
-  EOT
-  type        = string
-  default     = "REPLICA"
-  nullable    = false
-
-  validation {
-    condition     = contains(["REPLICA", "DAEMON"], var.scheduling_strategy)
-    error_message = "The 'scheduling_strategy' must be either 'REPLICA' or 'DAEMON'."
-  }
-}
+################################################################################
+# Service Connect
+################################################################################
 
 variable "service_connect_configuration" {
   description = <<-EOT
-    (Optional) The ECS Service Connect configuration for this service.
-      (Required) `enabled` - Whether to enable service connect.
-      (Optional) `log_configuration` - Configuration block for logging.
-        (Required) `log_driver` - The log driver to use.
-        (Optional) `options` - Key-value pairs to configure the log driver.
-        (Optional) `secret_option` - List of secret options.
-          (Required) `name` - Name of the secret option.
-          (Required) `value_from` - Value from the secret option.
-      (Optional) `namespace` - The namespace for service connect.
-      (Optional) `service` - Service configuration block.
-        (Optional) `client_alias` - Client alias configuration.
-          (Optional) `dns_name` - DNS name for the client alias.
-          (Required) `port` - Port number for the client alias.
-        (Optional) `discovery_name` - Service discovery name.
-        (Optional) `ingress_port_override` - Override port for ingress.
-        (Required) `port_name` - Name of the port.
+  (Optional) The ECS Service Connect configuration for this service.
+    (Required) `enabled` - Whether to enable service connect.
+    (Optional) `namespace` - The namespace for service connect.
+    (Optional) `log_configuration` - Configuration block for logging.
+      (Required) `log_driver` - The log driver to use.
+      (Optional) `options` - Key-value pairs to configure the log driver.
+      (Optional) `secret_option` - List of secret options.
+        (Required) `name` - Name of the secret option.
+        (Required) `value_from` - Value from the secret option.
+    (Optional) `service` - Service configuration block.
+      (Required) `port_name` - Name of the port.
+      (Optional) `discovery_name` - Service discovery name.
+      (Optional) `ingress_port_override` - Override port for ingress.
+      (Optional) `client_alias` - Client alias configuration.
+        (Required) `port` - Port number for the client alias.
+        (Optional) `dns_name` - DNS name for the client alias.
   EOT
-
   type = object({
-    enabled = optional(bool, false)
+    enabled   = bool
+    namespace = optional(string)
     log_configuration = optional(object({
       log_driver = string
       options    = optional(map(string))
@@ -283,160 +312,105 @@ variable "service_connect_configuration" {
         value_from = string
       })))
     }))
-    namespace = optional(string)
-    service = optional(object({
-      client_alias = optional(object({
-        dns_name = optional(string)
-        port     = number
-      }))
+    service = optional(list(object({
+      port_name             = string
       discovery_name        = optional(string)
       ingress_port_override = optional(number)
-      port_name             = string
-    }))
+      client_alias = optional(list(object({
+        port     = number
+        dns_name = optional(string)
+      })))
+    })))
   })
-
-  default  = {}
-  nullable = false
-
-  validation {
-    condition = (
-      length(keys(var.service_connect_configuration)) == 0 || (
-        try(
-          var.service_connect_configuration.enabled == null ||
-          contains([true, false], var.service_connect_configuration.enabled),
-          true
-        )
-      )
-    )
-    error_message = "The 'enabled' field must be either true or false."
-  }
+  default  = null
+  nullable = true
 
   validation {
-    condition = (
-      length(keys(var.service_connect_configuration)) == 0 ||
-      var.service_connect_configuration.service == null || (
-        try(
-          var.service_connect_configuration.service.port_name != null,
-          false
-        )
-      )
+    condition = var.service_connect_configuration == null || !var.service_connect_configuration.enabled || (
+      var.service_connect_configuration.enabled &&
+      var.service_connect_configuration.service != null &&
+      length(var.service_connect_configuration.service) > 0
     )
-    error_message = "When service is specified, port_name is required."
-  }
-
-  validation {
-    condition = (
-      length(keys(var.service_connect_configuration)) == 0 ||
-      try(var.service_connect_configuration.service, null) == null ||
-      try(var.service_connect_configuration.service.client_alias, null) == null || (
-        try(
-          var.service_connect_configuration.service.client_alias.port != null,
-          false
-        )
-      )
-    )
-    error_message = "When client_alias is specified, port is required."
-  }
-
-  validation {
-    condition = (
-      length(keys(var.service_connect_configuration)) == 0 ||
-      var.service_connect_configuration.log_configuration == null || (
-        try(
-          var.service_connect_configuration.log_configuration.log_driver != null,
-          false
-        )
-      )
-    )
-    error_message = "When log_configuration is specified, log_driver is required."
+    error_message = "When service_connect_configuration.enabled is true, at least one service configuration must be provided."
   }
 }
 
+################################################################################
+# Service Discovery
+################################################################################
+
 variable "service_discovery_registries" {
   description = <<-EOT
-    (Optional) Service discovery registries for the service. Supports the following:
-      (Required) `registry_arn` - ARN of the Service Registry. The currently supported service registry is Amazon Route 53 Auto Naming Service (aws_service_discovery_service).
-      (Optional) `port` - Port value used if your Service Discovery service specified an SRV record.
-      (Optional) `container_port` - Port value, already specified in the task definition, to be used for your service discovery service.
-    - `container_name`: (Optional) Container name value, already specified in the task definition, to be used for your service discovery service.
+  (Optional) Service discovery registries for the service. Supports the following:
+    (Required) `registry_arn` - ARN of the Service Registry. The currently supported service registry is Amazon Route 53 Auto Naming Service (aws_service_discovery_service).
+    (Optional) `port` - Port value used if your Service Discovery service specified an SRV record.
+    (Optional) `container_port` - Port value, already specified in the task definition, to be used for your service discovery service.
+    (Optional) `container_name` - Container name value, already specified in the task definition, to be used for your service discovery service.
   EOT
-  type = map(object({
-    container_name = string
-    container_port = number
-    port           = number
+  type = object({
     registry_arn   = string
-  }))
-  default  = {}
-  nullable = false
+    port           = optional(number)
+    container_name = optional(string)
+    container_port = optional(number)
+  })
+  default  = null
+  nullable = true
 }
 
 variable "timeouts" {
   description = <<-EOT
-    (Optional) Timeout configurations for the service operations. Supports the following:
-      (Default 20m) `create` - Timeout for creating the service.
-      (Default 20m) `update` - Timeout for updating the service.
-      (Default 20m) `delete` - Timeout for deleting the service.
+  (Optional) Timeout configurations for the service operations. Supports the following:
+    (Default 20m) `create` - Timeout for creating the service.
+    (Default 20m) `update` - Timeout for updating the service.
+    (Default 20m) `delete` - Timeout for deleting the service.
   EOT
   type = object({
     create = optional(string, "20m")
     update = optional(string, "20m")
     delete = optional(string, "20m")
   })
-  nullable = false
   default  = {}
+  nullable = false
 }
 
 variable "triggers" {
-  description = "(Optional) Map of arbitrary keys and values that, when changed, will trigger an in-place update (redeployment). Useful with `timestamp()`"
-  type        = any
-  default     = {}
-  nullable    = false
-}
-
-variable "wait_for_steady_state" {
-  description = "(Optional) If true, Terraform will wait for the service to reach a steady state before continuing. Default is `false`"
-  type        = bool
-  default     = null
-  nullable    = true
-}
-
-variable "service_tags" {
-  description = "(Optional) A map of additional tags to add to the service"
+  description = "(Optional) Map of arbitrary keys and values that, when changed, will trigger an in-place update (redeployment). Useful with plantimestamp()."
   type        = map(string)
   default     = {}
   nullable    = false
 }
 
-################################################################################
-# Task Definition
-################################################################################
-
-variable "network_mode" {
-  description = <<-EOT
-    (Optional) Docker networking mode to use for the containers in the task definition.
-    This specifies how the network interfaces are configured for the containers.
-    Valid values are `none`, `bridge`, `awsvpc`, and `host`.
-  EOT
-  type        = string
-  default     = "awsvpc"
+variable "wait_for_steady_state" {
+  description = "(Optional) If true, Terraform will wait for the service to reach a steady state (like 'aws ecs wait services-stable') before continuing."
+  type        = bool
+  default     = false
   nullable    = false
+}
+
+variable "tag_specifications" {
+  description = <<-EOT
+  (Optional) The tag specification configuration for the EBS volumes used in the ECS service.
+    (Required) `resource_type` - The type of resource to tag.
+    (Optional) `propagate_tags` - Whether to propagate the tags to the resource.
+    (Optional) `tags` - A map of tags to add to the resource.
+  EOT
+  type = list(object({
+    resource_type  = string
+    propagate_tags = optional(bool)
+    tags           = optional(map(string))
+  }))
+  default  = []
+  nullable = false
 
   validation {
-    condition     = var.network_mode == null || try(contains(["none", "bridge", "awsvpc", "host"], var.network_mode), false)
-    error_message = "The 'network_mode' must be one of 'none', 'bridge', 'awsvpc', or 'host'."
+    condition     = length(var.tag_specifications) == 0 || alltrue([for ts in var.tag_specifications : ts.resource_type == "volume"])
+    error_message = "The resource_type value must be 'volume'."
   }
 }
 
-variable "task_definition_arn" {
-  description = "(Required) The ARN of the ECS task definition to use for the service."
-  type        = string
-  default     = null
-  nullable    = true
-}
-
 
 ################################################################################
-# Service Auto Scaling - Scaling Policies
+# Service Auto Scaling
 ################################################################################
 
 variable "service_autoscaling_enabled" {
@@ -444,13 +418,6 @@ variable "service_autoscaling_enabled" {
   type        = bool
   default     = false
   nullable    = false
-}
-
-variable "cluster_name" {
-  description = "(Optional) The name of the ECS cluster. Required if `service_autoscaling_enabled` is true."
-  type        = string
-  default     = null
-  nullable    = true
 }
 
 variable "min_capacity" {
@@ -469,64 +436,61 @@ variable "max_capacity" {
 
 variable "scaling_policies" {
   description = <<EOF
-(Optional) A list of ECS service scaling policies. Only "TargetTrackingScaling" policy type is supported for ECS services.
+  (Optional) A list of ECS service scaling policies.
+    (Required) `name` - The name of the scaling policy.
+    (Required) `policy_type` - "TargetTrackingScaling", "StepScaling" are supported.
 
-  (Required) `name` - The name of the scaling policy.
-  (Required) `policy_type` - "TargetTrackingScaling", "StepScaling" are supported.
-  (Optional) `estimated_instance_warmup` - The estimated time, in seconds, until a newly launched task can contribute to the CloudWatch metrics.
-  (Required) `target_tracking_configuration` - The configuration for target tracking scaling.
-    (Required) `target_value` - The target value for the metric.
-    (Optional) `disable_scale_in` - Whether to disable scale in.
-    (Optional) `predefined_metric_specification` - A predefined metric specification.
-      (Required) `predefined_metric_type` - The metric type. One of: "ECSServiceAverageCPUUtilization", "ECSServiceAverageMemoryUtilization", or "ALBRequestCountPerTarget".
-      (Optional) `resource_label` - Identifies the resource associated with the metric type (required for ALB metrics).
-    (Optional) `customized_metric_specification` - A customized metric specification.
-      (Optional) `metric_name` - The name of the custom metric.
-      (Optional) `namespace` - The namespace of the custom metric.
-      (Optional) `statistic` - The statistic of the custom metric.
-      (Optional) `unit` - The unit of the custom metric.
-      (Optional) `dimensions` - A list of metric dimensions.
-        (Required) `name` - The name of the dimension.
-        (Required) `value` - The value of the dimension.
-EOF
+    (Optional) `target_tracking_configuration` - The configuration for target tracking scaling.
+      (Required) `target_value` - The target value for the metric.
+      (Optional) `disable_scale_in` - Whether to disable scale in.
+      (Optional) `scale_in_cooldown` - The cooldown period for scale in.
+      (Optional) `scale_out_cooldown` - The cooldown period for scale out.
+      (Optional) `predefined_metric_specification` - A predefined metric specification.
+        (Required) `predefined_metric_type` - The metric type. One of: "ECSServiceAverageCPUUtilization", "ECSServiceAverageMemoryUtilization", or "ALBRequestCountPerTarget".
+        (Optional) `resource_label` - Identifies the resource associated with the metric type (required for ALB metrics).
+
+    (Optional) `step_scaling_configuration` - The configuration for step scaling.
+      (Required) `adjustment_type` - The adjustment type. One of: "ChangeInCapacity", "ExactCapacity", or "PercentChangeInCapacity".
+      (Optional) `cooldown` - The cooldown period for step scaling.
+      (Optional) `metric_aggregation_type` - The aggregation type for the metric. One of: "Average", "Minimum", "Maximum", or "Sum".
+      (Optional) `min_adjustment_magnitude` - The minimum adjustment magnitude.
+      (Optional) `step_adjustment` - A list of step adjustments.
+        (Required) `scaling_adjustment` - The scaling adjustment.
+        (Optional) `metric_interval_lower_bound` - The lower bound for the metric interval.
+        (Optional) `metric_interval_upper_bound` - The upper bound for the metric interval.
+  EOF
 
   type = list(object({
-    name                      = string
-    policy_type               = string
-    estimated_instance_warmup = optional(number)
+    name        = string
+    policy_type = string
 
-    target_tracking_configuration = object({
-      target_value     = number
-      disable_scale_in = optional(bool, false)
+    target_tracking_configuration = optional(object({
+      target_value       = number
+      disable_scale_in   = optional(bool, false)
+      scale_in_cooldown  = optional(number)
+      scale_out_cooldown = optional(number)
 
       predefined_metric_specification = optional(object({
         predefined_metric_type = string
         resource_label         = optional(string)
       }))
+    }))
 
-      customized_metric_specification = optional(object({
-        metric_name = optional(string)
-        namespace   = optional(string)
-        statistic   = optional(string)
-        unit        = optional(string)
-        dimensions = optional(list(object({
-          name  = string
-          value = string
-        })), [])
+    step_scaling_configuration = optional(object({
+      adjustment_type          = string
+      cooldown                 = optional(number)
+      metric_aggregation_type  = optional(string)
+      min_adjustment_magnitude = optional(number)
+
+      step_adjustment = list(object({
+        scaling_adjustment          = number
+        metric_interval_lower_bound = optional(string)
+        metric_interval_upper_bound = optional(string)
       }))
-    })
+    }))
   }))
-
   default  = []
   nullable = false
-
-  validation {
-    condition = alltrue([
-      for policy in var.scaling_policies :
-      policy.policy_type == "TargetTrackingScaling"
-    ])
-    error_message = "For ECS services, the policy_type must be 'TargetTrackingScaling'."
-  }
 }
 
 variable "scaling_alarms" {
@@ -667,4 +631,15 @@ variable "iam_role_statements" {
   }))
   default  = {}
   nullable = false
+}
+
+################################################################################
+# Tags
+################################################################################
+
+variable "tags" {
+  description = "(Optional) A map of tags to add to all resources"
+  type        = map(string)
+  default     = {}
+  nullable    = false
 }

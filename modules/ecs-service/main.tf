@@ -1,7 +1,3 @@
-data "aws_region" "current" {}
-data "aws_partition" "current" {}
-data "aws_caller_identity" "current" {}
-
 locals {
   metadata = {
     package = "terraform-aws-container"
@@ -13,68 +9,86 @@ locals {
     "module.terraform.io/name"    = "${local.metadata.package}/${local.metadata.module}"
     "module.terraform.io/version" = local.metadata.version
   }
-
-  account_id = data.aws_caller_identity.current.account_id
-  partition  = data.aws_partition.current.partition
-  region     = data.aws_region.current.name
 }
+
+data "aws_region" "this" {}
+data "aws_partition" "this" {}
+data "aws_caller_identity" "this" {}
+data "aws_ecs_cluster" "this" {
+  cluster_name = var.cluster_name
+}
+
 
 ################################################################################
 # Service
 ################################################################################
 
 locals {
-  is_daemon  = var.scheduling_strategy == "DAEMON"
-  is_fargate = var.launch_type == "FARGATE"
+  fargate_providers      = ["FARGATE", "FARGATE_SPOT"]
+  use_capacity_providers = length(var.capacity_provider_strategies) > 0
+
+  is_fargate = local.use_capacity_providers ? anytrue([for strategy in var.capacity_provider_strategies : contains(local.fargate_providers, strategy.name)]) : false
 }
 
 resource "aws_ecs_service" "this" {
-  cluster         = var.cluster_arn
-  name            = var.name
-  task_definition = var.task_definition_arn
+  name                              = var.name
+  cluster                           = data.aws_ecs_cluster.this.arn
+  task_definition                   = var.task_definition_arn
+  scheduling_strategy               = "REPLICA"
+  desired_count                     = var.desired_count
+  platform_version                  = local.is_fargate ? var.platform_version : null
+  availability_zone_rebalancing     = var.enable_availability_zone_rebalancing ? "ENABLED" : "DISABLED"
+  enable_ecs_managed_tags           = var.enable_ecs_managed_tags
+  enable_execute_command            = var.enable_execute_command
+  force_new_deployment              = var.force_new_deployment
+  health_check_grace_period_seconds = var.health_check_grace_period_seconds
+  iam_role                          = aws_iam_role.ecs_service.arn
+
 
   dynamic "alarms" {
-    for_each = var.alarms
+    for_each = var.alarms != null ? [var.alarms] : []
 
     content {
-      alarm_names = alarms.value.alarm_names
+      alarm_names = alarms.value.names
       enable      = alarms.value.enable
       rollback    = alarms.value.rollback
     }
   }
 
   dynamic "capacity_provider_strategy" {
-    for_each = var.capacity_provider_strategy
+    for_each = var.capacity_provider_strategies
 
     content {
       base              = capacity_provider_strategy.value.base
-      capacity_provider = capacity_provider_strategy.value.capacity_provider
+      capacity_provider = capacity_provider_strategy.value.name
       weight            = capacity_provider_strategy.value.weight
     }
   }
 
-  deployment_circuit_breaker {
-    enable   = var.deployment_setting.circuit_breaker.enable
-    rollback = var.deployment_setting.circuit_breaker.rollback
-  }
-
-  deployment_maximum_percent         = local.is_daemon ? null : var.deployment_setting.maximum_percent
-  deployment_minimum_healthy_percent = local.is_daemon ? null : var.deployment_setting.minimum_healthy_percent
-  desired_count                      = local.is_daemon ? null : var.desired_count
-  enable_ecs_managed_tags            = var.enable_ecs_managed_tags
-  enable_execute_command             = var.enable_execute_command
-  force_new_deployment               = var.force_new_deployment
-  health_check_grace_period_seconds  = var.health_check_grace_period_seconds
-  iam_role                           = aws_iam_role.ecs_service.arn
-  launch_type                        = length(var.capacity_provider_strategy) > 0 ? null : var.launch_type
-
-  dynamic "network_configuration" {
-    for_each = var.network_mode == "awsvpc" ? [var.network_configuration] : []
+  dynamic "deployment_circuit_breaker" {
+    for_each = var.deployment_circuit_breaker != null ? [var.deployment_circuit_breaker] : []
 
     content {
-      assign_public_ip = network_configuration.value.assign_public_ip
-      security_groups  = network_configuration.value.security_group_ids
+      enable   = deployment_circuit_breaker.value.enable
+      rollback = deployment_circuit_breaker.value.rollback
+    }
+  }
+
+  deployment_controller {
+    type = var.deployment_options.controller_type
+  }
+
+  deployment_maximum_percent         = var.deployment_options.maximum_healthy_percent
+  deployment_minimum_healthy_percent = var.deployment_options.minimum_healthy_percent
+
+  # NOTE: Only supported when the Task Definition uses the `awsvpc` network mode.
+  dynamic "network_configuration" {
+    for_each = var.network_configuration != null ? [var.network_configuration] : []
+
+    content {
       subnets          = network_configuration.value.subnet_ids
+      security_groups  = network_configuration.value.security_group_ids
+      assign_public_ip = local.is_fargate ? network_configuration.value.assign_public_ip : null
     }
   }
 
@@ -96,10 +110,6 @@ resource "aws_ecs_service" "this" {
     }
   }
 
-  platform_version = local.is_fargate ? var.platform_version : null
-
-  scheduling_strategy = local.is_fargate ? "REPLICA" : var.scheduling_strategy
-
   dynamic "load_balancer" {
     for_each = var.load_balancers
 
@@ -112,10 +122,11 @@ resource "aws_ecs_service" "this" {
   }
 
   dynamic "service_connect_configuration" {
-    for_each = length(var.service_connect_configuration) > 0 ? [var.service_connect_configuration] : []
+    for_each = var.service_connect_configuration != null ? [var.service_connect_configuration] : []
 
     content {
-      enabled = service_connect_configuration.value.enabled
+      enabled   = service_connect_configuration.value.enabled
+      namespace = service_connect_configuration.value.namespace
 
       dynamic "log_configuration" {
         for_each = service_connect_configuration.value.log_configuration != null ? [service_connect_configuration.value.log_configuration] : []
@@ -135,53 +146,50 @@ resource "aws_ecs_service" "this" {
         }
       }
 
-      namespace = lookup(service_connect_configuration.value, "namespace", null)
-
       dynamic "service" {
-        for_each = service_connect_configuration.value.service != null ? [service_connect_configuration.value.service] : []
+        for_each = service_connect_configuration.value.service != null ? service_connect_configuration.value.service : []
 
         content {
-          dynamic "client_alias" {
-            for_each = service.value.client_alias != null ? [service.value.client_alias] : []
-
-            content {
-              dns_name = client_alias.value.dns_name
-              port     = client_alias.value.port
-            }
-          }
-
+          port_name             = service.value.port_name
           discovery_name        = service.value.discovery_name
           ingress_port_override = service.value.ingress_port_override
-          port_name             = service.value.port_name
+
+          dynamic "client_alias" {
+            for_each = service.value.client_alias != null ? service.value.client_alias : []
+
+            content {
+              port     = client_alias.value.port
+              dns_name = client_alias.value.dns_name
+            }
+          }
         }
       }
     }
   }
 
   dynamic "service_registries" {
-    for_each = length(var.service_discovery_registries) > 0 ? [for v in var.service_discovery_registries : v if !local.is_daemon] : []
+    for_each = var.service_discovery_registries != null ? [var.service_discovery_registries] : []
 
     content {
-      container_name = service_registries.value.container_name
-      container_port = service_registries.value.container_port
-      port           = service_registries.value.port
-      registry_arn   = service_registries.value.registry_arn
+      registry_arn   = service_discovery_registries.value.registry_arn
+      port           = service_discovery_registries.value.port
+      container_port = service_discovery_registries.value.container_port
+      container_name = service_discovery_registries.value.container_name
     }
   }
 
-  triggers = var.triggers
+  # dynamic "tag_specifications" {
+  #   for_each = var.tag_specifications
 
+  #   content {
+  #     resource_type  = tag_specifications.value.resource_type
+  #     propagate_tags = tag_specifications.value.propagate_tags
+  #     tags           = tag_specifications.value.tags
+  #   }
+  # }
+
+  triggers              = var.triggers
   wait_for_steady_state = var.wait_for_steady_state
-
-  propagate_tags = var.propagate_tags
-  tags = merge(
-    {
-      "Name" = local.metadata.name
-    },
-    var.service_tags,
-    var.tags,
-    local.module_tags
-  )
 
   timeouts {
     create = var.timeouts.create
@@ -194,4 +202,13 @@ resource "aws_ecs_service" "this" {
       desired_count,
     ]
   }
+
+  tags = merge(
+    {
+      "Name" = local.metadata.name
+    },
+    var.tags,
+    local.module_tags
+  )
+
 }
