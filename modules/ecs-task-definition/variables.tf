@@ -3,6 +3,11 @@ variable "operating_system_family" {
   type        = string
   default     = "LINUX"
   nullable    = false
+
+  validation {
+    condition     = contains(["LINUX", "WINDOWS_SERVER_2019_FULL", "WINDOWS_SERVER_2019_CORE", "WINDOWS_SERVER_2022_FULL", "WINDOWS_SERVER_2022_CORE"], var.operating_system_family)
+    error_message = "The operating_system_family must be one of: LINUX, WINDOWS_SERVER_2019_FULL, WINDOWS_SERVER_2019_CORE, WINDOWS_SERVER_2022_FULL, WINDOWS_SERVER_2022_CORE."
+  }
 }
 
 ################################################################################
@@ -29,50 +34,65 @@ variable "dependencies" {
     condition     = string
     containerName = string
   }))
-  default = []
+  default  = []
+  nullable = false
 }
 
 variable "disable_networking" {
   description = "(Optional) When this parameter is true, networking is disabled within the container"
   type        = bool
-  default     = null
-  nullable    = true
+  default     = false
+  nullable    = false
 }
 
 variable "dns_search_domains" {
   description = "(Optional) Container DNS search domains. A list of DNS search domains that are presented to the container"
   type        = list(string)
   default     = []
+  nullable    = false
 }
 
 variable "dns_servers" {
   description = "(Optional) Container DNS servers. This is a list of strings specifying the IP addresses of the DNS servers"
   type        = list(string)
   default     = []
+  nullable    = false
 }
 
 variable "docker_labels" {
   description = "(Optional) A key/value map of labels to add to the container"
   type        = map(string)
   default     = {}
+  nullable    = false
 }
 
 variable "docker_security_options" {
   description = "(Optional) A list of strings to provide custom labels for SELinux and AppArmor multi-level security systems. This field isn't valid for containers in tasks using the Fargate launch type"
   type        = list(string)
   default     = []
+  nullable    = false
+
+  validation {
+    condition = length(var.docker_security_options) == 0 || alltrue([
+      for option in var.docker_security_options :
+      length(regexall("^(no-new-privileges|apparmor:[^:]+|label:[^:]+|credentialspec:[^:]+)$", option)) > 0
+    ])
+    error_message = "Each docker_security_option must be one of: 'no-new-privileges', 'apparmor:PROFILE', 'label:value', or 'credentialspec:CredentialSpecFilePath'."
+  }
 }
 
 variable "enable_execute_command" {
   description = "(Optional) Specifies whether to enable Amazon ECS Exec for the tasks within the service"
   type        = bool
   default     = false
+  nullable    = false
 }
 
 variable "entrypoint" {
   description = "(Optional) The entry point that is passed to the container"
   type        = list(string)
   default     = []
+  nullable    = false
 }
 
 variable "environment" {
@@ -85,27 +105,29 @@ variable "environment" {
     name  = string
     value = string
   }))
-  default = []
+  default  = []
+  nullable = false
 }
 
 variable "environment_files" {
   description = <<-EOT
-  (Optional) A list of files containing the environment variables to pass to a container
-    (Required) `value`: The value of the environment variable
-    (Required) `type`: The type of the environment variable
+  (Optional) A list of files containing the environment variables to pass to a container. You can specify up to ten environment files.
+    (Required) `value`: The Amazon Resource Name (ARN) of the Amazon S3 object containing the environment variable file.
+    (Required) `type`: The file type to use. The only supported value is `s3`.
   EOT
   type = list(object({
     value = string
     type  = string
   }))
-  default = []
+  default  = []
+  nullable = false
 }
 
 variable "essential" {
   description = "(Optional) If the `essential` parameter of a container is marked as `true`, and that container fails or stops for any reason, all other containers that are part of the task are stopped"
   type        = bool
-  default     = null
-  nullable    = true
+  default     = false
+  nullable    = false
 }
 
 variable "extra_hosts" {
@@ -118,7 +140,8 @@ variable "extra_hosts" {
     hostname  = string
     ipAddress = string
   }))
-  default = []
+  default  = []
+  nullable = false
 }
 
 variable "firelens_configuration" {
@@ -131,7 +154,8 @@ variable "firelens_configuration" {
     options = optional(map(string))
     type    = optional(string)
   })
-  default = {}
+  default  = {}
+  nullable = false
 }
 
 variable "health_check" {
@@ -150,21 +174,32 @@ variable "health_check" {
     retries     = optional(number)
     startPeriod = optional(number)
   })
-  default = {}
+  default  = {}
+  nullable = false
 }
 
 variable "hostname" {
-  description = "(Optional) The hostname to use for your container"
+  description = "(Optional) The hostname to use for your container. Up to 255 letters (uppercase and lowercase), numbers, hyphens, underscores, colons, periods, forward slashes, and number signs are allowed"
   type        = string
   default     = null
   nullable    = true
+
+  validation {
+    condition     = var.hostname == null || length(regexall("^[a-zA-Z0-9-_:/.#]{1,255}$", var.hostname)) > 0
+    error_message = "The hostname must be between 1 and 255 characters and can only contain letters, numbers, hyphens, underscores, colons, periods, forward slashes, and number signs."
+  }
 }
 
 variable "image" {
-  description = "(Optional) The image used to start a container. This string is passed directly to the Docker daemon. By default, images in the Docker Hub registry are available. Other repositories are specified with either `repository-url/image:tag` or `repository-url/image@digest`"
+  description = "(Optional) The image used to start a container. This string is passed directly to the Docker daemon. By default, images in the Docker Hub registry are available. Other repositories are specified with either `repository-url/image:tag` or `repository-url/image@digest`. Up to 255 letters (uppercase and lowercase), numbers, hyphens, underscores, colons, periods, forward slashes, and number signs are allowed. This parameter maps to Image in the docker container create command and the IMAGE parameter of docker run."
   type        = string
   default     = null
   nullable    = true
+
+  validation {
+    condition     = var.image == null || length(regexall("^[a-zA-Z0-9-_:/.#]{1,255}$", var.image)) > 0
+    error_message = "The image must be between 1 and 255 characters and can only contain letters, numbers, hyphens, underscores, colons, periods, forward slashes, and number signs."
+  }
 }
 
 variable "interactive" {
@@ -175,9 +210,18 @@ variable "interactive" {
 }
 
 variable "links" {
-  description = "(Optional) The links parameter allows containers to communicate with each other without the need for port mappings. This parameter is only supported if the network mode of a task definition is `bridge`"
+  description = "(Optional) The links parameter allows containers to communicate with each other without the need for port mappings. This parameter is only supported if the network mode of a task definition is bridge. The name:internalName construct is analogous to name:alias in Docker links. Up to 255 letters (uppercase and lowercase), numbers, underscores, and hyphens are allowed. This parameter maps to Links in the docker container create command and the --link option to docker run."
   type        = list(string)
   default     = []
+  nullable    = false
+
+  validation {
+    condition = length(var.links) == 0 || alltrue([
+      for link in var.links :
+      length(regexall("^[a-zA-Z0-9-_]{1,255}:[a-zA-Z0-9-_]{1,255}$", link)) > 0
+    ])
+    error_message = "Each link must be in the format 'name:internalName' and can only contain letters, numbers, hyphens, and underscores, up to 255 characters for each part."
+  }
 }
 
 variable "linux_parameters" {
@@ -211,7 +255,8 @@ variable "linux_parameters" {
       mountOptions  = optional(list(string))
     })))
   })
-  default = {}
+  default  = {}
+  nullable = false
 }
 
 variable "log_configuration" {
@@ -229,7 +274,8 @@ variable "log_configuration" {
       valueFrom = string
     })))
   })
-  default = {}
+  default  = {}
+  nullable = false
 }
 
 variable "container_memory" {
@@ -273,7 +319,8 @@ variable "mount_points" {
     readOnly      = bool
     sourceVolume  = string
   }))
-  default = []
+  default  = []
+  nullable = false
 }
 
 variable "name" {
@@ -281,6 +328,11 @@ variable "name" {
   type        = string
   default     = null
   nullable    = true
+
+  validation {
+    condition     = var.name == null || length(regexall("^[a-zA-Z0-9-_]{1,255}$", var.name)) > 0
+    error_message = "The container name must be between 1 and 255 characters and can only contain letters, numbers, hyphens, and underscores."
+  }
 }
 
 variable "port_mappings" {
@@ -299,31 +351,36 @@ variable "port_mappings" {
     containerPortRange = optional(string)
     name               = optional(string)
   }))
-  default = []
+  default  = []
+  nullable = false
 }
 
 variable "privileged" {
   description = "(Optional) When this parameter is true, the container is given elevated privileges on the host container instance (similar to the root user)"
   type        = bool
   default     = false
+  nullable    = false
 }
 
 variable "pseudo_terminal" {
   description = "(Optional) When this parameter is true, a `TTY` is allocated"
   type        = bool
   default     = false
+  nullable    = false
 }
 
 variable "readonly_root_filesystem" {
   description = "(Optional) When this parameter is true, the container is given read-only access to its root file system"
   type        = bool
   default     = true
+  nullable    = false
 }
 
 variable "repository_credentials" {
   description = "(Optional) Container repository credentials; required when using a private repo.  This map currently supports a single key; \"credentialsParameter\", which should be the ARN of a Secrets Manager's secret holding the credentials"
   type        = map(string)
   default     = {}
+  nullable    = false
 }
 
 variable "resource_requirements" {
@@ -336,7 +393,8 @@ variable "resource_requirements" {
     type  = string
     value = string
   }))
-  default = []
+  default  = []
+  nullable = false
 }
 
 variable "secrets" {
@@ -349,13 +407,15 @@ variable "secrets" {
     name      = string
     valueFrom = string
   }))
-  default = []
+  default  = []
+  nullable = false
 }
 
 variable "start_timeout" {
   description = "(Optional) Time duration (in seconds) to wait before giving up on resolving dependencies for a container"
   type        = number
   default     = 30
+  nullable    = false
 
   validation {
     condition     = var.start_timeout >= 2 && var.start_timeout <= 120
@@ -367,6 +427,7 @@ variable "stop_timeout" {
   description = "(Optional) Time duration (in seconds) to wait before the container is forcefully killed if it doesn't exit normally on its own"
   type        = number
   default     = 120
+  nullable    = false
 
   validation {
     condition     = var.stop_timeout >= 2 && var.stop_timeout <= 120
@@ -384,7 +445,8 @@ variable "system_controls" {
     namespace = string
     value     = string
   }))
-  default = []
+  default  = []
+  nullable = false
 }
 
 variable "ulimits" {
@@ -399,7 +461,8 @@ variable "ulimits" {
     name      = string
     softLimit = number
   }))
-  default = []
+  default  = []
+  nullable = false
 
   validation {
     condition = alltrue([
@@ -430,6 +493,7 @@ variable "volumes_from" {
   description = "(Optional) Data volumes to mount from another container"
   type        = list(any)
   default     = []
+  nullable    = false
 }
 
 variable "working_directory" {
@@ -447,6 +511,7 @@ variable "service" {
   description = "(Optional) The name of the service that the container definition is associated with"
   type        = string
   default     = ""
+  nullable    = false
 }
 
 variable "cloudwatch_log_group_config" {
@@ -473,12 +538,14 @@ variable "cloudwatch_log_group_config" {
     use_name_prefix   = false
     retention_in_days = 30
   }
+  nullable = false
 }
 
 variable "task_tags" {
   description = "(Optional) A map of additional tags to add to the task definition/set created"
   type        = map(string)
   default     = {}
+  nullable    = false
 }
 
 ################################################################################
@@ -504,28 +571,30 @@ variable "ephemeral_storage" {
   (Optional) Configuration block for ephemeral storage. Supports the following:
     (Required) `size_in_gib` - The amount of ephemeral storage to allocate for the task in GiB (21 - 200).
   EOT
-
   type = object({
     size_in_gib = number
   })
   default = {
     size_in_gib = 21
   }
+  nullable = false
 }
 
 variable "family" {
   description = "(Required) A unique name for your task definition"
   type        = string
   default     = null
+  nullable    = true
 }
 
 variable "ipc_mode" {
   description = "(Optional) IPC resource namespace to be used for the containers in the task. The valid values are `host`, `task`, and `none`"
   type        = string
   default     = null
+  nullable    = true
 
   validation {
-    condition     = var.ipc_mode == null || try(contains(["host", "task", "none"], var.ipc_mode), false)
+    condition     = contains(["host", "task", "none"], var.ipc_mode)
     error_message = "The 'ipc_mode' must be one of 'host', 'task', or 'none'."
   }
 }
@@ -534,6 +603,7 @@ variable "network_mode" {
   description = "(Optional) Docker networking mode to use for the containers in the task. Valid values are `none`, `bridge`, `awsvpc`, and `host`"
   type        = string
   default     = "awsvpc"
+  nullable    = false
 
   validation {
     condition     = var.network_mode == null || try(contains(["none", "bridge", "awsvpc", "host"], var.network_mode), false)
@@ -545,9 +615,10 @@ variable "pid_mode" {
   description = "(Optional) Process namespace to use for the containers in the task. The valid values are `host` and `task`"
   type        = string
   default     = null
+  nullable    = true
 
   validation {
-    condition     = var.pid_mode == null || try(contains(["host", "task"], var.pid_mode), false)
+    condition     = contains(["host", "task"], var.pid_mode)
     error_message = "The 'pid_mode' must be one of 'host' or 'task'."
   }
 }
@@ -562,7 +633,8 @@ variable "task_definition_placement_constraints" {
     expression = optional(string, null)
     type       = string
   }))
-  default = []
+  default  = []
+  nullable = false
 }
 
 /*
@@ -577,7 +649,7 @@ variable "requires_compatibilities" {
   description = "(Optional) Set of launch types required by the task. The valid values are `EC2` and `FARGATE`"
   type        = list(string)
   default     = ["FARGATE"]
-
+  nullable    = false
   validation {
     condition     = alltrue([for compatibility in var.requires_compatibilities : contains(["EC2", "FARGATE"], compatibility)])
     error_message = "Each value in 'requires_compatibilities' must be either 'EC2' or 'FARGATE'."
@@ -605,6 +677,7 @@ variable "skip_destroy" {
   description = "(Optional) If true, the task is not deleted when the service is deleted"
   type        = bool
   default     = null
+  nullable    = true
 }
 
 variable "volume" {
@@ -647,7 +720,8 @@ variable "volume" {
     configure_at_launch = optional(bool)
     name                = string
   }))
-  default = {}
+  default  = {}
+  nullable = false
 }
 
 ################################################################################
@@ -658,12 +732,14 @@ variable "task_exec_iam_role_arn" {
   description = "(Optional) Existing IAM role ARN. Required when `create_task_exec_iam_role` is `false`"
   type        = string
   default     = null
+  nullable    = true
 }
 
 variable "create_task_exec_iam_role" {
   description = "(Optional) Determines whether the ECS task definition IAM role should be created"
   type        = bool
   default     = true
+  nullable    = false
 }
 
 variable "task_exec_iam_role_name" {
@@ -677,6 +753,7 @@ variable "task_exec_iam_role_use_name_prefix" {
   description = "(Optional) Determines whether the IAM role name (`task_exec_iam_role_name`) is used as a prefix"
   type        = bool
   default     = true
+  nullable    = false
 }
 
 variable "task_exec_iam_role_path" {
@@ -704,36 +781,42 @@ variable "task_exec_iam_role_tags" {
   description = "(Optional) A map of additional tags to add to the IAM role created"
   type        = map(string)
   default     = {}
+  nullable    = false
 }
 
 variable "task_exec_iam_role_policies" {
   description = "(Optional) Map of IAM role policy ARNs to attach to the IAM role"
   type        = map(string)
   default     = {}
+  nullable    = false
 }
 
 variable "task_exec_iam_role_max_session_duration" {
   description = "(Optional) Maximum session duration (in seconds) for ECS task execution role. Default is 3600."
   type        = number
   default     = null
+  nullable    = true
 }
 
 variable "create_task_exec_policy" {
   description = "(Optional) Determines whether the ECS task definition IAM policy should be created. This includes permissions included in AmazonECSTaskExecutionRolePolicy as well as access to secrets and SSM parameters"
   type        = bool
   default     = true
+  nullable    = false
 }
 
 variable "task_exec_ssm_param_arns" {
   description = "(Optional) List of SSM parameter ARNs the task execution role will be permitted to get/read"
   type        = list(string)
   default     = ["arn:aws:ssm:*:*:parameter/*"]
+  nullable    = false
 }
 
 variable "task_exec_secret_arns" {
   description = "(Optional) List of SecretsManager secret ARNs the task execution role will be permitted to get/read"
   type        = list(string)
   default     = ["arn:aws:secretsmanager:*:*:secret:*"]
+  nullable    = false
 }
 
 variable "task_exec_iam_statements" {
@@ -762,13 +845,15 @@ variable "task_exec_iam_statements" {
       variable = string
     })))
   }))
-  default = {}
+  default  = {}
+  nullable = false
 }
 
 variable "task_exec_iam_policy_path" {
   description = "(Optional) Path for the iam role"
   type        = string
   default     = null
+  nullable    = true
 }
 
 ################################################################################
@@ -779,12 +864,14 @@ variable "tasks_iam_role_arn" {
   description = "(Optional) Existing IAM role ARN"
   type        = string
   default     = null
+  nullable    = true
 }
 
 variable "create_tasks_iam_role" {
   description = "(Optional) Determines whether the ECS tasks IAM role should be created"
   type        = bool
   default     = true
+  nullable    = false
 }
 
 variable "tasks_iam_role_name" {
@@ -798,36 +885,42 @@ variable "tasks_iam_role_use_name_prefix" {
   description = "(Optional) Determines whether the IAM role name (`tasks_iam_role_name`) is used as a prefix"
   type        = bool
   default     = true
+  nullable    = false
 }
 
 variable "tasks_iam_role_path" {
   description = "(Optional) IAM role path"
   type        = string
   default     = null
+  nullable    = true
 }
 
 variable "tasks_iam_role_description" {
   description = "(Optional) Description of the role"
   type        = string
   default     = null
+  nullable    = true
 }
 
 variable "tasks_iam_role_permissions_boundary" {
   description = "(Optional) ARN of the policy that is used to set the permissions boundary for the IAM role"
   type        = string
   default     = null
+  nullable    = true
 }
 
 variable "tasks_iam_role_tags" {
   description = "(Optional) A map of additional tags to add to the IAM role created"
   type        = map(string)
   default     = {}
+  nullable    = false
 }
 
 variable "tasks_iam_role_policies" {
   description = "(Optional) Map of IAM role policy ARNs to attach to the IAM role"
   type        = map(string)
   default     = {}
+  nullable    = false
 }
 
 variable "tasks_iam_role_statements" {
@@ -856,11 +949,13 @@ variable "tasks_iam_role_statements" {
       variable = string
     })))
   }))
-  default = {}
+  default  = {}
+  nullable = false
 }
 
 variable "tags" {
   description = "(Optional) A map of tags to add to all resources"
   type        = map(string)
   default     = {}
+  nullable    = false
 }
