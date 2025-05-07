@@ -568,7 +568,7 @@ variable "task_memory" {
 
 variable "ephemeral_storage" {
   description = <<-EOT
-  (Optional) Configuration block for ephemeral storage. Supports the following:
+  (Optional) Configuration block for ephemeral storage. This parameter is used to expand the total amount of ephemeral storage available, beyond the default amount, for tasks hosted on AWS Fargate.
     (Required) `size_in_gib` - The amount of ephemeral storage to allocate for the task in GiB (21 - 200).
   EOT
   type = object({
@@ -588,7 +588,7 @@ variable "family" {
 }
 
 variable "ipc_mode" {
-  description = "(Optional) IPC resource namespace to be used for the containers in the task. The valid values are `host`, `task`, and `none`"
+  description = "(Optional) IPC resource namespace to be used for the containers in the task. The valid values are `host`, `task`, and `none`. Not supported in Fargate."
   type        = string
   default     = null
   nullable    = true
