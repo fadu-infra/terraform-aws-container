@@ -1,11 +1,21 @@
+data "aws_caller_identity" "current" {}
+data "aws_partition" "current" {}
+
+locals {
+  account_id = data.aws_caller_identity.current.account_id
+  partition  = data.aws_partition.current.partition
+  region     = data.aws_region.this.name
+}
+
 ################################################################################
 # Task Execution - IAM Role
 ################################################################################
 
 locals {
-  task_exec_iam_role_name   = coalesce(var.task_exec_iam_role_name, var.name)
+  task_exec_iam_role_name   = coalesce(var.task_exec_iam_role_name, var.family_name)
   create_task_exec_iam_role = var.create_task_exec_iam_role
   create_task_exec_policy   = local.create_task_exec_iam_role && var.create_task_exec_policy
+  task_exec_iam_role_arn    = local.create_task_exec_iam_role ? aws_iam_role.task_exec[0].arn : var.task_exec_iam_role_arn
 }
 
 data "aws_iam_policy_document" "task_exec_assume" {
@@ -167,11 +177,12 @@ resource "aws_iam_role_policy_attachment" "task_exec" {
 ################################################################################
 
 locals {
-  tasks_iam_role_name   = coalesce(var.tasks_iam_role_name, var.name)
-  create_tasks_iam_role = var.create_tasks_iam_role
+  tasks_iam_role_name   = coalesce(var.task_iam_role_name, var.family_name)
+  create_tasks_iam_role = var.create_task_iam_role
+  task_role_arn         = local.create_tasks_iam_role ? aws_iam_role.tasks[0].arn : var.task_iam_role_arn
 }
 
-data "aws_iam_policy_document" "tasks_assume" {
+data "aws_iam_policy_document" "tasks_assume_role" {
   count = local.create_tasks_iam_role ? 1 : 0
 
   statement {
@@ -200,34 +211,33 @@ data "aws_iam_policy_document" "tasks_assume" {
 resource "aws_iam_role" "tasks" {
   count = local.create_tasks_iam_role ? 1 : 0
 
-  name        = var.tasks_iam_role_use_name_prefix ? null : local.tasks_iam_role_name
-  name_prefix = var.tasks_iam_role_use_name_prefix ? "${local.tasks_iam_role_name}-" : null
-  path        = var.tasks_iam_role_path
-  description = var.tasks_iam_role_description
+  name_prefix        = var.task_iam_role_use_name_prefix ? "${local.tasks_iam_role_name}-" : null
+  name               = var.task_iam_role_use_name_prefix ? null : local.tasks_iam_role_name
+  path               = var.task_iam_role_path
+  description        = var.task_iam_role_description
+  assume_role_policy = data.aws_iam_policy_document.tasks_assume_role[0].json
 
-  assume_role_policy    = data.aws_iam_policy_document.tasks_assume[0].json
-  permissions_boundary  = var.tasks_iam_role_permissions_boundary
-  force_detach_policies = true
+  permissions_boundary = var.task_iam_role_permissions_boundary
 
   tags = merge(
     {
       "Name" = local.metadata.name
     },
-    var.tasks_iam_role_tags,
+    var.task_iam_role_tags,
     var.tags,
     local.module_tags
   )
 }
 
-resource "aws_iam_role_policy_attachment" "tasks" {
-  for_each = { for k, v in var.tasks_iam_role_policies : k => v if local.create_tasks_iam_role }
+resource "aws_iam_role_policy_attachment" "tasks_additional" {
+  for_each = local.create_tasks_iam_role ? var.task_iam_role_policies : {}
 
   role       = aws_iam_role.tasks[0].name
   policy_arn = each.value
 }
 
 data "aws_iam_policy_document" "tasks" {
-  count = local.create_tasks_iam_role && (length(var.tasks_iam_role_statements) > 0 || var.enable_execute_command) ? 1 : 0
+  count = local.create_tasks_iam_role && (length(var.task_iam_role_statements) > 0 || var.enable_execute_command) ? 1 : 0
 
   dynamic "statement" {
     for_each = var.enable_execute_command ? [1] : []
@@ -245,7 +255,7 @@ data "aws_iam_policy_document" "tasks" {
   }
 
   dynamic "statement" {
-    for_each = var.tasks_iam_role_statements
+    for_each = var.task_iam_role_statements
 
     content {
       sid           = statement.value.sid
@@ -287,10 +297,9 @@ data "aws_iam_policy_document" "tasks" {
 }
 
 resource "aws_iam_role_policy" "tasks" {
-  count = local.create_tasks_iam_role && (length(var.tasks_iam_role_statements) > 0 || var.enable_execute_command) ? 1 : 0
+  count = local.create_tasks_iam_role && (length(var.task_iam_role_statements) > 0 || var.enable_execute_command) ? 1 : 0
 
-  name        = var.tasks_iam_role_use_name_prefix ? null : local.tasks_iam_role_name
-  name_prefix = var.tasks_iam_role_use_name_prefix ? "${local.tasks_iam_role_name}-" : null
-  policy      = data.aws_iam_policy_document.tasks[0].json
-  role        = aws_iam_role.tasks[0].id
+  name   = "${local.tasks_iam_role_name}-policy"
+  policy = data.aws_iam_policy_document.tasks[0].json
+  role   = aws_iam_role.tasks[0].id
 }

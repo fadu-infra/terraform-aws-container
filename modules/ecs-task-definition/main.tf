@@ -1,155 +1,130 @@
-data "aws_region" "current" {}
-data "aws_partition" "current" {}
-data "aws_caller_identity" "current" {}
-
 locals {
   metadata = {
     package = "terraform-aws-container"
     version = trimspace(file("${path.module}/../../VERSION"))
     module  = basename(path.module)
-    name    = var.name
+    name    = var.family_name
   }
   module_tags = {
     "module.terraform.io/name"    = "${local.metadata.package}/${local.metadata.module}"
     "module.terraform.io/version" = local.metadata.version
   }
-
-  enable_cloudwatch_log_group = var.cloudwatch_log_group_config.create_log_group && var.cloudwatch_log_group_config.enable_logging
-
-  account_id = data.aws_caller_identity.current.account_id
-  partition  = data.aws_partition.current.partition
-  region     = data.aws_region.current.name
-
-  is_not_windows = contains(["LINUX"], var.operating_system_family)
-
-  log_group_name = try(
-    coalesce(
-      var.cloudwatch_log_group_config.log_group_name,
-      "/aws/ecs/${var.service}/${var.name}"
-    ),
-    "/aws/ecs/${var.service}/default"
-  )
-
-  default_log_config = var.cloudwatch_log_group_config.enable_logging ? {
-    logDriver = "awslogs"
-    options = {
-      awslogs-region        = data.aws_region.current.name
-      awslogs-group         = local.enable_cloudwatch_log_group ? aws_cloudwatch_log_group.this[0].name : ""
-      awslogs-stream-prefix = "ecs"
-    }
-    } : {
-    logDriver = null
-    options   = {}
-  }
-
-  log_configuration = merge(
-    local.default_log_config,
-    var.log_configuration
-  )
-
-  linux_parameters = var.enable_execute_command ? merge({ "initProcessEnabled" : true }, var.linux_parameters) : merge({ "initProcessEnabled" : false }, var.linux_parameters)
-
-  health_check = length(var.health_check) > 0 ? merge({
-    interval = 30,
-    retries  = 3,
-    timeout  = 5
-  }, var.health_check) : null
-
-  definition = {
-    command                = var.command
-    cpu                    = var.container_cpu
-    dependsOn              = length(var.dependencies) > 0 ? var.dependencies : null # depends_on is a reserved word
-    disableNetworking      = local.is_not_windows ? var.disable_networking : null
-    dnsSearchDomains       = local.is_not_windows && length(var.dns_search_domains) > 0 ? var.dns_search_domains : null
-    dnsServers             = local.is_not_windows && length(var.dns_servers) > 0 ? var.dns_servers : null
-    dockerLabels           = length(var.docker_labels) > 0 ? var.docker_labels : null
-    dockerSecurityOptions  = length(var.docker_security_options) > 0 ? var.docker_security_options : null
-    entrypoint             = length(var.entrypoint) > 0 ? var.entrypoint : null
-    environment            = var.environment
-    environmentFiles       = length(var.environment_files) > 0 ? var.environment_files : null
-    essential              = var.essential
-    extraHosts             = local.is_not_windows && length(var.extra_hosts) > 0 ? var.extra_hosts : null
-    firelensConfiguration  = length(var.firelens_configuration) > 0 ? var.firelens_configuration : null
-    healthCheck            = local.health_check
-    hostname               = var.hostname
-    image                  = var.image
-    interactive            = var.interactive
-    links                  = local.is_not_windows && length(var.links) > 0 ? var.links : null
-    linuxParameters        = local.is_not_windows && length(local.linux_parameters) > 0 ? local.linux_parameters : null
-    logConfiguration       = length(local.log_configuration) > 0 ? local.log_configuration : null
-    memory                 = var.container_memory
-    memoryReservation      = var.memory_reservation
-    mountPoints            = var.mount_points
-    name                   = var.name
-    portMappings           = var.port_mappings
-    privileged             = local.is_not_windows ? var.privileged : null
-    pseudoTerminal         = var.pseudo_terminal
-    readonlyRootFilesystem = local.is_not_windows ? var.readonly_root_filesystem : null
-    repositoryCredentials  = length(var.repository_credentials) > 0 ? var.repository_credentials : null
-    resourceRequirements   = length(var.resource_requirements) > 0 ? var.resource_requirements : null
-    secrets                = length(var.secrets) > 0 ? var.secrets : null
-    startTimeout           = var.start_timeout
-    stopTimeout            = var.stop_timeout
-    systemControls         = length(var.system_controls) > 0 ? var.system_controls : []
-    ulimits                = local.is_not_windows && length(var.ulimits) > 0 ? var.ulimits : null
-    user                   = local.is_not_windows ? var.user : null
-    volumesFrom            = var.volumes_from
-    workingDirectory       = var.working_directory
-  }
-
-  container_definition = { for k, v in local.definition : k => v if v != null }
 }
 
-resource "aws_cloudwatch_log_group" "this" {
-  count = local.enable_cloudwatch_log_group ? 1 : 0
+data "aws_region" "this" {}
 
-  name              = var.cloudwatch_log_group_config.use_name_prefix ? null : local.log_group_name
-  name_prefix       = var.cloudwatch_log_group_config.use_name_prefix ? "${local.log_group_name}-" : null
-  retention_in_days = var.cloudwatch_log_group_config.retention_in_days
-  kms_key_id        = var.cloudwatch_log_group_config.kms_key_id
+locals {
+  command                 = jsonencode(var.command)
+  container_dependencies  = jsonencode(var.container_dependencies)
+  dns_search_domains      = jsonencode(var.dns_search_domains)
+  dns_servers             = jsonencode(var.dns_servers)
+  docker_labels           = jsonencode(var.docker_labels)
+  docker_security_options = jsonencode(var.docker_security_options)
+  entrypoint              = jsonencode(var.entrypoint)
+  environment             = jsonencode(var.environment)
+  environment_files       = jsonencode(var.environment_files)
+  extra_hosts             = jsonencode(var.extra_hosts)
+  firelens_configuration  = jsonencode(var.firelens_configuration)
+  health_check            = jsonencode(var.health_check)
+  links                   = jsonencode(var.links)
+  linux_parameters        = jsonencode(var.linux_parameters)
+  log_configuration       = jsonencode(var.log_configuration)
+  mount_points            = jsonencode(var.mount_points)
+  port_mappings           = jsonencode(var.port_mappings)
+  repository_credentials  = jsonencode(var.repository_credentials)
+  resource_requirements   = jsonencode(var.resource_requirements)
+  secrets                 = jsonencode(var.secrets)
+  system_controls         = jsonencode(var.system_controls)
+  ulimits                 = jsonencode(var.ulimits)
+  volumes_from            = jsonencode(var.volumes_from)
 
-  tags = merge(
+
+  container_definition_template = templatefile(
+    "${path.module}/container-definition.json.tpl",
     {
-      "Name" = local.metadata.name
-    },
-    var.tags,
-    local.module_tags
+      # Simple types (passed directly or jsonencoded if nullable string)
+      name                   = var.container_name == null ? "null" : jsonencode(var.container_name)
+      image                  = var.container_image == null ? "null" : jsonencode(var.container_image)
+      cpu                    = var.container_cpu == null ? "null" : var.container_cpu
+      memory                 = var.container_memory == null ? "null" : var.container_memory
+      memoryReservation      = var.container_memory_reservation == null ? "null" : var.container_memory_reservation
+      essential              = var.essential
+      disableNetworking      = var.disable_networking
+      interactive            = var.interactive
+      pseudoTerminal         = var.pseudo_terminal
+      privileged             = var.privileged
+      readonlyRootFilesystem = var.readonly_root_filesystem
+      hostname               = var.hostname == null ? "null" : jsonencode(var.hostname)
+      user                   = var.user == null ? "null" : jsonencode(var.user)
+      workingDirectory       = var.working_directory == null ? "null" : jsonencode(var.working_directory)
+      startTimeout           = var.start_timeout
+      stopTimeout            = var.stop_timeout
+
+      # Lists (json encoded, then null if empty string "[]")
+      command               = local.command == "[]" ? "null" : local.command
+      containerDependencies = local.container_dependencies == "[]" ? "null" : local.container_dependencies
+      dnsSearchDomains      = local.dns_search_domains == "[]" ? "null" : local.dns_search_domains
+      dnsServers            = local.dns_servers == "[]" ? "null" : local.dns_servers
+      dockerSecurityOptions = local.docker_security_options == "[]" ? "null" : local.docker_security_options
+      entryPoint            = local.entrypoint == "[]" ? "null" : local.entrypoint
+      environment           = local.environment == "[]" ? "null" : local.environment
+      environmentFiles      = local.environment_files == "[]" ? "null" : local.environment_files
+      extraHosts            = local.extra_hosts == "[]" ? "null" : local.extra_hosts
+      links                 = local.links == "[]" ? "null" : local.links
+      mountPoints           = local.mount_points == "[]" ? "null" : local.mount_points
+      portMappings          = local.port_mappings == "[]" ? "null" : local.port_mappings
+      resourceRequirements  = local.resource_requirements == "[]" ? "null" : local.resource_requirements
+      secrets               = local.secrets == "[]" ? "null" : local.secrets
+      systemControls        = local.system_controls == "[]" ? "null" : local.system_controls
+      ulimits               = local.ulimits == "[]" ? "null" : local.ulimits
+      volumesFrom           = local.volumes_from == "[]" ? "null" : local.volumes_from
+
+      # Maps/Objects (json encoded, then null if empty string "{}")
+      dockerLabels          = local.docker_labels == "{}" ? "null" : local.docker_labels
+      firelensConfiguration = local.firelens_configuration == "{}" ? "null" : local.firelens_configuration
+      healthCheck           = local.health_check == "{}" ? "null" : local.health_check
+      linuxParameters       = local.linux_parameters == "{}" ? "null" : local.linux_parameters
+      logConfiguration      = local.log_configuration == "{}" ? "null" : local.log_configuration
+      repositoryCredentials = local.repository_credentials == "{}" ? "null" : local.repository_credentials
+    }
   )
+
+  container_definitions = replace(local.container_definition_template, "/\"(null)\"/", "$1")
 }
+
+# resource "aws_cloudwatch_log_group" "this" {
+#   count = local.enable_cloudwatch_log_group ? 1 : 0
+
+# name              = var.cloudwatch_log_group_config.use_name_prefix ? null : local.log_group_name
+# name_prefix       = var.cloudwatch_log_group_config.use_name_prefix ? "${local.log_group_name}-" : null
+# retention_in_days = var.cloudwatch_log_group_config.retention_in_days
+# kms_key_id        = var.cloudwatch_log_group_config.kms_key_id
+
+#   tags = merge(
+#     {
+#       "Name" = local.metadata.name
+#     },
+#     var.tags,
+#     local.module_tags
+#   )
+# }
 
 resource "aws_ecs_task_definition" "this" {
-  container_definitions = jsonencode([local.container_definition])
-  cpu                   = var.task_cpu
+  container_definitions = local.container_definitions
+  family                = var.family_name
+  ipc_mode              = var.ipc_mode
+  network_mode          = var.network_mode
+  pid_mode              = var.pid_mode
 
-  dynamic "ephemeral_storage" {
-    for_each = length(var.ephemeral_storage) > 0 ? [var.ephemeral_storage] : []
+  # Fargate requires cpu and memory to be defined at the task level
+  cpu    = var.task_cpu
+  memory = var.task_memory
 
-    content {
-      size_in_gib = ephemeral_storage.value.size_in_gib
-    }
-  }
-
-  execution_role_arn = var.create_task_exec_iam_role ? aws_iam_role.task_exec[0].arn : var.task_exec_iam_role_arn
-  family             = coalesce(var.family, var.name)
-
-  /*
-  dynamic "inference_accelerator" {
-    for_each = var.inference_accelerator
-
-    content {
-      device_name = inference_accelerator.value.device_name
-      device_type = inference_accelerator.value.device_type
-    }
-  }
-  */
-
-  ipc_mode     = var.ipc_mode
-  memory       = var.task_memory
-  network_mode = var.network_mode
-  pid_mode     = var.pid_mode
+  task_role_arn      = var.task_iam_role_arn
+  execution_role_arn = var.task_exec_iam_role_arn
 
   dynamic "placement_constraints" {
-    for_each = var.task_definition_placement_constraints
+    for_each = var.placement_constraints
 
     content {
       expression = placement_constraints.value.expression
@@ -157,38 +132,25 @@ resource "aws_ecs_task_definition" "this" {
     }
   }
 
-  /*
-  dynamic "proxy_configuration" {
-    for_each = length(var.proxy_configuration) > 0 ? [var.proxy_configuration] : []
-
-    content {
-      container_name = proxy_configuration.value.container_name
-      properties     = try(proxy_configuration.value.properties, null)
-      type           = try(proxy_configuration.value.type, null)
-    }
-  }
-  */
-
-  requires_compatibilities = var.requires_compatibilities
-
   dynamic "runtime_platform" {
-    for_each = length(var.runtime_platform) > 0 ? [var.runtime_platform] : []
+    for_each = var.runtime_platform
 
     content {
-      cpu_architecture        = runtime_platform.value.cpu_architecture
       operating_system_family = runtime_platform.value.operating_system_family
+      cpu_architecture        = runtime_platform.value.cpu_architecture
     }
   }
-
-  skip_destroy  = var.skip_destroy
-  task_role_arn = var.create_tasks_iam_role ? aws_iam_role.tasks[0].arn : var.tasks_iam_role_arn
 
   dynamic "volume" {
-    for_each = var.volume
+    for_each = var.volumes
 
     content {
+      name                = volume.value.name
+      host_path           = volume.value.host_path
+      configure_at_launch = volume.value.configure_at_launch
+
       dynamic "docker_volume_configuration" {
-        for_each = [volume.value.docker_volume_configuration]
+        for_each = volume.value.docker_volume_configuration != null ? [volume.value.docker_volume_configuration] : []
 
         content {
           autoprovision = docker_volume_configuration.value.autoprovision
@@ -200,28 +162,32 @@ resource "aws_ecs_task_definition" "this" {
       }
 
       dynamic "efs_volume_configuration" {
-        for_each = [volume.value.efs_volume_configuration]
+        for_each = volume.value.efs_volume_configuration != null ? [volume.value.efs_volume_configuration] : []
 
         content {
+          file_system_id          = efs_volume_configuration.value.file_system_id
+          root_directory          = efs_volume_configuration.value.root_directory
+          transit_encryption      = efs_volume_configuration.value.transit_encryption
+          transit_encryption_port = efs_volume_configuration.value.transit_encryption_port
+
           dynamic "authorization_config" {
-            for_each = [efs_volume_configuration.value.authorization_config]
+            for_each = efs_volume_configuration.value.authorization_config != null ? [efs_volume_configuration.value.authorization_config] : []
 
             content {
               access_point_id = authorization_config.value.access_point_id
               iam             = authorization_config.value.iam
             }
           }
-
-          file_system_id          = efs_volume_configuration.value.file_system_id
-          root_directory          = efs_volume_configuration.value.root_directory
-          transit_encryption      = efs_volume_configuration.value.transit_encryption
-          transit_encryption_port = efs_volume_configuration.value.transit_encryption_port
         }
       }
+    }
+  }
 
-      host_path           = volume.value.host_path
-      configure_at_launch = volume.value.configure_at_launch
-      name                = coalesce(volume.value.name, volume.key)
+  dynamic "ephemeral_storage" {
+    for_each = var.ephemeral_storage != null ? [var.ephemeral_storage] : []
+
+    content {
+      size_in_gib = ephemeral_storage.value.size_in_gib
     }
   }
 
@@ -229,7 +195,6 @@ resource "aws_ecs_task_definition" "this" {
     {
       "Name" = local.metadata.name
     },
-    var.task_tags,
     local.module_tags,
     var.tags
   )
