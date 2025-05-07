@@ -683,11 +683,23 @@ variable "skip_destroy" {
 variable "volume" {
   description = <<-EOT
   (Optional) Configuration block for volumes that containers in your task may use. Supports the following configurations:
-    (Required) `name` - Name of the volume.
-    (Optional) `docker_volume_configuration` - Configuration block to configure a Docker volume.
+    (Required) `name` - Name of the volume. This name is referenced in the sourceVolume parameter of container definition in the mountPoints section.
+    (Optional) `docker_volume_configuration` - Configuration block to configure a Docker volume. Docker volumes are only supported when using the EC2 launch type or external instances.
+      (Optional) `autoprovision` - Whether to automatically provision an EBS volume. This field is only used if the scope is 'shared'.
+      (Optional) `driver_opts` - Map of Docker driver specific options.
+      (Optional) `driver` - Docker volume driver to use. The driver value must match the driver name provided by Docker because it is used for task placement.
+      (Optional) `labels` - Map of custom metadata to add to your Docker volume.
+      (Optional) `scope` - Scope for the Docker volume, which determines its lifecycle, either 'task' or 'shared'. Docker volumes that are scoped to a task are automatically provisioned when the task starts and destroyed when the task stops. Docker volumes that are scoped as shared persist after the task stops.
     (Optional) `efs_volume_configuration` - Configuration block for an EFS volume.
+      (Optional) `file_system_id` - The ID of the EFS file system.
+      (Optional) `root_directory` - The path on the EFS file system to mount the volume.
+      (Optional) `transit_encryption` - Whether to enable encryption for the EFS volume. Valid values are `ENABLED` and `DISABLED`.
+      (Optional) `transit_encryption_port` - The port on the container to connect to the EFS file system.
+      (Optional) `authorization_config` - Configuration block for authorization for the EFS volume.
+        (Optional) `access_point_id` - The ID of the access point to use for the EFS volume.
+        (Optional) `iam` - Whether to use the IAM role specified in the task definition. Valid values are `ENABLED` and `DISABLED`.
     (Optional) `host_path` - Path on the host container instance that is presented to the container.
-    (Optional) `configure_at_launch` - Whether the volume should be configured at launch time.
+    (Optional) `configure_at_launch` - Whether the volume should be configured at launch time. This is used to create Amazon EBS volumes for standalone tasks or tasks created as part of a service.
   EOT
   type = map(object({
     docker_volume_configuration = optional(object({
@@ -700,11 +712,11 @@ variable "volume" {
     efs_volume_configuration = optional(object({
       file_system_id          = string
       root_directory          = optional(string)
-      transit_encryption      = optional(string)
+      transit_encryption      = optional(string, "DISABLED")
       transit_encryption_port = optional(number)
       authorization_config = optional(object({
         access_point_id = optional(string)
-        iam             = optional(string)
+        iam             = optional(string, "DISABLED")
       }))
     }))
     host_path           = optional(string, null)
