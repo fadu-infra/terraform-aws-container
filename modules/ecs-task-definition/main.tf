@@ -219,24 +219,6 @@ resource "aws_ecs_task_definition" "this" {
         }
       }
 
-      dynamic "fsx_windows_file_server_volume_configuration" {
-        for_each = [volume.value.fsx_windows_file_server_volume_configuration]
-
-        content {
-          dynamic "authorization_config" {
-            for_each = [fsx_windows_file_server_volume_configuration.value.authorization_config]
-
-            content {
-              credentials_parameter = authorization_config.value.credentials_parameter
-              domain                = authorization_config.value.domain
-            }
-          }
-
-          file_system_id = fsx_windows_file_server_volume_configuration.value.file_system_id
-          root_directory = fsx_windows_file_server_volume_configuration.value.root_directory
-        }
-      }
-
       host_path = volume.value.host_path
       name      = coalesce(volume.value.name, volume.key)
     }
