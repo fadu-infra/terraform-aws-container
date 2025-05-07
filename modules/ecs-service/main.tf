@@ -206,16 +206,6 @@ resource "aws_ecs_service" "this" {
     }
   }
 
-  # dynamic "tag_specifications" {
-  #   for_each = var.tag_specifications
-
-  #   content {
-  #     resource_type  = tag_specifications.value.resource_type
-  #     propagate_tags = tag_specifications.value.propagate_tags
-  #     tags           = tag_specifications.value.tags
-  #   }
-  # }
-
   triggers              = var.triggers
   wait_for_steady_state = var.wait_for_steady_state
 
