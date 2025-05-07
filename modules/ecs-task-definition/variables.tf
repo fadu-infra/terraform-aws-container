@@ -558,7 +558,7 @@ variable "working_directory" {
 }
 
 ################################################################################
-# Networking
+# Task Configuration
 ################################################################################
 
 variable "ipc_mode" {
@@ -585,10 +585,6 @@ variable "pid_mode" {
   }
 }
 
-################################################################################
-# Volumes
-################################################################################
-
 variable "ephemeral_storage" {
   description = <<-EOT
   (Optional) Configuration block for Fargate task ephemeral storage (min 21 GiB).
@@ -607,12 +603,14 @@ variable "volumes" {
     (Required) `name`: The name of the volume.
     (Optional) `host_path`: The path on the host container instance that is presented to the container.
     (Optional) `configure_at_launch`: Whether to configure the volume at launch.
+
     (Optional) `docker_volume_configuration`: Configuration block for Docker volumes.
       (Optional) `autoprovision`: If this value is `true`, then the Docker volume is created if it doesn't already exist.
       (Optional) `driver`: The Docker volume driver to use.
       (Optional) `driver_opts`: A map of Docker driver options to pass to the driver.
       (Optional) `labels`: A map of custom metadata to add to the volume.
       (Optional) `scope`: The scope of the volume.
+
     (Optional) `efs_volume_configuration`: Configuration block for Amazon EFS volumes.
       (Required) `file_system_id`: The ID of the Amazon EFS file system.
       (Optional) `root_directory`: The path on the Amazon EFS file system to mount the volume.
@@ -648,296 +646,18 @@ variable "volumes" {
   nullable = false
 }
 
-# ################################################################################
-# # CloudWatch Logging
-# ################################################################################
-
-# variable "cloudwatch_log_group_config" {
-#   description = <<-EOT
-#   (Optional) Configuration for the CloudWatch log group if using 'awslogs' log driver.
-#     (Optional) `enable_logging`: Whether this module should configure awslogs in log_configuration.
-#     (Optional) `create_log_group`: Whether this module should create the log group.
-#     (Optional) `log_group_name`: Custom log group name. If null, defaults to /ecs/<family>.
-#     (Optional) `use_name_prefix`: If true, log_group_name is a prefix.
-#     (Optional) `retention_in_days`: Log retention period.
-#     (Optional) `kms_key_id`: KMS Key ARN for log group encryption.
-#   EOT
-#   type = object({
-#     enable_logging    = optional(bool, true)
-#     create_log_group  = optional(bool, true)
-#     log_group_name    = optional(string)
-#     use_name_prefix   = optional(bool, false)
-#     retention_in_days = optional(number, 30)
-#     kms_key_id        = optional(string)
-#   })
-#   default  = {} # Default means no specific log group management by this module for container; relies on log_configuration var
-#   nullable = false
-# }
-
-# variable "service" {
-#   description = "(Optional) The name of the service, can be used for constructing default log group name if `cloudwatch_log_group_config.log_group_name` is not provided."
-#   type        = string
-#   default     = ""
-#   nullable    = false
-# }
-
-################################################################################
-# Task Execution IAM Role
-################################################################################
-
-variable "create_task_exec_iam_role" {
-  description = "(Optional) Determines whether the ECS task definition IAM role (executionRoleArn) should be created by this module."
-  type        = bool
-  default     = true
-  nullable    = false
+variable "task_iam_role_arn" {
+  description = "(Optional) The ARN of the IAM role that the task will use."
+  type        = string
+  default     = null
+  nullable    = true
 }
 
 variable "task_exec_iam_role_arn" {
-  description = "(Optional) Existing IAM role ARN for task execution. Required if `create_task_exec_iam_role` is `false`."
+  description = "(Optional) The ARN of the IAM role that the task execution will use."
   type        = string
   default     = null
   nullable    = true
-}
-
-variable "task_exec_iam_role_description" {
-  description = "(Optional) Description of the task execution IAM role if created by this module."
-  type        = string
-  default     = "IAM role for ECS task execution, created by Terraform module."
-  nullable    = true
-}
-
-variable "task_exec_iam_role_max_session_duration" {
-  description = "(Optional) Maximum session duration (seconds) for the task execution IAM role."
-  type        = number
-  default     = 3600
-  nullable    = true
-}
-
-variable "task_exec_iam_role_name" {
-  description = "(Optional) Name to use for the task execution IAM role if created. If null, a unique name is generated."
-  type        = string
-  default     = null
-  nullable    = true
-}
-
-variable "task_exec_iam_role_path" {
-  description = "(Optional) Path for the task execution IAM role if created."
-  type        = string
-  default     = "/"
-  nullable    = true
-}
-
-variable "task_exec_iam_role_permissions_boundary" {
-  description = "(Optional) ARN of the policy used to set the permissions boundary for the task execution IAM role."
-  type        = string
-  default     = null
-  nullable    = true
-}
-
-variable "task_exec_iam_role_policies" {
-  description = "(Optional) Map of IAM policy ARNs to attach to the task execution IAM role (if created)."
-  type        = map(string)
-  default     = {}
-  nullable    = false
-}
-
-variable "task_exec_iam_role_tags" {
-  description = "(Optional) A map of additional tags to add to the task execution IAM role if created."
-  type        = map(string)
-  default     = {}
-  nullable    = false
-}
-
-variable "task_exec_iam_role_use_name_prefix" {
-  description = "(Optional) Determines whether `task_exec_iam_role_name` is used as a prefix."
-  type        = bool
-  default     = true
-  nullable    = false
-}
-
-variable "create_task_exec_policy" {
-  description = "(Optional) Determines whether the default ECS task execution IAM policy should be created and attached to the role (if created)."
-  type        = bool
-  default     = true
-  nullable    = false
-}
-
-variable "task_exec_iam_policy_path" {
-  description = "(Optional) Path for the IAM policy for the task execution role if created."
-  type        = string
-  default     = "/"
-  nullable    = true
-}
-
-variable "task_exec_iam_statements" {
-  description = <<-EOT
-  (Optional) A list of additional IAM policy statements to include in the task execution role's policy.
-    (Optional) `sid`: The statement ID.
-    (Optional) `actions`: The actions to allow.
-    (Optional) `not_actions`: The actions to deny.
-    (Optional) `effect`: The effect of the statement.
-    (Optional) `resources`: The resources to allow.
-    (Optional) `not_resources`: The resources to deny.
-    (Optional) `principals`: The principals to allow.
-      (Optional) `type`: The type of principal.
-      (Optional) `identifiers`: The identifiers of the principals.
-    (Optional) `not_principals`: The principals to deny.
-      (Optional) `type`: The type of principal.
-      (Optional) `identifiers`: The identifiers of the principals.
-    (Optional) `conditions`: The conditions to allow.
-      (Optional) `test`: The test to perform.
-      (Optional) `values`: The values to test.
-      (Optional) `variable`: The variable to test.
-  EOT
-  type = list(object({
-    sid           = optional(string)
-    actions       = optional(list(string))
-    not_actions   = optional(list(string))
-    effect        = optional(string, "Allow")
-    resources     = optional(list(string))
-    not_resources = optional(list(string))
-    principals = optional(list(object({
-      type        = string
-      identifiers = list(string)
-    })))
-    not_principals = optional(list(object({
-      type        = string
-      identifiers = list(string)
-    })))
-    conditions = optional(list(object({
-      test     = string
-      values   = list(string)
-      variable = string
-    })))
-  }))
-  default  = []
-  nullable = false
-}
-
-variable "task_exec_secret_arns" {
-  description = "(Optional) List of SecretsManager secret ARNs the task execution role will be permitted to `secretsmanager:GetSecretValue`."
-  type        = list(string)
-  default     = []
-  nullable    = false
-}
-
-variable "task_exec_ssm_param_arns" {
-  description = "(Optional) List of SSM parameter ARNs the task execution role will be permitted to `ssm:GetParameters`."
-  type        = list(string)
-  default     = []
-  nullable    = false
-}
-
-################################################################################
-# Task IAM Role (for the task itself, not execution)
-################################################################################
-
-variable "create_task_iam_role" {
-  description = "(Optional) Determines whether the ECS task IAM role (taskRoleArn) should be created by this module."
-  type        = bool
-  default     = true
-  nullable    = false
-}
-
-variable "task_iam_role_arn" {
-  description = "(Optional) Existing IAM role ARN for the task itself. Required if `create_task_iam_role` is `false`."
-  type        = string
-  default     = null
-  nullable    = true
-}
-
-variable "task_iam_role_description" {
-  description = "(Optional) Description of the task IAM role if created by this module."
-  type        = string
-  default     = "IAM role for ECS tasks, created by Terraform module."
-  nullable    = true
-}
-
-variable "task_iam_role_name" {
-  description = "(Optional) Name to use for the task IAM role if created. If null, a unique name is generated."
-  type        = string
-  default     = null
-  nullable    = true
-}
-
-variable "task_iam_role_path" {
-  description = "(Optional) Path for the task IAM role if created."
-  type        = string
-  default     = "/"
-  nullable    = true
-}
-
-variable "task_iam_role_permissions_boundary" {
-  description = "(Optional) ARN of the policy used to set the permissions boundary for the task IAM role."
-  type        = string
-  default     = null
-  nullable    = true
-}
-
-variable "task_iam_role_policies" {
-  description = "(Optional) Map of IAM policy ARNs to attach to the task IAM role (if created)."
-  type        = map(string)
-  default     = {}
-  nullable    = false
-}
-
-variable "task_iam_role_statements" {
-  description = <<-EOT
-  (Optional) A list of additional IAM policy statements to include in the task IAM role's policy.
-    (Optional) `sid`: The statement ID.
-    (Optional) `actions`: The actions to allow.
-    (Optional) `not_actions`: The actions to deny.
-    (Optional) `effect`: The effect of the statement.
-    (Optional) `resources`: The resources to allow.
-    (Optional) `not_resources`: The resources to deny.
-    (Optional) `principals`: The principals to allow.
-      (Optional) `type`: The type of principal.
-      (Optional) `identifiers`: The identifiers of the principals.
-    (Optional) `not_principals`: The principals to deny.
-      (Optional) `type`: The type of principal.
-      (Optional) `identifiers`: The identifiers of the principals.
-    (Optional) `conditions`: The conditions to allow.
-      (Optional) `test`: The test to perform.
-      (Optional) `values`: The values to test.
-      (Optional) `variable`: The variable to test.
-  EOT
-  type = list(object({
-    sid           = optional(string)
-    actions       = optional(list(string))
-    not_actions   = optional(list(string))
-    effect        = optional(string, "Allow")
-    resources     = optional(list(string))
-    not_resources = optional(list(string))
-    principals = optional(list(object({
-      type        = string
-      identifiers = list(string)
-    })))
-    not_principals = optional(list(object({
-      type        = string
-      identifiers = list(string)
-    })))
-    conditions = optional(list(object({
-      test     = string
-      values   = list(string)
-      variable = string
-    })))
-  }))
-  default  = []
-  nullable = false
-}
-
-variable "task_iam_role_tags" {
-  description = "(Optional) A map of additional tags to add to the task IAM role if created."
-  type        = map(string)
-  default     = {}
-  nullable    = false
-}
-
-variable "task_iam_role_use_name_prefix" {
-  description = "(Optional) Determines whether `task_iam_role_name` is used as a prefix."
-  type        = bool
-  default     = true
-  nullable    = false
 }
 
 ################################################################################

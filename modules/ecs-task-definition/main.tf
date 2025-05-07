@@ -59,25 +59,6 @@ locals {
   ])
 }
 
-data "aws_region" "this" {}
-
-# resource "aws_cloudwatch_log_group" "this" {
-#   count = local.enable_cloudwatch_log_group ? 1 : 0
-
-# name              = var.cloudwatch_log_group_config.use_name_prefix ? null : local.log_group_name
-# name_prefix       = var.cloudwatch_log_group_config.use_name_prefix ? "${local.log_group_name}-" : null
-# retention_in_days = var.cloudwatch_log_group_config.retention_in_days
-# kms_key_id        = var.cloudwatch_log_group_config.kms_key_id
-
-#   tags = merge(
-#     {
-#       "Name" = local.metadata.name
-#     },
-#     var.tags,
-#     local.module_tags
-#   )
-# }
-
 resource "aws_ecs_task_definition" "this" {
   container_definitions = local.container_definitions
   family                = var.family_name
