@@ -69,7 +69,7 @@ locals {
     environmentFiles       = length(var.environment_files) > 0 ? var.environment_files : null
     essential              = var.essential
     extraHosts             = local.is_not_windows && length(var.extra_hosts) > 0 ? var.extra_hosts : null
-    firelensConfiguration  = length(var.firelens_configuration) > 0 ? var.firelens_configuration : null
+    firelensConfiguration  = var.firelens_configuration != null ? var.firelens_configuration : null
     healthCheck            = local.health_check
     hostname               = var.hostname
     image                  = var.image
