@@ -280,14 +280,14 @@ variable "health_check" {
 }
 
 variable "hostname" {
-  description = "(Optional) The hostname to use for your container."
+  description = "(Optional) The hostname to use for your container. Up to 255 letters (uppercase and lowercase), numbers, hyphens, underscores, colons, periods, forward slashes, and number signs are allowed. Cannot be set when network_mode is 'awsvpc'"
   type        = string
   default     = null
   nullable    = true
 
   validation {
-    condition     = var.hostname == null || length(regexall("^[a-zA-Z0-9-_:/.#]{1,255}$", var.hostname)) > 0
-    error_message = "The hostname must be between 1 and 255 characters."
+    condition     = var.hostname == null || try(regex("^[a-zA-Z0-9-_:/.#]{1,255}$", var.hostname), false)
+    error_message = "The hostname must be between 1 and 255 characters and can only contain letters, numbers, hyphens, underscores, colons, periods, forward slashes, and number signs."
   }
 }
 
