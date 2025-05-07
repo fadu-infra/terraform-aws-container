@@ -11,86 +11,55 @@ locals {
   }
 }
 
-data "aws_region" "this" {}
-
 locals {
-  command                 = jsonencode(var.command)
-  container_dependencies  = jsonencode(var.container_dependencies)
-  dns_search_domains      = jsonencode(var.dns_search_domains)
-  dns_servers             = jsonencode(var.dns_servers)
-  docker_labels           = jsonencode(var.docker_labels)
-  docker_security_options = jsonencode(var.docker_security_options)
-  entrypoint              = jsonencode(var.entrypoint)
-  environment             = jsonencode(var.environment)
-  environment_files       = jsonencode(var.environment_files)
-  extra_hosts             = jsonencode(var.extra_hosts)
-  firelens_configuration  = jsonencode(var.firelens_configuration)
-  health_check            = jsonencode(var.health_check)
-  links                   = jsonencode(var.links)
-  linux_parameters        = jsonencode(var.linux_parameters)
-  log_configuration       = jsonencode(var.log_configuration)
-  mount_points            = jsonencode(var.mount_points)
-  port_mappings           = jsonencode(var.port_mappings)
-  repository_credentials  = jsonencode(var.repository_credentials)
-  resource_requirements   = jsonencode(var.resource_requirements)
-  secrets                 = jsonencode(var.secrets)
-  system_controls         = jsonencode(var.system_controls)
-  ulimits                 = jsonencode(var.ulimits)
-  volumes_from            = jsonencode(var.volumes_from)
+  base = {
+    name                   = var.container_name
+    image                  = var.container_image
+    essential              = var.essential
+    entrypoint             = var.entrypoint
+    command                = var.command
+    workingDirectory       = var.working_directory
+    readonlyRootFilesystem = var.readonly_root_filesystem
+    mountPoints            = var.mount_points
+    dnsServers             = var.dns_servers
+    dnsSearchDomains       = var.dns_search_domains
+    ulimits                = var.ulimits
+    repositoryCredentials  = var.repository_credentials
+    links                  = var.links
+    volumesFrom            = var.volumes_from
+    user                   = var.user
+    dependsOn              = var.container_dependencies
+    privileged             = var.privileged
+    portMappings           = var.port_mappings
+    healthCheck            = var.health_check == {} ? null : var.health_check
+    firelensConfiguration  = var.firelens_configuration == {} ? null : var.firelens_configuration
+    linuxParameters        = var.linux_parameters == {} ? null : var.linux_parameters
+    logConfiguration       = var.log_configuration == {} ? null : var.log_configuration
+    memory                 = var.container_memory
+    memoryReservation      = var.container_memory_reservation
+    cpu                    = var.container_cpu
+    environment            = var.environment
+    environmentFiles       = var.environment_files
+    secrets                = var.secrets
+    dockerLabels           = var.docker_labels
+    startTimeout           = var.start_timeout
+    stopTimeout            = var.stop_timeout
+    systemControls         = var.system_controls
+    extraHosts             = var.extra_hosts
+    hostname               = var.hostname
+    disableNetworking      = var.disable_networking
+    interactive            = var.interactive
+    pseudoTerminal         = var.pseudo_terminal
+    dockerSecurityOptions  = var.docker_security_options
+    resourceRequirements   = var.resource_requirements
+  }
 
-
-  container_definition_template = templatefile(
-    "${path.module}/container-definition.json.tpl",
-    {
-      # Simple types (passed directly or jsonencoded if nullable string)
-      name                   = var.container_name == null ? "null" : jsonencode(var.container_name)
-      image                  = var.container_image == null ? "null" : jsonencode(var.container_image)
-      cpu                    = var.container_cpu == null ? "null" : var.container_cpu
-      memory                 = var.container_memory == null ? "null" : var.container_memory
-      memoryReservation      = var.container_memory_reservation == null ? "null" : var.container_memory_reservation
-      essential              = var.essential
-      disableNetworking      = var.disable_networking
-      interactive            = var.interactive
-      pseudoTerminal         = var.pseudo_terminal
-      privileged             = var.privileged
-      readonlyRootFilesystem = var.readonly_root_filesystem
-      hostname               = var.hostname == null ? "null" : jsonencode(var.hostname)
-      user                   = var.user == null ? "null" : jsonencode(var.user)
-      workingDirectory       = var.working_directory == null ? "null" : jsonencode(var.working_directory)
-      startTimeout           = var.start_timeout
-      stopTimeout            = var.stop_timeout
-
-      # Lists (json encoded, then null if empty string "[]")
-      command               = local.command == "[]" ? "null" : local.command
-      containerDependencies = local.container_dependencies == "[]" ? "null" : local.container_dependencies
-      dnsSearchDomains      = local.dns_search_domains == "[]" ? "null" : local.dns_search_domains
-      dnsServers            = local.dns_servers == "[]" ? "null" : local.dns_servers
-      dockerSecurityOptions = local.docker_security_options == "[]" ? "null" : local.docker_security_options
-      entryPoint            = local.entrypoint == "[]" ? "null" : local.entrypoint
-      environment           = local.environment == "[]" ? "null" : local.environment
-      environmentFiles      = local.environment_files == "[]" ? "null" : local.environment_files
-      extraHosts            = local.extra_hosts == "[]" ? "null" : local.extra_hosts
-      links                 = local.links == "[]" ? "null" : local.links
-      mountPoints           = local.mount_points == "[]" ? "null" : local.mount_points
-      portMappings          = local.port_mappings == "[]" ? "null" : local.port_mappings
-      resourceRequirements  = local.resource_requirements == "[]" ? "null" : local.resource_requirements
-      secrets               = local.secrets == "[]" ? "null" : local.secrets
-      systemControls        = local.system_controls == "[]" ? "null" : local.system_controls
-      ulimits               = local.ulimits == "[]" ? "null" : local.ulimits
-      volumesFrom           = local.volumes_from == "[]" ? "null" : local.volumes_from
-
-      # Maps/Objects (json encoded, then null if empty string "{}")
-      dockerLabels          = local.docker_labels == "{}" ? "null" : local.docker_labels
-      firelensConfiguration = local.firelens_configuration == "{}" ? "null" : local.firelens_configuration
-      healthCheck           = local.health_check == "{}" ? "null" : local.health_check
-      linuxParameters       = local.linux_parameters == "{}" ? "null" : local.linux_parameters
-      logConfiguration      = local.log_configuration == "{}" ? "null" : local.log_configuration
-      repositoryCredentials = local.repository_credentials == "{}" ? "null" : local.repository_credentials
-    }
-  )
-
-  container_definitions = replace(local.container_definition_template, "/\"(null)\"/", "$1")
+  container_definitions = jsonencode([
+    { for k, v in local.base : k => v if v != null }
+  ])
 }
+
+data "aws_region" "this" {}
 
 # resource "aws_cloudwatch_log_group" "this" {
 #   count = local.enable_cloudwatch_log_group ? 1 : 0
