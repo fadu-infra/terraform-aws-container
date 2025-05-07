@@ -55,6 +55,34 @@ resource "aws_ecs_service" "this" {
     }
   }
 
+  dynamic "volume_configuration" {
+    for_each = var.volume_configuration != null ? [var.volume_configuration] : []
+
+    content {
+      name = volume_configuration.value.name
+      managed_ebs_volume {
+        role_arn         = volume_configuration.value.managed_ebs_volume.role_arn
+        encrypted        = volume_configuration.value.managed_ebs_volume.encrypted
+        file_system_type = volume_configuration.value.managed_ebs_volume.file_system_type
+        iops             = volume_configuration.value.managed_ebs_volume.iops
+        kms_key_id       = volume_configuration.value.managed_ebs_volume.kms_key_id
+        size_in_gb       = volume_configuration.value.managed_ebs_volume.size_in_gb
+        snapshot_id      = volume_configuration.value.managed_ebs_volume.snapshot_id
+        throughput       = volume_configuration.value.managed_ebs_volume.throughput
+        volume_type      = volume_configuration.value.managed_ebs_volume.volume_type
+        dynamic "tag_specifications" {
+          for_each = volume_configuration.value.managed_ebs_volume.tag_specifications != null ? volume_configuration.value.managed_ebs_volume.tag_specifications : []
+
+          content {
+            resource_type  = tag_specifications.value.resource_type
+            propagate_tags = tag_specifications.value.propagate_tags
+            tags           = tag_specifications.value.tags
+          }
+        }
+      }
+    }
+  }
+
   dynamic "capacity_provider_strategy" {
     for_each = var.capacity_provider_strategies
 

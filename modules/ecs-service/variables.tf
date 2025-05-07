@@ -112,6 +112,49 @@ variable "alarms" {
   nullable = true
 }
 
+variable "volume_configuration" {
+  description = <<-EOT
+  (Optional) Configuration for a volume specified in the task definition as a volume that is configured at launch time. Currently, the only supported volume type is an Amazon EBS volume.
+  This configuration only applies to volumes in the task definition that have `configure_at_launch = true` set.
+    (Required) `name` - Name of the volume. Must match the name of a volume in the task definition with `configure_at_launch = true`.
+    (Required) `managed_ebs_volume` - Configuration block for the Amazon EBS volume that Amazon ECS creates and manages on your behalf.
+      (Required) `role_arn` - Amazon ECS infrastructure IAM role that is used to manage your Amazon Web Services infrastructure.
+      (Optional) `encrypted` - Whether the volume should be encrypted. Defaults to true.
+      (Optional) `file_system_type` - Linux filesystem type for the volume. Valid values are 'ext3', 'ext4', 'xfs'. Defaults to 'xfs'.
+      (Optional) `iops` - Number of I/O operations per second (IOPS).
+      (Optional) `kms_key_id` - ARN of the AWS Key Management Service key to use for Amazon EBS encryption.
+      (Optional) `size_in_gb` - Size of the volume in GiB. You must specify either a size_in_gb or a snapshot_id.
+      (Optional) `snapshot_id` - Snapshot that Amazon ECS uses to create the volume. You must specify either a size_in_gb or a snapshot_id.
+      (Optional) `throughput` - Throughput to provision for a volume, in MiB/s, with a maximum of 1,000 MiB/s.
+      (Optional) `volume_type` - Volume type.
+      (Optional) `tag_specifications` - The tags to apply to the volume.
+        (Required) `resource_type` - The type of resource to tag.
+        (Optional) `propagate_tags` - Whether to propagate the tags to the resource.
+        (Optional) `tags` - A map of tags to add to the resource. 'AmazonECSCreated' and 'AmazonECSManaged' are reserved tags that can't be used.
+  EOT
+  type = object({
+    name = string
+    managed_ebs_volume = object({
+      role_arn         = string
+      encrypted        = optional(bool, true)
+      file_system_type = optional(string, "xfs")
+      iops             = optional(number)
+      kms_key_id       = optional(string)
+      size_in_gb       = optional(number)
+      snapshot_id      = optional(string)
+      throughput       = optional(number)
+      volume_type      = optional(string)
+      tag_specifications = optional(list(object({
+        resource_type  = string
+        propagate_tags = optional(bool)
+        tags           = optional(map(string))
+      })))
+    })
+  })
+  default  = null
+  nullable = true
+}
+
 variable "capacity_provider_strategies" {
   description = <<-EOT
   (Optional) A list of capacity provider strategies for the ECS service. Each entry in the list should have the following keys:
