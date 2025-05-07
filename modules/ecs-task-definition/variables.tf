@@ -248,15 +248,15 @@ variable "extra_hosts" {
 variable "firelens_configuration" {
   description = <<-EOT
   (Optional) The FireLens configuration for the container, used to specify and configure a log router for container logs. For more details, refer to the Amazon ECS Developer Guide on Custom Log Routing.
-    (Optional) `type`: The log router to use. Valid values are `fluentd` or `fluentbit`.
+    (Required) `type`: The log router to use. Valid values are `fluentd` or `fluentbit`.
     (Optional) `options`: A map of key-value pairs to configure the log router. These options allow customization of the log routing behavior.
   EOT
   type = object({
-    type    = optional(string)
+    type    = string
     options = optional(map(string))
   })
-  default  = {}
-  nullable = false
+  default  = null
+  nullable = true
 }
 
 variable "health_check" {
