@@ -594,7 +594,7 @@ variable "ipc_mode" {
   nullable    = true
 
   validation {
-    condition     = contains(["host", "task", "none"], var.ipc_mode)
+    condition     = var.ipc_mode == null || try(contains(["host", "task", "none"], var.ipc_mode), false)
     error_message = "The 'ipc_mode' must be one of 'host', 'task', or 'none'."
   }
 }
