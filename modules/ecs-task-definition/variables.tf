@@ -686,7 +686,6 @@ variable "volume" {
     (Required) `name` - Name of the volume.
     (Optional) `docker_volume_configuration` - Configuration block to configure a Docker volume.
     (Optional) `efs_volume_configuration` - Configuration block for an EFS volume.
-    (Optional) `fsx_windows_file_server_volume_configuration` - Configuration block for an FSX Windows File Server volume.
     (Optional) `host_path` - Path on the host container instance that is presented to the container.
     (Optional) `configure_at_launch` - Whether the volume should be configured at launch time.
   EOT
@@ -708,16 +707,8 @@ variable "volume" {
         iam             = optional(string)
       }))
     }))
-    fsx_windows_file_server_volume_configuration = optional(object({
-      file_system_id = string
-      root_directory = string
-      authorization_config = object({
-        credentials_parameter = string
-        domain                = string
-      })
-    }), null)
     host_path           = optional(string, null)
-    configure_at_launch = optional(bool)
+    configure_at_launch = optional(bool, false)
     name                = string
   }))
   default  = {}

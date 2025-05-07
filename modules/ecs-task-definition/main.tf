@@ -219,8 +219,9 @@ resource "aws_ecs_task_definition" "this" {
         }
       }
 
-      host_path = volume.value.host_path
-      name      = coalesce(volume.value.name, volume.key)
+      host_path           = volume.value.host_path
+      configure_at_launch = volume.value.configure_at_launch
+      name                = coalesce(volume.value.name, volume.key)
     }
   }
 
