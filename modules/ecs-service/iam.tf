@@ -9,6 +9,8 @@ locals {
 ################################################################################
 
 resource "aws_iam_role" "ecs_service" {
+  count = var.create_iam_role ? 1 : 0
+
   name = local.ecs_service_role_name
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -37,6 +39,6 @@ resource "aws_iam_role" "ecs_service" {
 resource "aws_iam_role_policy_attachment" "ecs_service" {
   count = length(local.ecs_service_policies)
 
-  role       = aws_iam_role.ecs_service.name
+  role       = aws_iam_role.ecs_service[0].name
   policy_arn = local.ecs_service_policies[count.index]
 }

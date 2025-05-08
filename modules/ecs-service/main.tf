@@ -42,7 +42,7 @@ resource "aws_ecs_service" "this" {
   enable_execute_command            = var.enable_execute_command
   force_new_deployment              = var.force_new_deployment
   health_check_grace_period_seconds = var.health_check_grace_period_seconds
-  iam_role                          = aws_iam_role.ecs_service.arn
+  iam_role                          = var.create_iam_role ? aws_iam_role.ecs_service[0].arn : var.iam_role_arn
 
 
   dynamic "alarms" {
