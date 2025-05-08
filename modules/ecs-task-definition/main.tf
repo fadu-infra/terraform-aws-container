@@ -73,6 +73,8 @@ resource "aws_ecs_task_definition" "this" {
   task_role_arn      = var.task_iam_role_arn
   execution_role_arn = var.task_exec_iam_role_arn
 
+  requires_compatibilities = var.requires_compatibilities
+
   dynamic "placement_constraints" {
     for_each = var.placement_constraints
 

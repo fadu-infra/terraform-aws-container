@@ -30,8 +30,8 @@ variable "runtime_platform" {
     operating_system_family = optional(string)
     cpu_architecture        = optional(string)
   })
-  default  = null
-  nullable = true
+  default  = {}
+  nullable = false
 }
 
 variable "skip_destroy" {
@@ -67,6 +67,17 @@ variable "placement_constraints" {
   }))
   default  = []
   nullable = false
+}
+
+variable "requires_compatibilities" {
+  description = "(Optional) Set of launch types required by the task. The valid values are `EC2` and `FARGATE`"
+  type        = list(string)
+  default     = ["FARGATE"]
+  nullable    = false
+  validation {
+    condition     = alltrue([for compatibility in var.requires_compatibilities : contains(["EC2", "FARGATE"], compatibility)])
+    error_message = "Each value in 'requires_compatibilities' must be either 'EC2' or 'FARGATE'."
+  }
 }
 
 ################################################################################
