@@ -135,7 +135,7 @@ variable "container_memory_reservation" {
 variable "container_dependencies" {
   description = <<EOT
   (Optional) The dependencies defined for container startup and shutdown.
-    (Required) `condition`: The dependency condition.
+    (Required) `condition`: The dependency condition. Valid values are `START`, `COMPLETE`, `SUCCESS`, `HEALTHY`.
     (Required) `containerName`: The name of the container that this dependency is associated with.
   EOT
   type = list(object({
@@ -144,6 +144,14 @@ variable "container_dependencies" {
   }))
   default  = []
   nullable = false
+
+  validation {
+    condition = alltrue([
+      for dep in var.container_dependencies :
+      contains(["START", "COMPLETE", "SUCCESS", "HEALTHY"], dep.condition)
+    ])
+    error_message = "The condition must be one of: START, COMPLETE, SUCCESS, HEALTHY."
+  }
 }
 
 variable "disable_networking" {
