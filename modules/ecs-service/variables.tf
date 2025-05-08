@@ -572,13 +572,6 @@ variable "scaling_alarms" {
 # Service - IAM Role
 ################################################################################
 
-variable "create_iam_role" {
-  description = "(Optional) Determines whether the ECS service IAM role should be created"
-  type        = bool
-  default     = true
-  nullable    = false
-}
-
 variable "iam_role_arn" {
   description = <<-EOT
     (Optional) Existing IAM role ARN. Required if using a load balancer without awsvpc network mode.
