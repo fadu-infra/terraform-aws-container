@@ -75,6 +75,11 @@ resource "aws_ecs_task_definition" "this" {
 
   requires_compatibilities = var.requires_compatibilities
 
+  runtime_platform {
+    operating_system_family = var.runtime_platform.operating_system_family
+    cpu_architecture        = var.runtime_platform.cpu_architecture
+  }
+
   dynamic "placement_constraints" {
     for_each = var.placement_constraints
 
@@ -84,14 +89,6 @@ resource "aws_ecs_task_definition" "this" {
     }
   }
 
-  dynamic "runtime_platform" {
-    for_each = var.runtime_platform != null ? [var.runtime_platform] : []
-
-    content {
-      operating_system_family = runtime_platform.value.operating_system_family
-      cpu_architecture        = runtime_platform.value.cpu_architecture
-    }
-  }
 
   dynamic "volume" {
     for_each = var.volumes
