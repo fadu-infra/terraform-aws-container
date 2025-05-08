@@ -587,7 +587,7 @@ variable "ipc_mode" {
   nullable    = true
 
   validation {
-    condition     = var.ipc_mode == null || contains(["host", "task", "none"], var.ipc_mode)
+    condition     = var.ipc_mode == null || try(contains(["host", "task", "none"], var.ipc_mode), false)
     error_message = "The 'ipc_mode' must be one of 'host', 'task', or 'none'."
   }
 }
@@ -599,7 +599,7 @@ variable "pid_mode" {
   nullable    = true
 
   validation {
-    condition     = var.pid_mode == null || contains(["host", "task"], var.pid_mode)
+    condition     = var.pid_mode == null || try(contains(["host", "task"], var.pid_mode), false)
     error_message = "The 'pid_mode' must be one of 'host' or 'task'."
   }
 }
