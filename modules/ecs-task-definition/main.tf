@@ -57,14 +57,16 @@ locals {
   container_definitions = jsonencode([
     { for k, v in local.base : k => v if v != null }
   ])
+
+  is_fargate = contains(var.requires_compatibilities, "FARGATE")
 }
 
 resource "aws_ecs_task_definition" "this" {
   container_definitions = local.container_definitions
   family                = var.family_name
-  ipc_mode              = var.ipc_mode
-  network_mode          = var.network_mode
-  pid_mode              = var.pid_mode
+  ipc_mode              = local.is_fargate ? null : var.ipc_mode
+  network_mode          = local.is_fargate ? "awsvpc" : var.network_mode
+  pid_mode              = local.is_fargate ? null : var.pid_mode
 
   # Fargate requires cpu and memory to be defined at the task level
   cpu    = var.task_cpu
