@@ -30,8 +30,8 @@ variable "runtime_platform" {
     operating_system_family = optional(string)
     cpu_architecture        = optional(string)
   })
-  default  = {}
-  nullable = false
+  default  = null
+  nullable = true
 }
 
 variable "skip_destroy" {
