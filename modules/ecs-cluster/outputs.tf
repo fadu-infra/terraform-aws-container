@@ -44,37 +44,3 @@ output "autoscaling_capacity_provider" {
   description = "Map of autoscaling capacity provider created and their attributes"
   value       = aws_ecs_capacity_provider.this
 }
-
-################################################################################
-# IAM Role
-################################################################################
-
-output "ecs_instance_role_name" {
-  description = "Service IAM role name"
-  value       = try(aws_iam_role.ecs_instance[0].name, null)
-}
-
-output "ecs_instance_role_arn" {
-  description = "Service IAM role ARN"
-  value       = try(aws_iam_role.ecs_instance[0].arn, null)
-}
-
-output "ecs_instance_role_unique_id" {
-  description = "Stable and unique string identifying the service IAM role"
-  value       = try(aws_iam_role.ecs_instance[0].unique_id, null)
-}
-
-output "ecs_task_execution_role_name" {
-  description = "Service IAM role name"
-  value       = try(aws_iam_role.ecs_task_execution.name, null)
-}
-
-output "ecs_task_execution_role_arn" {
-  description = "Service IAM role ARN"
-  value       = aws_iam_role.ecs_task_execution.arn
-}
-
-output "ecs_task_execution_role_unique_id" {
-  description = "Stable and unique string identifying the service IAM role"
-  value       = aws_iam_role.ecs_task_execution.unique_id
-}
