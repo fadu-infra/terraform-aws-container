@@ -3,7 +3,6 @@ include:
 
 # Global variables used across jobs
 variables:
-  MODULE_PATH: modules/ecs-asg-cluster
   DOC_FILENAME: README.md
 
 # Generate Terraform documentation
@@ -15,17 +14,19 @@ create-terraform-doc:
     entrypoint: ['']
   script:
     - |
-      terraform-docs markdown table \
-        --output-file=${DOC_FILENAME} \
-        --output-mode=replace \
-        --sort=true \
-        --sort-by=required \
-        --hide-empty=true \
-        --sensitive=true \
-        --read-comments=true \
-        --escape=false \
-        --indent=2 \
-        ${MODULE_PATH}
+      find modules -mindepth 1 -maxdepth 1 -type d | while read MODULE_PATH; do
+        terraform-docs markdown table \
+          --output-file="${DOC_FILENAME}" \
+          --output-mode=replace \
+          --sort=true \
+          --sort-by=required \
+          --hide-empty=true \
+          --sensitive=true \
+          --read-comments=true \
+          --escape=false \
+          --indent=2 \
+          "${MODULE_PATH}"
+      done
   artifacts:
     paths:
-      - ${MODULE_PATH}/${DOC_FILENAME}
+      - modules/*/${DOC_FILENAME}

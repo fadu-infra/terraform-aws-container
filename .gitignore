@@ -52,4 +52,7 @@ override.tf.json
 .terraformrc
 terraform.rc
 
+# Ignore Terraform lock files in modules
+modules/**/.terraform.lock.hcl
+
 # End of https://www.toptal.com/developers/gitignore/api/linux,terraform
